@@ -1,0 +1,20 @@
+# Configuration Supabase — repo eklio-backend.
+# Ce repo est la source de vérité unique du schéma Eklio (voir README.md).
+#
+# Organisation Supabase : eklio (mvrhhyusekksnthqumbn)
+# Projets rattachés :
+#   - enolgemfqeajrwpftppm  eu-west-1  (existant, données de test, à retirer
+#                                       une fois la bascule US validée)
+#   - le projet us-east-1 reste à créer ; son ref sera ajouté ici.
+#
+# Aucun secret dans ce fichier. Les clés (SUPABASE_ACCESS_TOKEN, db password)
+# restent hors du repo — voir .gitignore.
+#
+# Rattacher un projet distant : supabase link --project-ref <ref>
+# Appliquer les migrations   : supabase db push
+
+project_id = "eklio-backend"
+
+[db]
+# Doit correspondre à la version des projets Supabase distants (Postgres 17).
+major_version = 17
