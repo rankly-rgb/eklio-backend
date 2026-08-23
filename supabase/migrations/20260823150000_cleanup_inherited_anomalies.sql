@@ -40,28 +40,31 @@
 --     échouer la suppression du projet. NO ACTION laisse la cascade se
 --     terminer puis vérifie — la suppression d'un projet reste possible.
 
--- Lignes orphelines : `direction_id` est NOT NULL, aucun cas NULL à traiter.
--- Sur une base peuplée, un brand kit dont la direction a disparu est déjà
--- irrécupérable (son contenu référence une direction inexistante).
--- ⚠ Ce bloc SUPPRIME ces lignes. Il est bruyant à dessein : la volumétrie
--- attendue est 0 partout, tout compte non nul doit être investigué.
+-- Garde-fou lignes orphelines. `direction_id` est NOT NULL, aucun cas NULL à
+-- traiter : un orphelin est un brand kit dont la `direction_id` ne résout plus.
+--
+-- ⚠ Ce bloc ÉCHOUE, il ne répare pas. Un brand kit est un livrable payé : on
+-- ne l'efface jamais en silence pour faire passer une contrainte. S'il en
+-- existe, la migration s'arrête et rend la main à un humain, qui décidera de
+-- recréer la direction manquante ou de supprimer le kit en connaissance de
+-- cause. La volumétrie attendue est 0 partout ; tout déclenchement est un
+-- incident, pas un cas nominal.
 do $$
 declare
   orphelins bigint;
+  echantillon text;
 begin
-  select count(*) into orphelins
+  select count(*), string_agg(bk.id::text, ', ' order by bk.id)
+    into orphelins, echantillon
   from public.brand_kits bk
   where not exists (
     select 1 from public.directions d where d.id = bk.direction_id
   );
 
   if orphelins > 0 then
-    raise warning
-      'cleanup_inherited_anomalies: % brand_kits orphelins (direction_id sans direction) vont etre supprimes', orphelins;
-    delete from public.brand_kits bk
-    where not exists (
-      select 1 from public.directions d where d.id = bk.direction_id
-    );
+    raise exception
+      'cleanup_inherited_anomalies: % brand_kits reference(nt) une direction_id inexistante. La FK brand_kits_direction_id_fkey ne peut pas etre posee. Aucune ligne n''a ete modifiee. brand_kits.id concernes : %. Recreer la direction manquante ou supprimer ces kits explicitement, puis rejouer la migration.',
+      orphelins, echantillon;
   end if;
 end
 $$;
