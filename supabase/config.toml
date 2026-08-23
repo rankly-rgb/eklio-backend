@@ -3,17 +3,26 @@
 #
 # Organisation Supabase : eklio (mvrhhyusekksnthqumbn)
 # Projets rattachés :
-#   - enolgemfqeajrwpftppm  eu-west-1  (existant, données de test, à retirer
-#                                       une fois la bascule US validée)
-#   - le projet us-east-1 reste à créer ; son ref sera ajouté ici.
+#   - fobgdsupyfslxbswfuay  us-east-1  ACTIF — cible des migrations.
+#   - enolgemfqeajrwpftppm  eu-west-1  ancien projet, données de test. Conservé
+#                                      intact comme filet de sécurité, à retirer
+#                                      une fois la bascule US validée. Ne jamais
+#                                      y pousser de migration.
 #
 # Aucun secret dans ce fichier. Les clés (SUPABASE_ACCESS_TOKEN, db password)
 # restent hors du repo — voir .gitignore.
 #
-# Rattacher un projet distant : supabase link --project-ref <ref>
-# Appliquer les migrations   : supabase db push
+# Rattacher le projet US : supabase link --project-ref fobgdsupyfslxbswfuay
+# Appliquer les migrations : supabase db push
+#
+# NB : `project_id` ci-dessous est l'identifiant LOCAL du projet (il nomme les
+# conteneurs de `supabase start`) ; il ne pilote pas la cible de `db push`.
+# Celle-ci vient de `supabase link`, qui écrit le ref dans
+# `supabase/.temp/project-ref` — un chemin gitignoré, donc à refaire après
+# chaque clone. On aligne quand même `project_id` sur le ref US pour qu'il n'y
+# ait qu'une seule valeur à lire dans ce repo.
 
-project_id = "eklio-backend"
+project_id = "fobgdsupyfslxbswfuay"
 
 [db]
 # Doit correspondre à la version des projets Supabase distants (Postgres 17).
