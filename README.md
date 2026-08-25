@@ -101,9 +101,43 @@ un achat est un événement daté, un abonnement est un état courant.
 - `stripe_events` n'est exposée à personne : RLS, aucune policy, et privilèges
   `anon` / `authenticated` révoqués.
 
-⚠ Cette migration recouvre `20260825120000_lot3_brand_kits_us.sql` (branche
-`claude/backend-lot3-brand-kits`, non fusionnée) sur la colonne `tier` : même
-définition, les deux fichiers sont idempotents. Le Lot 3 portant un horodatage
-**antérieur** à celui-ci, sa fusion ultérieure demandera un
-`supabase db push --include-all`, le CLI refusant par défaut d'insérer une
-migration avant la dernière appliquée.
+#### La branche Lot 3, abandonnée — ce qu'elle portait et pourquoi
+
+`claude/backend-lot3-brand-kits` (commit `1dd8a5f`, migration
+`20260825120000_lot3_brand_kits_us.sql`) a été **supprimée sans être
+fusionnée**. Elle ne définissait que deux colonnes sur `brand_kits` :
+
+- **`tier`** — repris tel quel par le Lot 4, à la définition près identique,
+  et **avec le backfill qui lui manquait**. Le Lot 3 avait été écrit en
+  supposant `brand_kits` vide ; la table portait un kit dont le tier
+  `signature` vivait dans `content`. Appliqué seul, il l'aurait déclassé en
+  `starter`. Rien n'est perdu, le défaut est corrigé.
+- **`status`** (`pending` / `generating` / `complete` / `failed`) —
+  **délibérément abandonnée**, et c'est la seule décision de fond de cette
+  suppression. La génération du kit est un appel unique tout-ou-rien : les
+  trois gardes du front (structure, périmètre, déontologie) lèvent *avant*
+  la moindre écriture, et la ligne n'est insérée qu'une fois le livrable
+  complet et validé. Un `status` n'y aurait donc qu'une seule valeur
+  atteignable — et son défaut `'pending'` aurait estampillé « en attente »
+  des kits terminés, tant que le front ne l'écrit pas. L'avancement du
+  projet est déjà porté par `projects.status`, que le front passe à `kit`
+  juste après l'enregistrement.
+
+  Si la génération devient un jour incrémentale ou reprenable — ligne créée
+  avant que le contenu ne soit complet — la colonne redevient justifiée et
+  sera reposée dans une migration **postérieure** au Lot 4, avec un défaut
+  accordé à ce flux-là. C'est exactement le raisonnement qui a fait garder
+  `status` sur `monthly_presence_content`, produit lui par un job planifié
+  et rejouable.
+
+La branche portait aussi une observation qui n'était pas du DDL, et qui reste
+vraie : **`share_slug` est unique mais aucune policy ne permet à un visiteur
+non authentifié de lire un kit partagé** (`brand_kits_all_own` exige
+`projects.user_id = auth.uid()`, et pour `anon` `auth.uid()` vaut NULL). La
+page de partage ne fonctionnera donc pas tant qu'une policy publique en
+lecture n'aura pas été ajoutée, ou tant que la lecture ne passera pas par le
+`service_role`. Ce n'est volontairement toujours pas tranché : ouvrir
+`brand_kits` à `anon` exposerait le contenu intégral d'un livrable payant à
+quiconque devine ou collecte un slug. Arbitrage produit et sécurité — entropie
+du slug, révocabilité, exposition partielle — à traiter quand la page de
+partage sera au programme.
