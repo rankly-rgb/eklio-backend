@@ -66,7 +66,7 @@ course possible juste après signup, qui sera traitée côté applicatif.
 
 ## Schéma
 
-Six tables, RLS activée sur chacune, cloisonnement par propriétaire :
+Dix tables, RLS activée sur chacune, cloisonnement par propriétaire :
 
 - `profiles` — miroir 1:1 de `auth.users`, alimenté par le trigger
   `handle_new_user` ; `INSERT` / `DELETE` non exposés aux clients
@@ -75,6 +75,35 @@ Six tables, RLS activée sur chacune, cloisonnement par propriétaire :
 - `directions` — les 3 propositions créatives d'un projet
 - `brand_kits` — le kit de marque final
 - `generation_credits` — quotas de génération IA
+- `subscriptions` — abonnement Monthly Presence, une ligne par utilisateur
+- `purchases` — achats de kit (paiement unique), un événement par paiement
+- `stripe_events` — journal d'idempotence des webhooks Stripe, `service_role` seul
+- `monthly_presence_content` — livrable mensuel, un enregistrement par (projet, mois)
 
 Aucune table n'est en `FORCE ROW LEVEL SECURITY` : le `service_role`, utilisé
-côté serveur, contourne les policies.
+côté serveur, contourne les policies. C'est le mécanisme sur lequel repose le
+Lot 4 : le webhook Stripe écrit sans qu'aucune policy ne lui soit accordée,
+tandis que le navigateur ne lit que ses propres lignes.
+
+### `20260825160000_lot4_billing.sql`
+
+Le **schéma de facturation**, appliqué. Paiement unique (kits, trois tiers) et
+abonnement Monthly Presence sont deux modèles distincts et le restent en base :
+un achat est un événement daté, un abonnement est un état courant.
+
+- `brand_kits.tier` promu depuis `content` JSONB, **avec backfill** ;
+- `profiles.stripe_customer_id` (unique) — une seule correspondance
+  utilisateur ↔ client Stripe, partagée par les deux flux ;
+- `subscriptions`, `purchases`, `stripe_events`, `monthly_presence_content` ;
+- sur chacune : lecture propriétaire, écriture cliente **explicitement
+  refusée** (`using (false)`). L'event trigger `ensure_rls` active la RLS mais
+  ne crée aucune policy — elles sont toutes écrites à la main ;
+- `stripe_events` n'est exposée à personne : RLS, aucune policy, et privilèges
+  `anon` / `authenticated` révoqués.
+
+⚠ Cette migration recouvre `20260825120000_lot3_brand_kits_us.sql` (branche
+`claude/backend-lot3-brand-kits`, non fusionnée) sur la colonne `tier` : même
+définition, les deux fichiers sont idempotents. Le Lot 3 portant un horodatage
+**antérieur** à celui-ci, sa fusion ultérieure demandera un
+`supabase db push --include-all`, le CLI refusant par défaut d'insérer une
+migration avant la dernière appliquée.
