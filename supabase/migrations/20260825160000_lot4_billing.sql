@@ -313,9 +313,14 @@ comment on table public.stripe_events is
 -- job, donc rejouable. Sans cette contrainte, un double déclenchement produit
 -- deux mois de septembre et l'UI en choisit un au hasard.
 --
--- `status` reprend les valeurs de `brand_kits.status` (Lot 3) : une génération
--- interrompue doit être discernable d'un mois complet sans inspecter les clés
--- du JSON.
+-- `status` existe ici et PAS sur `brand_kits`, et la différence est voulue. Le
+-- kit est généré en un seul appel tout-ou-rien : la ligne n'est écrite qu'une
+-- fois le livrable complet et validé, donc un `status` n'y aurait qu'une seule
+-- valeur atteignable, et l'avancement du projet est déjà porté par
+-- `projects.status`. Le contenu mensuel, lui, est produit par un job planifié
+-- et rejouable : la ligne peut exister avant que le mois ne soit complet, et
+-- une génération interrompue doit être discernable d'un mois abouti sans
+-- inspecter les clés du JSON.
 --
 -- Rattachée au PROJET et non à l'utilisateur : le contenu décline l'identité
 -- de marque d'un projet précis (palette, voix, ton). Un utilisateur à deux
