@@ -77,13 +77,10 @@ create trigger set_plans_updated_at before update on public.plans
 
 -- >>> PLAN DATA (mirrored verbatim in supabase/seed.sql) >>>
 
--- ⚠ THE THREE PAID ROWS ARE A PROPOSAL, NOT A DECISION. Nothing in the schema
--- ever distinguished the tiers, so there is no prior art to recover — these
--- numbers are invented to give the table a shape, and they are meant to be
--- changed. Changing them is an UPDATE here; it must never become a code edit.
---
--- The free row is not a proposal: one run of three directions and one
--- regeneration is the allowance that was agreed.
+-- ⚠ THESE NUMBERS ARE THE DECISION. Nothing in the schema had ever
+-- distinguished the tiers — they differed only in price — so this table is where
+-- the difference now lives. Changing what a tier grants is an UPDATE here and
+-- nowhere else; it must never become a code edit.
 insert into public.plans (tier, label, price_cents, directions_limit, regenerations_limit, sort_order) values
   ('free',      'Free',      0,     3, 1,  0),
   ('starter',   'Starter',   7900,  3, 3,  1),
@@ -365,7 +362,7 @@ begin
   end if;
 
   raise notice ' ';
-  raise notice 'plans — the three paid rows are a PROPOSAL and are meant to be edited:';
+  raise notice 'plans — the allowance of every tier, and the only place it is written:';
   raise notice '  tier        label       price   directions/run  regenerations  total runs';
   for r in select * from public.plans order by sort_order loop
     raise notice '  %  %  %  %  %  %',

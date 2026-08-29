@@ -1477,10 +1477,10 @@ a route. Changing what a tier grants is an `UPDATE` here.
 - **`directions_limit` is directions produced by one run**, not a number of runs.
 - **`regenerations_limit` is runs beyond the first.** Total runs is `1 + it`.
 
-> ⚠ **The three paid rows are a proposal.** Nothing in the schema ever
-> distinguished the tiers — they differ only in price — so these numbers were
-> invented to give the table a shape and are expected to change. Read them from
-> `plans`; never hard-code them. The `free` row is not a proposal.
+> ⚠ **Read these from `plans`; never hard-code them.** They are data, and
+> changing what a tier grants is an `UPDATE` on that table — which is the whole
+> reason it exists. A number copied into a route is a number that will be wrong
+> the first time one of these moves.
 
 `generation_credits.plan_tier` records which plan a project was granted, and
 defaults to `free`. There is no `entitled ? paid : free` branch anywhere:
