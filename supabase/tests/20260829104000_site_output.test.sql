@@ -55,9 +55,9 @@ declare
     ['framer',      '0a94bf53b63075ba86171788e71b173d'],
     ['v0',          '0a94bf53b63075ba86171788e71b173d'],
     ['generic',     '0a94bf53b63075ba86171788e71b173d'],
-    ['squarespace', 'acbc2ac896acc79695e58ce72be25a19'],
-    ['wix',         '6003518caddcf818de966d304256c7a6'],
-    ['webflow',     '8db2c694b7bfa0318b1e1aeaed0b68d8']
+    ['squarespace', '961f12af4bea2bd311c4133456b3dfcc'],
+    ['wix',         '677dcfcf7a71a7a72179d9b6062a9966'],
+    ['webflow',     'ad570b34b199d69366e8ca513909c9fd']
   ];
   i   int;
   got text;
@@ -334,6 +334,40 @@ begin
 end
 $$;
 
+-- ⚠ A step title that states a count must state its own values length.
+-- Step 2 was "Set your five colors" over six values for as long as it took
+-- `paper` to come back and nobody to notice.
+do $$
+declare
+  spec jsonb := (select s from snapshot_spec);
+  t    text;
+  r    record;
+  n    int;
+begin
+  foreach t in array array['squarespace','wix','webflow'] loop
+    for r in select v.value->>'n' as n, v.value->>'title' as title,
+                    jsonb_array_length(v.value->'values') as len
+               from jsonb_array_elements(public.site_spec_output(spec, t)->'steps') v
+    loop
+      n := public.site_output_step_title_count(r.title);
+      assert n is null or n = r.len,
+        format('%s step %s titled "%s" states %s but carries %s value(s)',
+               t, r.n, r.title, n, r.len);
+    end loop;
+  end loop;
+
+  -- the two that were wrong, named explicitly
+  assert (select v.value->>'title' from jsonb_array_elements(
+            public.site_spec_output(spec,'squarespace')->'steps') v
+           where (v.value->>'n')::int = 2) = 'Set your six colors',
+         'step 2 no longer names its six colours';
+  assert (select v.value->>'title' from jsonb_array_elements(
+            public.site_spec_output(spec,'squarespace')->'steps') v
+           where (v.value->>'n')::int = 3) = 'Set your fonts',
+         'step 3 states a count again over a mixed list';
+end
+$$;
+
 -- Copy blocks: every string, individually copyable, one per list item.
 do $$
 declare
@@ -382,7 +416,7 @@ begin
   txt := public.site_spec_output_render('Squarespace', public.site_spec_output(spec, 'squarespace'), false);
 
   assert md like '# Squarespace%',            'the markdown sheet is titled with the builder';
-  assert md like '%## 2. Set your five colors%', 'the markdown sheet has step headings';
+  assert md like '%## 2. Set your six colors%', 'the markdown sheet has step headings';
   assert md like '%> Where: Site Styles › Colors%', 'the panel is quoted in the markdown sheet';
   assert txt not like '%## %',                 'the plain rendering kept its markdown markers';
   assert txt like '%SQUARESPACE%',             'the plain rendering has a title';

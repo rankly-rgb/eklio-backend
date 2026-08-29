@@ -537,3 +537,13 @@ update public.palette_families set accent_hex = '#A34A2A' where id = 'ochre_pape
 update public.palette_families set accent_hex = '#8E4A3C' where id = 'slate_bone';     -- brick: warmth against the slate
 
 -- <<< PALETTE ACCENT DATA <<<
+
+
+-- >>> STEP TITLE DATA (mirrored verbatim in supabase/seed.sql) >>>
+
+update public.site_output_templates
+   set body = 'Set your six colors'   where id = 'all.sheet.step2_title';
+update public.site_output_templates
+   set body = 'Set your fonts'        where id = 'all.sheet.step3_title';
+
+-- <<< STEP TITLE DATA <<<
