@@ -244,6 +244,43 @@ begin
   -- the two blocks delivered earlier are still there
   assert c ?& array['section_types','builder_targets'],
          'adding the limits dropped a catalog block';
+
+  -- ⚠ TWO LIMIT SETS, AND THEY ARE NOT THE SAME NUMBERS. The generator that
+  -- writes brand_kits.directions is bound by direction_limits; the editor the
+  -- therapist types into is bound by site_spec_limits. Publishing only the
+  -- second would tell the generator it has 90 characters of headline when the
+  -- upstream CHECK allows 46 — and the refusal lands after the generation is
+  -- paid for.
+  assert c ? 'direction_limits', 'GET /catalog does not carry direction_limits';
+  assert c->'direction_limits' = public.direction_limits(),
+         'the catalog and the direction extractor disagree';
+  assert (c->'direction_limits'->>'hero_headline')::int
+       < (c->'site_spec_limits'->>'hero_headline')::int,
+         'the direction headline bound is no longer tighter than the site spec one';
+  assert (c->'direction_limits'->>'hero_subhead')::int
+       < (c->'site_spec_limits'->>'hero_subhead')::int,
+         'the direction subhead bound is no longer tighter than the site spec one';
+  assert c->'direction_limits' ?& array['name','name_words_max','rationale_min',
+                                        'rationale_max','hero_headline','hero_subhead',
+                                        'tone_keywords_joined','tone_keywords_count',
+                                        'directions_count'],
+         'a documented direction limit key is missing from the catalog payload';
+
+  -- and each direction bound is the real boundary of its own enforcer
+  assert public.brand_kit_directions_rendering_valid(jsonb_build_array(
+           jsonb_build_object('id','a','name','A','rationale', repeat('x', 70),
+             'hero', jsonb_build_object('headline',
+                       repeat('x', (c->'direction_limits'->>'hero_headline')::int),
+                       'subhead', repeat('x', (c->'direction_limits'->>'hero_subhead')::int)),
+             'tone_keywords', jsonb_build_array('a','b','c')))),
+         'a direction at exactly the published limits was refused';
+  assert not public.brand_kit_directions_rendering_valid(jsonb_build_array(
+           jsonb_build_object('id','a','name','A','rationale', repeat('x', 70),
+             'hero', jsonb_build_object('headline',
+                       repeat('x', (c->'direction_limits'->>'hero_headline')::int + 1),
+                       'subhead', 's'),
+             'tone_keywords', jsonb_build_array('a','b','c')))),
+         'the published direction headline bound is one character short of the truth';
 end
 $$;
 

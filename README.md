@@ -556,8 +556,8 @@ pour redessiner la maquette, le panneau de contraste et la bannière.
     "spec_version": 1,
     "last_copied_spec_version": null,
     "updated_at": "2026-08-29T07:44:44.277880+00:00",
-    "primary": "#3B2C3A", "secondary": "#4A5361", "accent": "#4A5361",
-    "light_neutral": "#F3EDE4", "dark_neutral": "#241B23",
+    "primary": "#3B2C3A", "secondary": "#4A5361", "accent": "#6E2F44",
+    "paper": "#FAF7F2", "light_neutral": "#F3EDE4", "dark_neutral": "#241B23",
     "type_pairing_id": "cormorant_source",
     "heading_font": "Cormorant Garamond", "body_font": "Source Sans 3",
     "google_fonts_url": "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&…",
@@ -577,10 +577,11 @@ pour redessiner la maquette, le panneau de contraste et la bannière.
       "email": null, "phone": null
     },
     "extra_instructions": null,
-    "target": "squarespace"
+    "target": "squarespace",
+    "seed_clamped": null
   },
   "preview":  { "practice_name": "Elm & Ember Therapy", "tokens": { … }, "pages": [ … ] },
-  "contrast": { "pairs": [ … ], "worst_ratio": 6.68, "passes_aa": true },
+  "contrast": { "pairs": [ … ], "worst_ratio": 5.66, "passes_aa": true },
   "output":   { "kind": "setup_sheet", "steps": [ … ], "copy_blocks": [ … ] },
   "diff":     { "stale": false, "changes": [] },
   "etag":     "f84ed47d93d724c9f033c4b410fbaa36"
@@ -602,7 +603,7 @@ recherche sur l'index unique `brand_kit_id`, de la manipulation jsonb en
 mémoire, un UPDATE, une enveloppe. Rien n'y croît avec quoi que ce soit.
 
 Clés acceptées (`site_spec_patchable_keys()`) : `primary`, `secondary`,
-`accent`, `light_neutral`, `dark_neutral`, `type_pairing_id`, `heading_font`,
+`accent`, `paper`, `light_neutral`, `dark_neutral`, `type_pairing_id`, `heading_font`,
 `body_font`, `google_fonts_url`, `hero`, `about_excerpt`, `pages`,
 `practice_details`, `extra_instructions`, `target`. Toute autre clé est refusée
 en la nommant.
@@ -803,15 +804,32 @@ pas d'`accent`. `palette_families` a les mêmes cinq colonnes, la copie approuv�
 de l'écran 4 les mêmes cinq, et le mot « accent » n'apparaissait nulle part dans
 le schéma avant le lot 6.
 
-L'accent est donc **dérivé**, et n'est jamais une copie du secondaire : deux
-pastilles identiques sous deux libellés différents se lisent comme un bug de
-l'éditeur, et se comportent comme tel dès qu'elle déplace l'une des deux. La
-règle, déterministe de bout en bout : teinte du primaire tournée à sa
-complémentaire fendue (150°, puis sept décalages de repli), saturation plancher
-à 0,28 pour qu'un primaire quasi gris ne rende pas un accent gris, clarté prise
-sur une échelle fixe au plus près de celle du primaire tout en atteignant
-**4,5:1 sur `light_neutral`**, et distance perceptuelle d'au moins **ΔE 15** du
-primaire *et* du secondaire.
+L'accent n'est jamais une copie du secondaire : deux pastilles identiques sous
+deux libellés différents se lisent comme un bug de l'éditeur, et se comportent
+comme tel dès qu'elle déplace l'une des deux.
+
+Il est **curaté**, pas dérivé. `palette_families.accent_hex` porte six valeurs
+choisies à la main, dans le registre de leur propre famille — un frère plus
+chaud ou plus profond, jamais un contraste complémentaire. La dérivation
+existait d'abord et produisait un bleu-vert pour CLAY & SAND, un vert olive pour
+PLUM & BONE : une rotation de teinte marche droit dans le **vert sauge et le
+bleu poussiéreux** que la règle éditoriale de ce repo interdit, et automatisait
+donc leur injection dans des palettes choisies à la main.
+
+Ordre de résolution : l'accent envoyé par le générateur, puis celui curaté de la
+famille (retrouvée en appariant les cinq hexadécimales), puis la dérivation.
+
+Celle-ci reste le repli pour une palette qui n'est pas des nôtres, inchangée :
+teinte du primaire tournée à sa complémentaire fendue (150°, puis sept décalages
+de repli), saturation plancher à 0,28 pour qu'un primaire quasi gris ne rende
+pas un accent gris, clarté prise sur une échelle fixe au plus près de celle du
+primaire tout en atteignant **4,5:1 sur le papier**, et distance perceptuelle
+d'au moins **ΔE 15** du primaire *et* du secondaire.
+
+Changer un accent curaté est **une ligne** dans le bloc balisé de
+`20260829114000_palette_accent.sql`. Le garde-fou revérifie distance,
+lisibilité et la règle éditoriale (teinte hors de l'arc vert/bleu 75-260) à
+chaque application, et imprime le tableau de revue.
 
 Le seuil est mesuré, pas choisi : le produit livre déjà PLUM & BONE à ΔE 18,10
 entre son primaire et son secondaire, et CLAY & SAND à 25,37. ΔE est du CIE76
@@ -857,6 +875,70 @@ Les trois réellement rognables sont `overline`, `cta_label` et `about_excerpt`.
 > qu'il dépassait la limite : la limite est un CHECK. L'original reste lisible
 > dans `brand_kits.directions[selected].hero`, donc la note peut le montrer et
 > la laisser réécrire à la bonne longueur — pas l'enregistrer tel quel.
+
+### Six jetons, et le contraste mesuré sur ce qui est peint
+
+Une palette de direction porte cinq rôles ; le spec en portait cinq — mais pas
+les mêmes. Un accent est arrivé et **`paper` avait disparu**. Le mappage est
+maintenant complet et ne perd aucun rôle source :
+
+| source (`directions[].palette`) | spec (`site_specs`) |
+|---|---|
+| `primary` | `primary` |
+| `secondary` | `secondary` |
+| `light` | `light_neutral` — teinte d'un bandeau ou d'une carte |
+| `dark` | `dark_neutral` |
+| `paper` | `paper` — **le fond de page**, la plus grande surface du site |
+| *(aucun)* | `accent` — curaté au catalogue, dérivé en repli |
+
+`site_spec_palette_role()` accepte aussi les noms `light_neutral` /
+`dark_neutral` : une ligne écrite pendant que le trou NULL était ouvert reste
+lisible.
+
+Les paires de contraste passent de six à **sept**, et la surface change. Elles
+étaient toutes mesurées contre `light_neutral` ; le texte repose sur `paper`.
+
+| paire | ce qu'elle mesure |
+|---|---|
+| `cta_label_on_primary` | le libellé sur le bouton |
+| `dark_neutral_on_paper` | **texte courant sur la page** — celle qui compte le plus |
+| `primary_on_paper` | liens et titres sur la page |
+| `secondary_on_paper` | titres secondaires sur la page |
+| `accent_on_paper` | marques d'accent sur la page |
+| `dark_neutral_on_light_neutral` | texte courant dans un bandeau teinté |
+| `paper_on_dark_neutral` | texte inversé dans une section sombre |
+
+> ⚠ **Aucune des deux surfaces ne bouge jamais.** `paper` porte cinq des sept
+> paires et le bandeau une : corriger l'une pour réparer une paire changerait
+> toutes les autres dessinées dessus. Le jeton déplacé est toujours l'encre ou
+> une couleur de marque.
+
+Le livrable **déclare le fond de page explicitement**. Sans ça, un constructeur
+met le site en blanc quoi qu'en dise la palette.
+
+### Deux jeux de limites, et qui lit lequel
+
+`GET /catalog` porte deux blocs, parce que deux choses différentes sont bornées :
+
+- **`direction_limits`** — ce que le **générateur** doit respecter en produisant
+  `brand_kits.directions`. Titre ≤ 46, sous-titre ≤ 60, nom ≤ 20 (un ou deux
+  mots), justification 60–95, mots-clés de ton joints ≤ 32. Appliqué par
+  `brand_kit_directions_rendering_valid`.
+- **`site_spec_limits`** — ce que l'**éditeur** doit respecter quand la
+  thérapeute tape. Titre ≤ 90, sous-titre ≤ 220, overline ≤ 48, CTA ≤ 28,
+  « à propos » ≤ 600, champ de section ≤ 800, notes ≤ 2000. Appliqué par les
+  CHECK de `site_specs`.
+
+> ⚠ **Les limites de direction sont les plus serrées, et ce n'est pas une
+> incohérence à réconcilier.** Une direction est rendue trois de front sur
+> l'écran de révélation, dans une maquette de 250px ; un spec de site est rendu
+> une fois sur une page. Publier un seul bloc dirait au générateur qu'il a 90
+> caractères de titre là où le CHECK amont en accepte 46 — et le refus tombe
+> après que la génération a été payée. Un garde-fou échoue si les deux jeux
+> cessent d'être ordonnés ainsi.
+
+Les deux sont extraits de leurs propres validateurs et **sondés** : n passe,
+n+1 est refusé.
 
 ### La copie du livrable est un catalogue
 
@@ -934,6 +1016,56 @@ interdit.
   porte un numéro de licence dont Eklio n'a aucun moyen de vérifier la réalité,
   et un produit qui laisserait croire qu'il l'a vérifié ferait une affirmation
   sur les diplômes d'une thérapeute à sa place.
+
+### ⚠ Le trou NULL dans les validateurs jsonb, et la règle qui en sort
+
+**Une contrainte CHECK accepte une ligne quand son expression vaut TRUE *ou
+NULL*. Elle ne refuse que sur FALSE.** Tout validateur qui teste une clé jsonb
+avec un opérateur rendant NULL sur clé absente n'est donc pas une contrainte,
+c'est une suggestion :
+
+```sql
+p->>'light' ~ '^#[0-9A-Fa-f]{6}$'   -- clé absente -> NULL
+true and NULL                        -- -> NULL
+CHECK (NULL)                         -- -> ACCEPTÉ
+```
+
+Trouvé dans `brand_kit_palette_valid`, puis audité sur **toutes** les fonctions
+atteignables depuis un CHECK. Cinq fonctions et une contrainte inline étaient
+touchées ; `20260829112000_null_safe_jsonb_validators.sql` les corrige.
+
+Ce qui a survécu a survécu pour une raison, et c'est la règle à retenir :
+
+| construction | comportement sur clé absente |
+|---|---|
+| `x ~ 'regex'`, `x = 'v'`, `not (x = any(…))` | **NULL** — le trou |
+| `jsonb_typeof(x) is distinct from 'string'` | TRUE — sûr |
+| `coalesce(char_length(x), 0) <= 34` | absorbé — sûr |
+| `x is null` | TRUE/FALSE — sûr |
+
+> **Écrire un validateur jsonb : tester la présence des clés avec `?&` avant
+> leur format, et envelopper le corps dans `coalesce(…, false)`.** Les seules
+> réponses atteignables doivent être TRUE et FALSE.
+
+`supabase/tests/20260829112000_null_safe_jsonb_validators.test.sql` est
+**paramétré sur `pg_proc`** : un validateur ajouté plus tard sans cette
+couverture fait échouer le test au lieu de partir avec le même trou.
+
+Deux choses valent d'être notées sur la portée :
+
+- **Rien de pire n'a été trouvé.** La contrainte critique pour la sécurité —
+  `monthly_presence_content_locked_is_empty_check`, le paywall — est écrite sur
+  `IS NULL` et est saine. `site_spec_cta_target_url_valid` aussi.
+- **`create or replace function` ne revérifie pas les lignes existantes.** La
+  migration audite donc `brand_kits` avant de resserrer, groupe les directions
+  fautives par raison, et **s'arrête** si le compte n'est pas zéro. Rembourrer
+  le kit stocké de quelqu'un est une décision produit, pas une décision de
+  schéma.
+
+⚠ Conséquence pour le front : une palette de forme
+`{primary, secondary, accent, light_neutral, dark_neutral}` est désormais
+**refusée à l'écriture** par `brand_kits`. Le générateur doit émettre
+`{primary, secondary, light, dark, paper}`, plus `accent` s'il en a un.
 
 ### Deux points de sécurité qui ne sont pas de la cosmétique
 
