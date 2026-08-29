@@ -169,12 +169,15 @@ begin
     c := public.site_spec_contrast(jsonb_build_object(
            'primary_hex', pal.primary_hex, 'secondary_hex', pal.secondary_hex,
            'accent_hex', pal.secondary_hex,
-           'light_neutral_hex', pal.light_hex, 'dark_neutral_hex', pal.dark_hex));
+           'light_neutral_hex', pal.light_hex, 'dark_neutral_hex', pal.dark_hex,
+           'paper_hex', pal.paper_hex));
 
+    -- ⚠ neither surface: `paper` carries five of the seven pairs, the tinted
+    -- band one. Correcting either to fix one pair changes every pair on it.
     assert not exists (
       select 1 from jsonb_array_elements(c->'pairs') p
-       where p.value->'suggested_fix'->>'token' = 'light_neutral'),
-      format('%s: a correction moves the page background', pal.id);
+       where p.value->'suggested_fix'->>'token' in ('paper', 'light_neutral')),
+      format('%s: a correction moves a surface', pal.id);
 
     -- every token a correction names is one the spec actually has
     assert not exists (
@@ -191,7 +194,7 @@ begin
          and public.site_spec_contrast_ratio(
                p.value->'suggested_fix'->>'hex',
                case when p.value->>'pair_id'
-                         in ('cta_label_on_primary','light_neutral_on_dark_neutral')
+                         in ('cta_label_on_primary','paper_on_dark_neutral')
                     then p.value->>'fg' else p.value->>'bg' end) < 4.5),
       format('%s: a correction does not reach 4.5:1', pal.id);
   end loop;
@@ -238,8 +241,8 @@ begin
   -- OCHRE & PAPER: its primary on its own page background is 2.71:1
   e := public.site_spec_get(kit);
   select p.value into pair from jsonb_array_elements(e->'contrast'->'pairs') p
-   where p.value->>'pair_id' = 'primary_on_light_neutral';
-  assert (pair->>'ratio')::numeric = 2.71, 'the fixture pair must fail at 2.71:1';
+   where p.value->>'pair_id' = 'primary_on_paper';
+  assert (pair->>'ratio')::numeric = 2.85, 'the fixture pair must fail at 2.85:1';
 
   -- ⚠ ONE CLICK. Every failing pair the panel shows, fixed in turn, must end AA.
   for id in select p.value->>'pair_id' from jsonb_array_elements(e->'contrast'->'pairs') p
@@ -256,11 +259,13 @@ begin
   end loop;
 
   -- the page background was never touched by any of them
-  assert e->'spec'->>'light_neutral' = '#F6F2EA',
+  assert e->'spec'->>'paper' = '#FBF8F1',
          'a one-click fix moved the page background';
+  assert e->'spec'->>'light_neutral' = '#F6F2EA',
+         'a one-click fix moved the section background';
 
   -- and clicking again is a no-op with a reason, not a second edit
-  assert public.site_spec_fix_contrast(kit, 'primary_on_light_neutral')->'error'->>'code'
+  assert public.site_spec_fix_contrast(kit, 'primary_on_paper')->'error'->>'code'
          = 'no_fix_needed',
          'fixing an already-readable pair was treated as work';
 

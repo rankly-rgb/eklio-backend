@@ -71,7 +71,11 @@ begin
   assert not (e->'spec' ? 'change_marks'), 'the storage-side change marks reached the client';
 
   assert e->'preview'->'tokens'->>'primary' = '#3B2C3A', 'the preview carries the tokens';
-  assert jsonb_array_length(e->'contrast'->'pairs') = 6, 'the contrast panel carries six pairs';
+  assert jsonb_array_length(e->'contrast'->'pairs') = 7, 'the contrast panel carries seven pairs';
+  -- ⚠ paper is a token of its own again, and is not the band tint
+  assert e->'spec'->>'paper' is not null, 'the envelope must carry the page background';
+  assert e->'spec'->>'paper' <> e->'spec'->>'light_neutral',
+         'paper and light_neutral must not collapse into one value';
 
   -- the brief's builder answer wins over the kit's own column
   assert e->'spec'->>'target' = 'lovable', 'the target must come from the brief';
@@ -366,26 +370,26 @@ declare
 begin
   -- OCHRE & PAPER's primary on its own light neutral: 2.71:1, a real failure a
   -- real palette produces.
-  e := public.site_spec_patch(kit, '{"accent":"#C08A3E","light_neutral":"#F6F2EA"}');
+  e := public.site_spec_patch(kit, '{"accent":"#C08A3E","paper":"#F6F2EA"}');
   select p.value into pair from jsonb_array_elements(e->'contrast'->'pairs') p
-   where p.value->>'pair_id' = 'accent_on_light_neutral';
+   where p.value->>'pair_id' = 'accent_on_paper';
   assert (pair->>'ratio')::numeric = 2.71,      'the fixture pair must fail';
   assert pair->'suggested_fix'->>'token' = 'accent', 'the fix must move the accent';
 
   -- ⚠ the spec saved anyway. Contrast is reported and fixable, never a wall.
   assert e ? 'spec', 'a failing contrast pair blocked a write';
 
-  e := public.site_spec_fix_contrast(kit, 'accent_on_light_neutral');
+  e := public.site_spec_fix_contrast(kit, 'accent_on_paper');
   select p.value into pair from jsonb_array_elements(e->'contrast'->'pairs') p
-   where p.value->>'pair_id' = 'accent_on_light_neutral';
+   where p.value->>'pair_id' = 'accent_on_paper';
   assert (pair->>'ratio')::numeric >= 4.5,   'the one-click fix did not reach AA';
   assert pair->'suggested_fix' = 'null'::jsonb, 'a fixed pair is still offering a fix';
   assert e->'spec'->>'accent' <> '#C08A3E',  'the fix was not applied to the spec';
-  assert e->'spec'->>'light_neutral' = '#F6F2EA',
+  assert e->'spec'->>'paper' = '#F6F2EA',
          'the fix moved the page background, which five other pairs are measured against';
 
   -- applying it again is a no-op with a reason, not a second edit
-  assert public.site_spec_fix_contrast(kit, 'accent_on_light_neutral')->'error'->>'code'
+  assert public.site_spec_fix_contrast(kit, 'accent_on_paper')->'error'->>'code'
          = 'no_fix_needed', 'fixing an already-readable pair was treated as work';
   assert public.site_spec_fix_contrast(kit, 'nope')->'error'->>'code' = 'invalid_field',
          'an unknown pair id was accepted';
@@ -411,7 +415,7 @@ begin
          'a stranger switching builder must get not_found';
   assert public.site_output_mark_copied(kit)->'error'->>'code' = 'not_found',
          'a stranger marking copied must get not_found';
-  assert public.site_spec_fix_contrast(kit, 'primary_on_light_neutral')->'error'->>'code' = 'not_found',
+  assert public.site_spec_fix_contrast(kit, 'primary_on_paper')->'error'->>'code' = 'not_found',
          'a stranger fixing contrast must get not_found';
   assert public.site_output_get(kit)->'error'->>'code' = 'not_found',
          'a stranger reading the output must get not_found';

@@ -20,7 +20,7 @@ select format('    [%s %s],',
   cross join (
     select jsonb_build_object(
       'primary_hex','#3B2C3A','secondary_hex','#4A5361','accent_hex','#C08A3E',
-      'light_neutral_hex','#F3EDE4','dark_neutral_hex','#241B23',
+      'light_neutral_hex','#F3EDE4','dark_neutral_hex','#241B23','paper_hex','#FAF7F2',
       'type_pairing_id','cormorant_source',
       'heading_font','Cormorant Garamond','body_font','Source Sans 3',
       'google_fonts_url','https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Source+Sans+3:wght@400;600;700&display=swap',

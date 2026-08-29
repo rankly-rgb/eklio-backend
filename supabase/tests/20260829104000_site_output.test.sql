@@ -26,7 +26,7 @@ begin;
 create temporary table snapshot_spec as
 select jsonb_build_object(
   'primary_hex','#3B2C3A','secondary_hex','#4A5361','accent_hex','#C08A3E',
-  'light_neutral_hex','#F3EDE4','dark_neutral_hex','#241B23',
+  'light_neutral_hex','#F3EDE4','dark_neutral_hex','#241B23','paper_hex','#FAF7F2',
   'type_pairing_id','cormorant_source',
   'heading_font','Cormorant Garamond','body_font','Source Sans 3',
   'google_fonts_url','https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Source+Sans+3:wght@400;600;700&display=swap',
@@ -51,13 +51,13 @@ do $$
 declare
   spec     jsonb := (select s from snapshot_spec);
   expected text[][] := array[
-    ['lovable',     '22930239c58ee7b443e1b6fb6b173c89'],
-    ['framer',      '22930239c58ee7b443e1b6fb6b173c89'],
-    ['v0',          '22930239c58ee7b443e1b6fb6b173c89'],
-    ['generic',     '22930239c58ee7b443e1b6fb6b173c89'],
-    ['squarespace', '82c053ac1ea541421486675b8ee24431'],
-    ['wix',         '2c7dd72e1c069e9cab093f9912353bd2'],
-    ['webflow',     '75ca997178753e150eb1a1c47bcff07f']
+    ['lovable',     '0a94bf53b63075ba86171788e71b173d'],
+    ['framer',      '0a94bf53b63075ba86171788e71b173d'],
+    ['v0',          '0a94bf53b63075ba86171788e71b173d'],
+    ['generic',     '0a94bf53b63075ba86171788e71b173d'],
+    ['squarespace', 'acbc2ac896acc79695e58ce72be25a19'],
+    ['wix',         '6003518caddcf818de966d304256c7a6'],
+    ['webflow',     '8db2c694b7bfa0318b1e1aeaed0b68d8']
   ];
   i   int;
   got text;
@@ -152,6 +152,12 @@ begin
   -- tokens, each with the role it plays
   assert position('Primary — buttons, links and active states: #3B2C3A' in t) > 0,
          'a design token lost its role';
+  -- ⚠ the page background must be stated, or the builder defaults it to white
+  -- whatever the palette says
+  assert position('Page background' in t) > 0 and position('#FAF7F2' in t) > 0,
+         'the prompt does not state the page background';
+  assert position('Section background' in t) > 0 and position('#F3EDE4' in t) > 0,
+         'the prompt does not distinguish the tinted band from the page';
   assert position('Cormorant Garamond' in t) > 0, 'the heading font is missing';
   assert position('fonts.googleapis.com' in t) > 0, 'the Google Fonts stylesheet is missing';
 
@@ -286,7 +292,10 @@ begin
    where (s.value->>'n')::int = 2;
   assert step->>'builder_hint' = 'Site Styles › Colors',
          'step 2 must name Squarespace''s own color panel';
-  assert jsonb_array_length(step->'values') = 5, 'five hexes, each with its role';
+  assert jsonb_array_length(step->'values') = 6, 'six hexes, each with its role';
+  assert exists (select 1 from jsonb_array_elements(step->'values') v
+                  where v.value->>'label' like 'Page background%'),
+         'the colour step does not name the page background';
   assert exists (select 1 from jsonb_array_elements(step->'values') v
                   where v.value->>'value' = '#3B2C3A' and v.value->>'kind' = 'hex'),
          'the primary hex is missing from the color step';

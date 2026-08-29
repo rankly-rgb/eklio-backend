@@ -186,28 +186,37 @@ end
 $$;
 
 -- ---------------------------------------------------------------------------
--- The contrast envelope: six pairs, worst ratio, AA verdict
+-- The contrast envelope: seven pairs, worst ratio, AA verdict
 -- ---------------------------------------------------------------------------
 do $$
 declare
   spec jsonb := jsonb_build_object(
     'primary_hex', '#C08A3E', 'secondary_hex', '#6B4B1C', 'accent_hex', '#7A8168',
-    'light_neutral_hex', '#F6F2EA', 'dark_neutral_hex', '#2A2118');
+    'light_neutral_hex', '#F6F2EA', 'dark_neutral_hex', '#2A2118',
+    -- ⚠ OCHRE & PAPER's real page background. Until 20260829113000 the spec
+    -- dropped `paper` and every pair was measured against `light`, a surface
+    -- the visitor only sees in bands.
+    'paper_hex', '#FBF8F1');
   c jsonb := public.site_spec_contrast(spec);
   ids text[];
 begin
-  assert jsonb_array_length(c->'pairs') = 6,
-         'exactly the six pairs the mockup draws, no cross product';
+  assert jsonb_array_length(c->'pairs') = 7,
+         'exactly the seven pairs the mockup draws, no cross product';
 
   select array_agg(p.value->>'pair_id' order by p.ord)
     into ids
     from jsonb_array_elements(c->'pairs') with ordinality as p(value, ord);
-  assert ids = array['cta_label_on_primary', 'primary_on_light_neutral',
-                     'secondary_on_light_neutral', 'dark_neutral_on_light_neutral',
-                     'light_neutral_on_dark_neutral', 'accent_on_light_neutral'],
+  assert ids = array['cta_label_on_primary', 'dark_neutral_on_paper', 'primary_on_paper',
+                     'secondary_on_paper', 'accent_on_paper',
+                     'dark_neutral_on_light_neutral', 'paper_on_dark_neutral'],
          'the pair list or its order drifted';
 
-  assert (c->>'worst_ratio')::numeric = 2.71, 'worst_ratio must be the minimum of the six';
+  -- the body text pair is measured against the page, not the band tint
+  assert (select p.value->>'bg' from jsonb_array_elements(c->'pairs') p
+           where p.value->>'pair_id' = 'dark_neutral_on_paper') = '#FBF8F1',
+         'body text must be measured against the page background';
+
+  assert (c->>'worst_ratio')::numeric = 2.85, 'worst_ratio must be the minimum of the seven';
   assert (c->>'passes_aa')::boolean = false,  'a palette with a 2.71:1 pair does not pass AA';
 
   -- The button label is white or the dark neutral, whichever reads better on
@@ -224,7 +233,7 @@ begin
        and public.site_spec_contrast_ratio(
              p.value->'suggested_fix'->>'hex',
              case when p.value->>'pair_id'
-                       in ('cta_label_on_primary', 'light_neutral_on_dark_neutral')
+                       in ('cta_label_on_primary', 'paper_on_dark_neutral')
                   then p.value->>'fg' else p.value->>'bg' end) < 4.5),
          'a suggested fix does not reach 4.5:1';
 
@@ -235,18 +244,19 @@ begin
        and p.value->'suggested_fix' <> 'null'::jsonb),
          'a passing pair was offered a fix';
 
-  -- ⚠ The suggestion moves a brand colour, never the page background: the
-  -- light neutral is the surface five of the six pairs are measured against,
-  -- so moving it to fix one silently changes the rest.
+  -- ⚠ The suggestion moves a brand colour or the ink, never a SURFACE. `paper`
+  -- carries five of the seven pairs and `light_neutral` one; correcting either
+  -- to fix a single pair silently changes every other pair drawn on it.
   assert not exists (
     select 1 from jsonb_array_elements(c->'pairs') p
-     where p.value->'suggested_fix'->>'token' = 'light_neutral'),
-         'a suggestion moves the page background';
+     where p.value->'suggested_fix'->>'token' in ('paper', 'light_neutral')),
+         'a suggestion moves a surface';
 
   -- A palette where everything passes reports so, and offers nothing.
   c := public.site_spec_contrast(jsonb_build_object(
          'primary_hex', '#3B2C3A', 'secondary_hex', '#241B23', 'accent_hex', '#241B23',
-         'light_neutral_hex', '#F3EDE4', 'dark_neutral_hex', '#241B23'));
+         'light_neutral_hex', '#F3EDE4', 'dark_neutral_hex', '#241B23',
+         'paper_hex', '#FAF7F2'));
   assert (c->>'passes_aa')::boolean = true, 'PLUM & BONE must pass AA on every drawn pair';
   assert not exists (
     select 1 from jsonb_array_elements(c->'pairs') p
