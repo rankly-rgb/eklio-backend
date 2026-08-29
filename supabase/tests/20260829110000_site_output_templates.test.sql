@@ -168,8 +168,13 @@ begin
   -- is a claim the deliverable makes that the builder cannot check.
   assert array_length(public.site_spec_constraint_lines(spec, f), 1) = 6,
          'the constraints block no longer emits six lines';
-  assert (public.site_spec_constraint_lines(spec, f))[5] like '%18px bold%',
+  assert (public.site_spec_constraint_lines(spec, f))[5] like '%24px%'
+     and (public.site_spec_constraint_lines(spec, f))[5] like '%19px%',
          'the button size floor is missing from the constraints';
+  -- ⚠ 20260829121000: 18px bold is BELOW WCAG large text (18.66px). Citing it
+  -- made the instruction unable to deliver what it implied.
+  assert (public.site_spec_constraint_lines(spec, f))[5] not like '%18px%',
+         'the size floor cites 18px again, which does not clear 18.66px';
   -- and the booking link was interpolated, not left as a placeholder
   assert (public.site_spec_constraint_lines(spec, f))[4] like '%https://example.com/book%',
          'the booking link was not interpolated into the constraints';

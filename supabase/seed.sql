@@ -635,3 +635,16 @@ insert into public.site_output_templates (id, target, key, body, sort_order) val
 on conflict (id) do update set body = excluded.body, sort_order = excluded.sort_order;
 
 -- <<< PRACTITIONER AND VOICE TEMPLATE DATA <<<
+
+
+-- >>> CTA SIZE FLOOR CORRECTION (mirrored verbatim in supabase/seed.sql) >>>
+
+update public.site_output_templates set body =
+  'Do not set the call-to-action label below 24px, or 19px if it is bold. The button''s two colors were checked for text at that size; keep the label at or above it and the pair stays legible.'
+ where id = 'all.constraint.cta_min_size';
+
+update public.site_output_templates set body =
+  '24px, or 19px if bold'
+ where id = 'all.sheet.value_cta_min_size';
+
+-- <<< CTA SIZE FLOOR CORRECTION <<<

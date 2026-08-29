@@ -833,6 +833,48 @@ pour toutes les autres requêtes. Après : `GET` 9 ms, `PATCH` 14 ms.
 > symptôme n'est pas une erreur, c'est un autosave qui revient discrètement à
 > une demi-seconde.
 
+### Le second coût fixe : quatre couleurs redérivées à chaque écriture
+
+Le JIT réglé, `PATCH` est resté autour de 140 ms sur un spec réel — et **le
+chiffre ne bougeait pas quand le spec grossissait**. Un spec délibérément lourd
+(quatre pages, les 26 sections autorisées, chaque champ texte à sa limite de 800
+caractères, enveloppe de 129 Ko) se corrigeait dans le même temps qu'un spec de
+quatre sections. Un coût qui ignore la taille de l'entrée n'est pas un coût de
+données : c'est du travail fait quoi qu'il arrive.
+
+`auto_explain` avec `log_nested_statements` l'a situé : trois exécutions de ~39 ms
+de la marche à 91 candidats de `site_spec_suggest_hex`, **à l'intérieur d'un
+PATCH qui ne changeait que `about_excerpt`**.
+
+⚠ `maintain_site_spec_text_variants` recalculait les quatre couleurs dérivées à
+**chaque** UPDATE, quoi qu'il ait changé. Corriger un titre relançait quatre
+recherches de couleur dont aucune entrée n'avait bougé. Sur une famille dont les
+couleurs de marque demandent toutes une variante — quatre des six livrées — cela
+faisait ~120 des 140 ms.
+
+Chaque variante n'est désormais recalculée que si **ses** entrées ont bougé.
+Mesuré dans une seule session, sur le spec lourd :
+
+| | `GET` | `PATCH` copie | `PATCH` primaire | `PATCH` papier |
+|---|---|---|---|---|
+| avant | 28 ms | **164–179 ms** | 143–151 ms | 171–207 ms |
+| après | 28 ms | **47–51 ms** | 105–111 ms | 130–145 ms |
+
+L'autosave — le chemin fréquent — passe sous le tiers de son coût. Les écritures
+de couleur restent chères parce qu'elles paient la marche qu'elles demandent :
+une pour la primaire, trois pour le papier qui nourrit les trois variantes.
+
+> ⚠ La branche qui saute le calcul assigne **`old.<colonne>`**, elle ne laisse
+> pas `new.<colonne>` tel quel. La différence est tout le sujet : un trigger qui
+> se contentait de sortir tôt laisserait une cliente écrire une variante à la
+> main, alors que ces colonnes existent précisément pour qu'elle ne le puisse
+> jamais. Le test le vérifie dans les deux sens.
+
+C'est la même forme que la section de voix rendue deux fois par enveloppe : du
+travail dérivé répété parce que rien ne disait quand le sauter. **Quand une
+mesure ne varie pas avec la taille de l'entrée, chercher le travail
+inconditionnel avant de chercher une requête lente.**
+
 ### Les fonctions pures
 
 | Fonction | Volatilité | Ce qu'elle rend |

@@ -533,7 +533,7 @@ not infer from this envelope that the field is always null.
                     {
                         "kind": "text",
                         "label": "Smallest the label may be set",
-                        "value": "18px bold, or 24px if it is not bold"
+                        "value": "24px, or 19px if bold"
                     }
                 ],
                 "builder_hint": null
@@ -548,7 +548,7 @@ not infer from this envelope that the field is always null.
             },
             {
                 "n": 10,
-                "body": "[ ] Use the provided copy exactly as written. Do not rewrite, expand or add copy.\n[ ] Do not invent testimonials, client quotes, statistics, credentials or awards.\n[ ] No stock photos of people; leave labeled image placeholders.\n[ ] The call to action links to https://elmandember.clientsecure.me/book. Do not add a contact form that collects health information — a mailto link, a phone number or a booking link only.\n[ ] Do not set the call-to-action label below 18px bold, or 24px if it is not bold. The button's two colors were checked for text at that size; below it the same pair stops being legible enough.\n[ ] Maintain WCAG AA text contrast.",
+                "body": "[ ] Use the provided copy exactly as written. Do not rewrite, expand or add copy.\n[ ] Do not invent testimonials, client quotes, statistics, credentials or awards.\n[ ] No stock photos of people; leave labeled image placeholders.\n[ ] The call to action links to https://elmandember.clientsecure.me/book. Do not add a contact form that collects health information — a mailto link, a phone number or a booking link only.\n[ ] Do not set the call-to-action label below 24px, or 19px if it is bold. The button's two colors were checked for text at that size; keep the label at or above it and the pair stays legible.\n[ ] Maintain WCAG AA text contrast.",
                 "title": "Before you publish",
                 "values": [
                 ],
@@ -1943,22 +1943,34 @@ It carries the label, the link, the ink and a minimum size:
    - Button label: Book a consult
    - Button links to: https://elmandember.clientsecure.me/book
    - Button label color: #10100F
-   - Smallest the label may be set: 18px bold, or 24px if it is not bold
+   - Smallest the label may be set: 24px, or 19px if bold
 ```
 
 The same floor is a **sixth constraint** in the prompt — the constraints block
 now emits six lines, not five:
 
 ```
-- Do not set the call-to-action label below 18px bold, or 24px if it is not
-  bold. The button's two colors were checked for text at that size; below it the
-  same pair stops being legible enough.
+- Do not set the call-to-action label below 24px, or 19px if it is bold. The
+  button's two colors were checked for text at that size; keep the label at or
+  above it and the pair stays legible.
 ```
 
 ⚠ It is there because the deliverable makes a claim about rendered size the
 moment it tells a builder to put a label on a button, and neither Eklio nor the
 builder can check what size a template actually renders it at. If your editor
 shows a button preview, render it at or above that floor.
+
+> ⚠ **The numbers changed at `20260829121000`, and the old ones were wrong.**
+> The floor shipped as `18px bold, or 24px if it is not bold`. WCAG's large-text
+> threshold is **18.66px** bold (14pt) or 24px regular (18pt), so 18px bold sat
+> *below* the threshold the `cta_label_on_primary` measurement assumes — the
+> instruction could not deliver what it implied, and you were right to refuse to
+> tell her otherwise. It is now `24px, or 19px if bold`: 19 clears 18.66 with a
+> whole pixel, which is also a number a person can type into a size box without
+> arguing about rounding. **Following the instruction now keeps the button
+> legible at the level the contrast check assumed.** Nothing else moved — no
+> pair was re-measured and no colour changed; the floor has always been copy,
+> which is why it lives in `site_output_templates`.
 
 `output.kind` follows: `"prompt"` gives `{kind, text, char_count}`;
 `"setup_sheet"` gives `{kind, steps[], copy_blocks[]}` where each step is

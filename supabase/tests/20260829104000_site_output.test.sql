@@ -61,13 +61,13 @@ do $$
 declare
   spec     jsonb := (select s from snapshot_spec);
   expected text[][] := array[
-    ['lovable',     'bdcc34568f9730014dfb1bf5b1af1e4b'],
-    ['framer',      'bdcc34568f9730014dfb1bf5b1af1e4b'],
-    ['v0',          'bdcc34568f9730014dfb1bf5b1af1e4b'],
-    ['generic',     'bdcc34568f9730014dfb1bf5b1af1e4b'],
-    ['squarespace', '7d3af7dc30f1387c1dff527556716120'],
-    ['wix',         '4e00ad1ff1a5d35e73aa3c038e7927e4'],
-    ['webflow',     '9cea39a5ffb4a0496a69a72fbb08d474']
+    ['lovable',     'db7bd4c0a57dbd0a3419b031968059de'],
+    ['framer',      'db7bd4c0a57dbd0a3419b031968059de'],
+    ['v0',          'db7bd4c0a57dbd0a3419b031968059de'],
+    ['generic',     'db7bd4c0a57dbd0a3419b031968059de'],
+    ['squarespace', '11bb34b95f4d5c5f5e750e3ddd673540'],
+    ['wix',         '0fcc6a654672c6e026d9a9e3d411ff63'],
+    ['webflow',     'd8b11edeaef2390055dab3d95f109b2f']
   ];
   i   int;
   got text;
@@ -196,7 +196,7 @@ begin
   -- ⚠ the size floor: the deliverable makes a claim about rendered size the
   -- moment it tells a builder to put a label on a button, and nothing
   -- downstream can check it.
-  assert position('Do not set the call-to-action label below 18px bold' in t) > 0,
+  assert position('Do not set the call-to-action label below 24px, or 19px if it is bold' in t) > 0,
          'the button size floor is missing from the prompt';
 
   -- her notes, verbatim and last
@@ -350,7 +350,7 @@ begin
   assert step is not null, 'the checklist step is missing';
   assert (select count(*) from regexp_matches(step->>'body', '\[ \] ', 'g')) = 6,
          'the checklist must carry all six constraints';
-  assert position('18px bold' in step->>'body') > 0,
+  assert position('24px, or 19px if it is bold' in step->>'body') > 0,
          'the checklist does not carry the button size floor';
   assert position('Do not invent testimonials' in step->>'body') > 0,
          'a constraint was dropped from the checklist';
