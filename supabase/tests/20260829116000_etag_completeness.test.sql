@@ -118,15 +118,15 @@ begin
   assert e <> e0, 'a target switch did not move the etag';
   e0 := e;
 
-  -- a contrast fix is a write, so it must move it. Put the primary back to
-  -- CLAY & SAND's #B4674A first: cta_label_on_primary is 4.22 there, and it is
-  -- the pair a text variant deliberately does not rescue — a label on a fill.
-  e0 := public.site_spec_patch(kit, '{"primary":"#B4674A"}')->>'etag';
+  -- a contrast fix is a write, so it must move it. The derived colours cover
+  -- every brand-colour pair now, so the one that can still fail is a neutral:
+  -- a mid-grey body text has no variant, because dark_neutral IS the ink.
+  e0 := public.site_spec_patch(kit, '{"dark_neutral":"#8A8A8A"}')->>'etag';
   assert (select p.value->'suggested_fix' from jsonb_array_elements(
             public.site_spec_get(kit)->'contrast'->'pairs') p
-           where p.value->>'pair_id' = 'cta_label_on_primary') <> 'null'::jsonb,
+           where p.value->>'pair_id' = 'dark_neutral_on_light_neutral') <> 'null'::jsonb,
          'the fixture does not actually offer a fix to apply';
-  e := public.site_spec_fix_contrast(kit, 'cta_label_on_primary')->>'etag';
+  e := public.site_spec_fix_contrast(kit, 'dark_neutral_on_light_neutral')->>'etag';
   assert e is not null and e <> e0, 'a contrast fix did not move the etag';
   e0 := e;
 

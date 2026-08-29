@@ -104,8 +104,12 @@ Verified behaviour, by real calls:
 ## 2. The envelope, as real JSON
 
 Captured from `site_spec_get` on a CLAY & SAND kit: four enabled pages, real
-copy, `extra_instructions` set, one contrast pair failing and two below AA.
-18,186 bytes. This is the complete response.
+copy, `extra_instructions` set. 18,540 bytes. This is the complete response.
+
+⚠ **Every contrast pair passes in it** — `passes_aa: true`, worst 4.51 — because
+the derived colours of section 3 do their job on a shipped palette. So every
+`suggested_fix` in it is `null`. The non-null shape is shown in section 4; do
+not infer from this envelope that the field is always null.
 
 ```json
 {
@@ -118,7 +122,7 @@ copy, `extra_instructions` set, one contrast pair failing and two below AA.
             }
         ]
     },
-    "etag": "862e96f8034c77d1b5ff9f61bf777223",
+    "etag": "710df92493419592f4dfcadf647887bb",
     "spec": {
         "hero": {
             "subhead": "Therapy for adults who hold it together.",
@@ -330,7 +334,7 @@ copy, `extra_instructions` set, one contrast pair failing and two below AA.
         "primary": "#B4674A",
         "body_font": "Nunito Sans",
         "secondary": "#C08A3E",
-        "updated_at": "2026-08-29T10:53:51.192767+00:00",
+        "updated_at": "2026-08-29T11:10:39.838112+00:00",
         "brand_kit_id": "33333333-3333-3333-3333-333333333333",
         "dark_neutral": "#2B2A27",
         "heading_font": "Fraunces",
@@ -477,13 +481,23 @@ copy, `extra_instructions` set, one contrast pair failing and two below AA.
                         "kind": "url",
                         "label": "Button links to",
                         "value": "https://elmandember.clientsecure.me/book"
+                    },
+                    {
+                        "kind": "hex",
+                        "label": "Button label color",
+                        "value": "#10100F"
+                    },
+                    {
+                        "kind": "text",
+                        "label": "Smallest the label may be set",
+                        "value": "18px bold, or 24px if it is not bold"
                     }
                 ],
                 "builder_hint": null
             },
             {
                 "n": 8,
-                "body": "[ ] Use the provided copy exactly as written. Do not rewrite, expand or add copy.\n[ ] Do not invent testimonials, client quotes, statistics, credentials or awards.\n[ ] No stock photos of people; leave labeled image placeholders.\n[ ] The call to action links to https://elmandember.clientsecure.me/book. Do not add a contact form that collects health information — a mailto link, a phone number or a booking link only.\n[ ] Maintain WCAG AA text contrast.",
+                "body": "[ ] Use the provided copy exactly as written. Do not rewrite, expand or add copy.\n[ ] Do not invent testimonials, client quotes, statistics, credentials or awards.\n[ ] No stock photos of people; leave labeled image placeholders.\n[ ] The call to action links to https://elmandember.clientsecure.me/book. Do not add a contact form that collects health information — a mailto link, a phone number or a booking link only.\n[ ] Do not set the call-to-action label below 18px bold, or 24px if it is not bold. The button's two colors were checked for text at that size; below it the same pair stops being legible enough.\n[ ] Maintain WCAG AA text contrast.",
                 "title": "Before you publish",
                 "values": [
                 ],
@@ -877,6 +891,7 @@ copy, `extra_instructions` set, one contrast pair failing and two below AA.
         "tokens": {
             "paper": "#FAF6EE",
             "accent": "#6E3320",
+            "cta_ink": "#10100F",
             "primary": "#B4674A",
             "body_font": "Nunito Sans",
             "secondary": "#C08A3E",
@@ -894,15 +909,12 @@ copy, `extra_instructions` set, one contrast pair failing and two below AA.
         "pairs": [
             {
                 "bg": "#B4674A",
-                "fg": "#FFFFFF",
+                "fg": "#10100F",
                 "label": "Button label on your primary color",
-                "level": "AA_large",
-                "ratio": 4.22,
+                "level": "AA",
+                "ratio": 4.51,
                 "pair_id": "cta_label_on_primary",
-                "suggested_fix": {
-                    "hex": "#AD6347",
-                    "token": "primary"
-                }
+                "suggested_fix": null
             },
             {
                 "bg": "#FAF6EE",
@@ -959,8 +971,8 @@ copy, `extra_instructions` set, one contrast pair failing and two below AA.
                 "suggested_fix": null
             }
         ],
-        "passes_aa": false,
-        "worst_ratio": 4.22
+        "passes_aa": true,
+        "worst_ratio": 4.51
     }
 }
 ```
@@ -1226,10 +1238,16 @@ control that corresponds to one.
 | `primary_text` | `primary`, darkened only as far as 4.5:1 on `paper` requires | headings and links painted in the primary |
 | `secondary_text` | same, for `secondary` | supporting headings |
 | `accent_text` | same, for `accent` | small highlighted words |
+| `cta_ink` | the colour the CTA label is set in: white where white reads on `primary`, otherwise `dark_neutral` darkened until it does | the call-to-action button's label |
 
 **The rule, everywhere a brand colour is painted:** if it is **text**, use the
 variant. If it is a **fill** — a background, a button, a band, a rule, a border,
 a chip — use the brand colour.
+
+`cta_ink` is the same rule on one more surface: the button's label is text on
+the primary *fill*, so it gets a legible value too. `dark_neutral` itself never
+moves — it is body text and reads on paper at 13.31; `cta_ink` is a variant of
+it scoped to the button.
 
 Where the brand colour already reads as text, **the variant is the brand colour,
 the same string**. Ten of the eighteen shipped brand colours need no variant and
@@ -1288,9 +1306,11 @@ therefore only ever `primary`, `secondary`, `accent` or `dark_neutral`.
 | `dark_neutral_on_light_neutral` | Body text inside a tinted band. | `dark_neutral` |
 | `paper_on_dark_neutral` | Inverted text in a dark section. | `dark_neutral` |
 
-`cta_label_on_primary`'s `fg` is not a token: it is white or the dark neutral,
-whichever reads better on the current primary. The backend decides; render what
-it returns.
+`cta_label_on_primary`'s `fg` is `cta_ink` — white where white reads on the
+primary, otherwise the dark neutral darkened until it does. It used to be
+"white or the dark neutral, whichever reads better", which left the pair below
+AA on two shipped palettes. The backend decides; render what it returns. Nothing
+changes on the client side: `fg` was always the value to paint.
 
 > ⚠ **Three of the seven measure a text variant, not the brand colour.**
 > `primary_on_paper`, `secondary_on_paper` and `accent_on_paper` measure a brand
@@ -1303,10 +1323,17 @@ it returns.
 > `cta_label_on_primary` is deliberately unchanged: it is a label on a **fill**,
 > and the fill is the brand colour.
 >
-> `suggested_fix.token` is still `primary`, `secondary` or `accent` — never a
-> variant. If one of those three ever fails, the brand colour moves and the
-> variant is recomputed from it. **A `*_text` value can never appear as a
-> `suggested_fix.token`**; there is no control behind it.
+> `suggested_fix.token` is still `primary`, `secondary`, `accent` or
+> `dark_neutral` — never a derived colour. If one of those pairs ever fails, the
+> brand colour moves and the variant is recomputed from it. **Neither a `*_text`
+> value nor `cta_ink` can appear as a `suggested_fix.token`**; there is no
+> control behind either.
+>
+> All six shipped palettes now reach AA on all seven pairs. The pairs that can
+> still fail on a palette she edits are the neutral ones —
+> `dark_neutral_on_paper`, `dark_neutral_on_light_neutral`,
+> `paper_on_dark_neutral` — because `dark_neutral` *is* the ink and has no
+> variant to fall back on.
 
 `ratio` is WCAG 2.1, rounded to two decimals. `level` is derived from the
 **rounded** ratio, so they can never disagree:
@@ -1334,6 +1361,29 @@ Exactly two cases:
 
 Otherwise `suggested_fix` is `{"token": …, "hex": …}` and the hex is guaranteed
 to reach ≥ 4.5:1 against the other side of that pair.
+
+A real one, from a spec whose `dark_neutral` was set to a mid grey — the case a
+therapist creates, and one no derived colour rescues, because `dark_neutral`
+*is* the ink:
+
+```json
+{
+    "bg": "#F4EEE3",
+    "fg": "#8A8A8A",
+    "label": "Body text on a tinted section",
+    "level": "fail",
+    "ratio": 2.99,
+    "pair_id": "dark_neutral_on_light_neutral",
+    "suggested_fix": {
+        "hex": "#6B6B6B",
+        "token": "dark_neutral"
+    }
+}
+```
+
+`token` always names a colour she has a control for. `hex` is what to write to
+it — but call `site_spec_fix_contrast` rather than patching it yourself, so the
+suggestion is recomputed against the spec as it stands now.
 
 Note that `AA_large` pairs *do* carry a fix — the target is 4.5, not 3. In the
 envelope above, `cta_label_on_primary` at 4.22 and `primary_on_paper` at 3.91
@@ -1719,6 +1769,32 @@ three are alternates of which:
 
 ⚠ **The sheet now has nine steps, not eight.** The checklist is step 8 and
 "Your own notes" is step 9. Do not hardcode step numbers; read `n`.
+
+### The button step, and the size floor
+
+Step 7 carries the label, the link, the ink and a minimum size:
+
+```
+7. Point the button at your booking link
+   - Button label: Book a consult
+   - Button links to: https://elmandember.clientsecure.me/book
+   - Button label color: #FFFFFF
+   - Smallest the label may be set: 18px bold, or 24px if it is not bold
+```
+
+The same floor is a **sixth constraint** in the prompt — the constraints block
+now emits six lines, not five:
+
+```
+- Do not set the call-to-action label below 18px bold, or 24px if it is not
+  bold. The button's two colors were checked for text at that size; below it the
+  same pair stops being legible enough.
+```
+
+⚠ It is there because the deliverable makes a claim about rendered size the
+moment it tells a builder to put a label on a button, and neither Eklio nor the
+builder can check what size a template actually renders it at. If your editor
+shows a button preview, render it at or above that floor.
 
 `output.kind` follows: `"prompt"` gives `{kind, text, char_count}`;
 `"setup_sheet"` gives `{kind, steps[], copy_blocks[]}` where each step is

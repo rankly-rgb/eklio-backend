@@ -73,9 +73,9 @@ begin
   assert e->'preview'->'tokens'->>'primary' = '#3B2C3A', 'the preview carries the tokens';
   assert jsonb_array_length(e->'contrast'->'pairs') = 7, 'the contrast panel carries seven pairs';
   -- ⚠ the variants are rendered, never edited: in preview.tokens, not in spec
-  assert e->'preview'->'tokens' ?& array['primary_text','secondary_text','accent_text'],
+  assert e->'preview'->'tokens' ?& array['primary_text','secondary_text','accent_text','cta_ink'],
          'the mockup cannot paint text in a brand colour without the variants';
-  assert not (e->'spec' ?| array['primary_text','secondary_text','accent_text']),
+  assert not (e->'spec' ?| array['primary_text','secondary_text','accent_text','cta_ink']),
          'a derived variant leaked into the editable spec';
   assert not ('primary_text' = any (public.site_spec_patchable_keys())),
          'a derived variant became patchable';
@@ -375,38 +375,39 @@ declare
   e    jsonb;
   pair jsonb;
 begin
-  -- ⚠ CLAY & SAND's button label: white on #B4674A is 4.22:1. This is the pair
-  -- a text variant deliberately does NOT rescue — it is a label on a fill, and
-  -- the fill is the brand colour. The three text-on-paper pairs all pass now,
-  -- so this is the one that still exercises the fix path.
-  e := public.site_spec_patch(kit, '{"primary":"#B4674A","paper":"#FAF6EE","light_neutral":"#F4EEE3","dark_neutral":"#2B2A27"}');
+  -- ⚠ Four derived colours now cover every brand-colour-as-text pair and the
+  -- button label, so the pairs that can still fail are the neutral ones: they
+  -- have no variant, because `dark_neutral` IS the ink. A mid-grey body text on
+  -- a light page is the case a therapist actually creates.
+  e := public.site_spec_patch(kit, '{"primary":"#B4674A","paper":"#FAF6EE","light_neutral":"#F4EEE3","dark_neutral":"#8A8A8A"}');
   select p.value into pair from jsonb_array_elements(e->'contrast'->'pairs') p
-   where p.value->>'pair_id' = 'cta_label_on_primary';
-  assert (pair->>'ratio')::numeric = 4.22,       'the fixture pair must fail';
-  assert pair->'suggested_fix'->>'token' = 'primary', 'the fix must move the primary';
+   where p.value->>'pair_id' = 'dark_neutral_on_light_neutral';
+  assert (pair->>'ratio')::numeric = 2.99,            'the fixture pair must fail';
+  assert pair->'suggested_fix'->>'token' = 'dark_neutral', 'the fix must move the ink';
 
   -- ⚠ the spec saved anyway. Contrast is reported and fixable, never a wall.
   assert e ? 'spec', 'a failing contrast pair blocked a write';
 
-  e := public.site_spec_fix_contrast(kit, 'cta_label_on_primary');
+  e := public.site_spec_fix_contrast(kit, 'dark_neutral_on_light_neutral');
   select p.value into pair from jsonb_array_elements(e->'contrast'->'pairs') p
-   where p.value->>'pair_id' = 'cta_label_on_primary';
+   where p.value->>'pair_id' = 'dark_neutral_on_light_neutral';
   assert (pair->>'ratio')::numeric >= 4.5,   'the one-click fix did not reach AA';
   assert pair->'suggested_fix' = 'null'::jsonb, 'a fixed pair is still offering a fix';
-  assert e->'spec'->>'primary' <> '#B4674A', 'the fix was not applied to the spec';
+  assert e->'spec'->>'dark_neutral' <> '#8A8A8A', 'the fix was not applied to the spec';
   assert e->'spec'->>'paper' = '#FAF6EE',
          'the fix moved the page background, which five other pairs are measured against';
 
   -- applying it again is a no-op with a reason, not a second edit
-  assert public.site_spec_fix_contrast(kit, 'cta_label_on_primary')->'error'->>'code'
+  assert public.site_spec_fix_contrast(kit, 'dark_neutral_on_light_neutral')->'error'->>'code'
          = 'no_fix_needed', 'fixing an already-readable pair was treated as work';
 
   -- ⚠ a text variant is never a token she can be asked to fix
   assert not exists (
     select 1 from jsonb_array_elements(
              public.site_spec_get(kit)->'contrast'->'pairs') p
-     where p.value->'suggested_fix'->>'token' like '%_text'),
-         'a text variant was offered as a suggested_fix token';
+     where p.value->'suggested_fix'->>'token' in ('primary_text','secondary_text',
+                                                   'accent_text','cta_ink')),
+         'a derived colour was offered as a suggested_fix token';
   assert public.site_spec_fix_contrast(kit, 'nope')->'error'->>'code' = 'invalid_field',
          'an unknown pair id was accepted';
 end

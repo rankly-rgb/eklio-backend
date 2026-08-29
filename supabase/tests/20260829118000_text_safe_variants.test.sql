@@ -293,4 +293,73 @@ begin
 end
 $$;
 
+-- ---------------------------------------------------------------------------
+-- ⚠ cta_ink: the same rule, applied to the button label
+-- ---------------------------------------------------------------------------
+-- The button's label is text on a fill. It gets a legible variant like every
+-- other text use. `dark_neutral` itself never moves — it is body text.
+do $$
+declare
+  r   record;
+  sat numeric; ds numeric; dh numeric;
+  n   int;
+begin
+  for r in select * from public.palette_families order by sort_order loop
+    -- reaches AA on the fill, for every family
+    assert public.site_spec_contrast_ratio(r.cta_ink_hex, r.primary_hex) >= 4.5,
+           format('%s: the button label is %s:1 on the primary', r.id,
+                  public.site_spec_contrast_ratio(r.cta_ink_hex, r.primary_hex));
+
+    -- white where white reads, and nothing invented
+    if public.site_spec_contrast_ratio('#FFFFFF', r.primary_hex) >= 4.5 then
+      assert r.cta_ink_hex = '#FFFFFF',
+             format('%s: white reads on the primary and was not used', r.id);
+    else
+      -- otherwise a walked dark neutral, still that colour
+      assert r.cta_ink_hex <> '#000000',
+             format('%s: pure black was substituted', r.id);
+      sat := (public.site_spec_hex_to_hsl(r.dark_hex))[2];
+      ds  := abs((public.site_spec_hex_to_hsl(r.cta_ink_hex))[2] - sat);
+      dh  := abs((((public.site_spec_hex_to_hsl(r.cta_ink_hex))[1]
+                   - (public.site_spec_hex_to_hsl(r.dark_hex))[1] + 540)::numeric % 360) - 180);
+      assert ds <= 0.02, format('%s: the ink moved saturation by %s', r.id, ds);
+      assert dh <= public.site_spec_hue_tolerance(sat),
+             format('%s: the ink moved hue by %s° at saturation %s', r.id, dh, round(sat,3));
+    end if;
+
+    -- ⚠ dark_neutral ITSELF did not move: it is still body text and still reads
+    assert public.site_spec_contrast_ratio(r.dark_hex, r.paper_hex) >= 4.5,
+           format('%s: the dark neutral stopped reading as body text', r.id);
+  end loop;
+
+  -- ---- ⚠ 42 OF 42 --------------------------------------------------------
+  select count(*) into n
+    from public.palette_families pf
+    cross join lateral jsonb_array_elements(public.site_spec_contrast(jsonb_build_object(
+      'primary_hex', pf.primary_hex, 'secondary_hex', pf.secondary_hex,
+      'accent_hex', pf.accent_hex, 'light_neutral_hex', pf.light_hex,
+      'dark_neutral_hex', pf.dark_hex, 'paper_hex', pf.paper_hex,
+      'primary_text_hex', pf.primary_text_hex, 'secondary_text_hex', pf.secondary_text_hex,
+      'accent_text_hex', pf.accent_text_hex, 'cta_ink_hex', pf.cta_ink_hex))->'pairs') p
+   where (p.value->>'ratio')::numeric < 4.5;
+  assert n = 0, format('%s of 42 pairs still below AA across the shipped families', n);
+end
+$$;
+
+-- The hue tolerance is chroma-scaled, and the three tiers are measured.
+do $$
+begin
+  assert public.site_spec_hue_tolerance(0.55)  = 1.0,   'a saturated colour gets 1 degree';
+  assert public.site_spec_hue_tolerance(0.107) = 3.0,   'OLIVE & CHALK''s chroma gets 3';
+  assert public.site_spec_hue_tolerance(0.032) = 360.0, 'a near-neutral has no meaningful hue';
+  -- the measurements behind the tiers, so a future edit has to face them
+  assert abs((public.site_spec_hex_to_hsl('#6C745D'))[1]
+             - (public.site_spec_hex_to_hsl('#6D745D'))[1]) > 2.5,
+         'one 8-bit step at s=0.107 no longer moves the hue by more than 2.5 degrees';
+  assert abs((public.site_spec_hex_to_hsl('#10110F'))[1]
+             - (public.site_spec_hex_to_hsl('#10100F'))[1]) >= 30,
+         'one 8-bit step at s=0.032 no longer moves the hue by 30 degrees';
+end
+$$;
+
 rollback;

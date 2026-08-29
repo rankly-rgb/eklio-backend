@@ -51,13 +51,13 @@ do $$
 declare
   spec     jsonb := (select s from snapshot_spec);
   expected text[][] := array[
-    ['lovable',     '15f9e81bc776758aa7dd8b6985692e87'],
-    ['framer',      '15f9e81bc776758aa7dd8b6985692e87'],
-    ['v0',          '15f9e81bc776758aa7dd8b6985692e87'],
-    ['generic',     '15f9e81bc776758aa7dd8b6985692e87'],
-    ['squarespace', '253897e08dd856f1837a59a01a366cb0'],
-    ['wix',         'e3476120041613c2523c67b0415b3a8a'],
-    ['webflow',     'c0ce835b97f3949728aa599e9da0ee52']
+    ['lovable',     'bfef598b93dc90692aca9e0b1049cbdc'],
+    ['framer',      'bfef598b93dc90692aca9e0b1049cbdc'],
+    ['v0',          'bfef598b93dc90692aca9e0b1049cbdc'],
+    ['generic',     'bfef598b93dc90692aca9e0b1049cbdc'],
+    ['squarespace', 'b1dfca4350ffe69136a9b0ade91e40ed'],
+    ['wix',         '7dc7289685ccff569bdbf2a403b39aec'],
+    ['webflow',     '89bc9d78a3ade772f47b7c3bb5a6a44f']
   ];
   i   int;
   got text;
@@ -178,7 +178,12 @@ begin
          'constraint 4 must name her actual booking link';
   assert position('contact form that collects health information' in t) > 0,
          'the health-information clause is missing';
-  assert position('Maintain WCAG AA text contrast.' in t) > 0, 'constraint 5 missing';
+  assert position('Maintain WCAG AA text contrast.' in t) > 0, 'constraint 6 missing';
+  -- ⚠ the size floor: the deliverable makes a claim about rendered size the
+  -- moment it tells a builder to put a label on a button, and nothing
+  -- downstream can check it.
+  assert position('Do not set the call-to-action label below 18px bold' in t) > 0,
+         'the button size floor is missing from the prompt';
 
   -- her notes, verbatim and last
   assert right(t, 44) = 'Tuesday and Thursday are the only open hours right now.'
@@ -319,8 +324,10 @@ begin
   select s.value into step from jsonb_array_elements(sheet->'steps') s
    where (s.value->>'n')::int = 8;
   assert step->>'title' = 'Before you publish', 'the checklist step is missing';
-  assert (select count(*) from regexp_matches(step->>'body', '\[ \] ', 'g')) = 5,
-         'the checklist must carry all five constraints';
+  assert (select count(*) from regexp_matches(step->>'body', '\[ \] ', 'g')) = 6,
+         'the checklist must carry all six constraints';
+  assert position('18px bold' in step->>'body') > 0,
+         'the checklist does not carry the button size floor';
   assert position('Do not invent testimonials' in step->>'body') > 0,
          'a constraint was dropped from the checklist';
 

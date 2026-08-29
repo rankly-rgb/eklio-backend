@@ -29,6 +29,8 @@ declare
     'token.dark_neutral','token.heading_font','token.body_font','token.google_fonts_url',
     'token.paper','token.primary_text','token.secondary_text','token.accent_text',
     'token.text_variant_note','sheet.step_text_title','sheet.step_text_body',
+    'token.cta_ink','constraint.cta_min_size','sheet.label_cta_ink',
+    'sheet.label_cta_min_size','sheet.value_cta_min_size',
     'constraint.copy_exact','constraint.no_invention','constraint.no_stock_photos',
     'constraint.cta_linked','constraint.cta_unlinked','constraint.contrast',
     'sheet.step1_title','sheet.step1_body','sheet.step2_title','sheet.step2_body',
@@ -156,8 +158,12 @@ declare
     'pages', public.site_spec_default_pages(null,null));
   f jsonb := public.site_output_fragments(null);
 begin
-  assert array_length(public.site_spec_constraint_lines(spec, f), 1) = 5,
-         'the constraints block no longer emits five lines';
+  -- ⚠ SIX SINCE 20260829119000: the button size floor joined them, because it
+  -- is a claim the deliverable makes that the builder cannot check.
+  assert array_length(public.site_spec_constraint_lines(spec, f), 1) = 6,
+         'the constraints block no longer emits six lines';
+  assert (public.site_spec_constraint_lines(spec, f))[5] like '%18px bold%',
+         'the button size floor is missing from the constraints';
   -- and the booking link was interpolated, not left as a placeholder
   assert (public.site_spec_constraint_lines(spec, f))[4] like '%https://example.com/book%',
          'the booking link was not interpolated into the constraints';

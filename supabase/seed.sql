@@ -584,3 +584,28 @@ update public.site_output_templates set body =
   'Accent — small marks, rules and selected states'  where id = 'all.token.accent';
 
 -- <<< TEXT VARIANT TEMPLATE DATA <<<
+
+
+-- >>> PALETTE CTA INK DATA (mirrored verbatim in supabase/seed.sql) >>>
+
+update public.palette_families
+   set cta_ink_hex = public.site_spec_cta_ink(primary_hex, dark_hex);
+
+-- <<< PALETTE CTA INK DATA <<<
+
+
+-- >>> CTA INK TEMPLATE DATA (mirrored verbatim in supabase/seed.sql) >>>
+
+insert into public.site_output_templates (id, target, key, body, sort_order) values
+  ('all.token.cta_ink', null, 'token.cta_ink',
+   'Button label ink — the color the label is set in, on the primary fill', 33),
+  ('all.constraint.cta_min_size', null, 'constraint.cta_min_size',
+   'Do not set the call-to-action label below 18px bold, or 24px if it is not bold. The button''s two colors were checked for text at that size; below it the same pair stops being legible enough.', 44),
+  ('all.sheet.label_cta_ink', null, 'sheet.label_cta_ink', 'Button label color', 67),
+  ('all.sheet.label_cta_min_size', null, 'sheet.label_cta_min_size',
+   'Smallest the label may be set', 68),
+  ('all.sheet.value_cta_min_size', null, 'sheet.value_cta_min_size',
+   '18px bold, or 24px if it is not bold', 69)
+on conflict (id) do update set body = excluded.body, sort_order = excluded.sort_order;
+
+-- <<< CTA INK TEMPLATE DATA <<<

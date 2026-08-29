@@ -5,6 +5,63 @@ Source de vérité unique du **schéma de base de données** d'Eklio.
 Le code applicatif Next.js vit dans un repo séparé, `eklio-frontend`. Ce repo-ci
 ne contient que le schéma et sa configuration Supabase.
 
+## ⚠ Discipline NULL — à lire avant d'écrire un validateur
+
+Trois défauts, trois lots, **une seule cause**. Chacun a été trouvé par la
+mesure, aucun n'aurait échappé à une règle. Voici la règle.
+
+### Ce qui est sûr, et ce qui ne l'est pas
+
+| construction | sur une clé absente / une colonne NULL |
+|---|---|
+| `x ~ 'regex'`, `x = 'v'`, `not (x = any(…))` | **NULL** — le piège |
+| `'libellé: ' \|\| x` | **NULL** — toute la ligne disparaît |
+| `array_to_string(array[…, NULL, …], …)` | **l'élément est écarté en silence** |
+| `jsonb_typeof(x) is distinct from 'string'` | TRUE — sûr |
+| `coalesce(char_length(x), 0) <= 34` | absorbé — sûr |
+| `x is null` | TRUE / FALSE — sûr |
+
+### Les trois règles
+
+1. **Tout corps de validateur est enveloppé dans `coalesce(…, false)`**, et teste
+   la présence des clés avec `?&` *avant* leur format. Les seules réponses
+   atteignables doivent être TRUE et FALSE.
+2. **Toute concaténation qui peut rencontrer une colonne nullable passe par un
+   résolveur ou un `coalesce`.** Jamais `p_spec->>'une_colonne'` à nu dans un
+   `||`.
+3. **Tout tableau assemblé pour la sortie a ses éléments coalescés avant le
+   join.** `array_to_string` n'est pas une erreur qui se voit.
+
+### Les trois défauts, comme exemples
+
+**Un CHECK qui accepte NULL.** `brand_kit_palette_valid`
+(`20260827102000_brand_kit_deliverable.sql`) chaînait des `p->>'clé' ~ regex`
+avec AND. Clé absente → NULL, `true and NULL` → NULL, et **une contrainte CHECK
+accepte NULL** ; elle ne refuse que sur FALSE. Une palette à laquelle il manquait
+un rôle passait donc à l'écriture, puis cassait le choix de direction plus bas
+dans la pile. L'audit a trouvé la même construction dans quatre autres
+validateurs et une contrainte inline. Corrigé par
+`20260829112000_null_safe_jsonb_validators.sql`, dont le test est **paramétré sur
+`pg_proc`** : un validateur ajouté plus tard sans cette couverture fait échouer
+la suite au lieu de partir avec le même trou.
+
+**Une ligne entière effacée par une concaténation.** `site_spec_token_lines`
+(`20260829118000_text_safe_variants.sql`) lisait `p_spec->>'primary_text_hex'` à
+nu. Sur un spec littéral sans les colonnes dérivées, `'libellé' || ': ' || NULL`
+vaut NULL — et **trois lignes de jetons disparaissaient d'un livrable payant**
+sans la moindre erreur. Trouvé en lisant la sortie rendue, pas en lisant le code.
+Tous les moteurs passent désormais par `site_spec_variant_of`.
+
+**Un tableau qui perd ses trous en silence.** C'est ce qui a rendu le défaut
+précédent invisible : `array_to_string` **écarte les éléments NULL** au lieu de
+produire une ligne vide. Trois NULL dans le tableau, trois lignes en moins, zéro
+signal. Un `coalesce` par élément aurait produit `« Primary as text: »` — moche,
+visible, corrigé le jour même.
+
+> **La leçon commune :** une valeur qui disparaît sans erreur est pire qu'une
+> valeur qui échoue. Quand un choix existe entre « refuser bruyamment » et
+> « rendre quelque chose d'incomplet », prendre le refus.
+
 ## Répartition des responsabilités
 
 Ce repo possède : les tables, colonnes, contraintes, policies RLS, triggers,
@@ -1017,50 +1074,25 @@ interdit.
   et un produit qui laisserait croire qu'il l'a vérifié ferait une affirmation
   sur les diplômes d'une thérapeute à sa place.
 
-### ⚠ Le trou NULL dans les validateurs jsonb, et la règle qui en sort
+### ⚠ Le trou NULL dans les validateurs jsonb
 
-**Une contrainte CHECK accepte une ligne quand son expression vaut TRUE *ou
-NULL*. Elle ne refuse que sur FALSE.** Tout validateur qui teste une clé jsonb
-avec un opérateur rendant NULL sur clé absente n'est donc pas une contrainte,
-c'est une suggestion :
+La règle générale est en tête de ce README, section **Discipline NULL** — elle
+vaut pour tout le dépôt et pas seulement pour ce lot. Ce qui suit est ce que
+l'audit a trouvé ici.
 
-```sql
-p->>'light' ~ '^#[0-9A-Fa-f]{6}$'   -- clé absente -> NULL
-true and NULL                        -- -> NULL
-CHECK (NULL)                         -- -> ACCEPTÉ
-```
+Cinq fonctions et une contrainte inline étaient touchées ;
+`20260829112000_null_safe_jsonb_validators.sql` les corrige, et son test est
+paramétré sur `pg_proc` pour qu'un validateur ajouté plus tard sans cette
+couverture fasse échouer la suite.
 
-Trouvé dans `brand_kit_palette_valid`, puis audité sur **toutes** les fonctions
-atteignables depuis un CHECK. Cinq fonctions et une contrainte inline étaient
-touchées ; `20260829112000_null_safe_jsonb_validators.sql` les corrige.
-
-Ce qui a survécu a survécu pour une raison, et c'est la règle à retenir :
-
-| construction | comportement sur clé absente |
-|---|---|
-| `x ~ 'regex'`, `x = 'v'`, `not (x = any(…))` | **NULL** — le trou |
-| `jsonb_typeof(x) is distinct from 'string'` | TRUE — sûr |
-| `coalesce(char_length(x), 0) <= 34` | absorbé — sûr |
-| `x is null` | TRUE/FALSE — sûr |
-
-> **Écrire un validateur jsonb : tester la présence des clés avec `?&` avant
-> leur format, et envelopper le corps dans `coalesce(…, false)`.** Les seules
-> réponses atteignables doivent être TRUE et FALSE.
-
-`supabase/tests/20260829112000_null_safe_jsonb_validators.test.sql` est
-**paramétré sur `pg_proc`** : un validateur ajouté plus tard sans cette
-couverture fait échouer le test au lieu de partir avec le même trou.
-
-Deux choses valent d'être notées sur la portée :
+Deux points de portée :
 
 - **Rien de pire n'a été trouvé.** La contrainte critique pour la sécurité —
   `monthly_presence_content_locked_is_empty_check`, le paywall — est écrite sur
   `IS NULL` et est saine. `site_spec_cta_target_url_valid` aussi.
 - **`create or replace function` ne revérifie pas les lignes existantes.** La
   migration audite donc `brand_kits` avant de resserrer, groupe les directions
-  fautives par raison, et **s'arrête** si le compte n'est pas zéro. Rembourrer
-  le kit stocké de quelqu'un est une décision produit, pas une décision de
-  schéma.
+  fautives par raison, et **s'arrête** si le compte n'est pas zéro.
 
 ⚠ Conséquence pour le front : une palette de forme
 `{primary, secondary, accent, light_neutral, dark_neutral}` est désormais
