@@ -279,6 +279,19 @@ $$;
 -- A prompt that does not name the page background gets a white site whatever
 -- the palette says. The fragment is a catalog row like every other token label.
 
+-- ⚠ MIRRORED IN `supabase/seed.sql`, AND THE ORDER MATTERS. seed.sql replays
+-- the block from `20260829110000_site_output_templates.sql`, which still
+-- carries the pre-`paper` wording for `token.light_neutral`. This block has to
+-- be mirrored AFTER it, or a local `db reset` silently relabels the page
+-- background back and the rendered output stops matching its own snapshot —
+-- which is exactly how this was caught.
+--
+--   awk '/^-- >>> PAPER TEMPLATE DATA/,/^-- <<< PAPER TEMPLATE DATA/' \
+--     supabase/migrations/20260829113000_site_spec_paper.sql \
+--     > /tmp/paper-templates.sql
+
+-- >>> PAPER TEMPLATE DATA (mirrored verbatim in supabase/seed.sql) >>>
+
 insert into public.site_output_templates (id, target, key, body, sort_order) values
   ('all.token.paper', null, 'token.paper', 'Page background — the whole page sits on this', 33)
 on conflict (id) do update set body = excluded.body, sort_order = excluded.sort_order;
@@ -286,6 +299,8 @@ on conflict (id) do update set body = excluded.body, sort_order = excluded.sort_
 update public.site_output_templates
    set body = 'Section background — tinted bands and cards only'
  where id = 'all.token.light_neutral';
+
+-- <<< PAPER TEMPLATE DATA <<<
 
 create or replace function public.site_spec_token_lines(p_spec jsonb, p_frag jsonb)
 returns text

@@ -162,10 +162,11 @@ begin
   -- a palette with a malformed hex
   begin
     insert into public.palette_families
-      (id, sort_order, label, primary_hex, secondary_hex, light_hex, dark_hex, paper_hex, swatches, preview_tokens)
+      (id, sort_order, label, primary_hex, secondary_hex, light_hex, dark_hex, paper_hex,
+       accent_hex, swatches, preview_tokens)
     values ('bad_hex', 99, 'BAD', 'red', '#C08A3E', '#F4EEE3', '#2B2A27', '#FAF6EE',
-            array['red','#C08A3E','#F4EEE3'],
-            '{"primary":"red","secondary":"#C08A3E","light":"#F4EEE3","dark":"#2B2A27","paper":"#FAF6EE"}'::jsonb);
+            '#6E3320', array['red','#C08A3E','#F4EEE3'],
+            '{"primary":"red","secondary":"#C08A3E","light":"#F4EEE3","dark":"#2B2A27","paper":"#FAF6EE","accent":"#6E3320"}'::jsonb);
     rejected := false;
   exception when check_violation then rejected := true;
   end;
@@ -174,8 +175,9 @@ begin
   -- swatches that disagree with the roles they are meant to mirror
   begin
     insert into public.palette_families
-      (id, sort_order, label, primary_hex, secondary_hex, light_hex, dark_hex, paper_hex, swatches, preview_tokens)
-    values ('bad_swatch', 99, 'BAD', '#B4674A', '#C08A3E', '#F4EEE3', '#2B2A27', '#FAF6EE',
+      (id, sort_order, label, primary_hex, secondary_hex, light_hex, dark_hex, paper_hex,
+       accent_hex, swatches, preview_tokens)
+    values ('bad_swatch', 99, 'BAD', '#B4674A', '#C08A3E', '#F4EEE3', '#2B2A27', '#FAF6EE', '#6E3320',
             array['#000000','#C08A3E','#F4EEE3'],
             '{"primary":"#B4674A","secondary":"#C08A3E","light":"#F4EEE3","dark":"#2B2A27","paper":"#FAF6EE"}'::jsonb);
     rejected := false;

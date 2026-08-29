@@ -56,6 +56,21 @@ veut régénérer une valeur attendue.
   empreintes de snapshot du livrable de site, une par cible de constructeur.
   À relancer quand un changement du rendu ou de la copie du catalogue est
   **voulu**, et après avoir lu ce qui a bougé.
+- [`check_seed_mirrors.sh`](helpers/check_seed_mirrors.sh) — vérifie que chaque
+  bloc de données balisé d'une migration est **identique octet pour octet** dans
+  `seed.sql`, et qu'il y apparaît dans l'ordre des migrations. À lancer avec la
+  suite :
+
+  ```bash
+  bash supabase/tests/helpers/check_seed_mirrors.sh
+  ```
+
+  Ce n'est pas du SQL, donc ce n'est pas un `.test.sql`. Il existe parce que le
+  piège s'est refermé une fois : `20260829113000` a renommé
+  `token.light_neutral`, `seed.sql` portait encore la formulation de
+  `20260829110000`, et un `db reset` local la remettait en silence — le livrable
+  cessait alors de correspondre à sa propre empreinte. C'est ainsi que ça a été
+  trouvé, ce qui est à un hasard près de ne pas l'avoir été.
 
 ## Tester la RLS
 

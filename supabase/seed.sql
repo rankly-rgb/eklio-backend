@@ -512,3 +512,28 @@ on conflict (id) do update set
   active     = excluded.active;
 
 -- <<< SITE OUTPUT TEMPLATE DATA <<<
+
+
+-- >>> PAPER TEMPLATE DATA (mirrored verbatim in supabase/seed.sql) >>>
+
+insert into public.site_output_templates (id, target, key, body, sort_order) values
+  ('all.token.paper', null, 'token.paper', 'Page background — the whole page sits on this', 33)
+on conflict (id) do update set body = excluded.body, sort_order = excluded.sort_order;
+
+update public.site_output_templates
+   set body = 'Section background — tinted bands and cards only'
+ where id = 'all.token.light_neutral';
+
+-- <<< PAPER TEMPLATE DATA <<<
+
+
+-- >>> PALETTE ACCENT DATA (mirrored verbatim in supabase/seed.sql) >>>
+
+update public.palette_families set accent_hex = '#6E2F44' where id = 'plum_bone';      -- deep berry: the plum, taken redder
+update public.palette_families set accent_hex = '#6E3320' where id = 'clay_sand';      -- deep brick: the terracotta, taken much deeper
+update public.palette_families set accent_hex = '#8F5324' where id = 'ink_blue_chalk'; -- copper: warmth against the ink
+update public.palette_families set accent_hex = '#8C5624' where id = 'olive_chalk';    -- ochre: the olive, taken warmer and deeper
+update public.palette_families set accent_hex = '#A34A2A' where id = 'ochre_paper';    -- burnt orange: the ochre, taken redder
+update public.palette_families set accent_hex = '#8E4A3C' where id = 'slate_bone';     -- brick: warmth against the slate
+
+-- <<< PALETTE ACCENT DATA <<<
