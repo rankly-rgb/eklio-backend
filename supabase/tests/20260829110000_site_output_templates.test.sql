@@ -39,7 +39,11 @@ declare
     'sheet.step6_body_linked','sheet.step6_body_unlinked',
     'sheet.step7_title','sheet.step8_title','sheet.label_cta_label','sheet.label_cta_target',
     'render.where_md','render.where_txt','render.copy_blocks_md','render.copy_blocks_txt',
-    'render.copy_block_heading','render.value_line'
+    'render.copy_block_heading','render.value_line',
+    'identity.label_practitioner',
+    'voice.heading','voice.intro','voice.sounds_like_label','voice.never_write_label',
+    'sheet.step_details_title','sheet.step_details_body',
+    'sheet.step_voice_title','sheet.step_voice_body'
   ];
 begin
   foreach k in array req loop
@@ -121,7 +125,9 @@ begin
                        'hero', jsonb_build_object('overline','o','headline','h','subhead','s','cta_label','c'),
                        'pages', public.site_spec_default_pages(null,null)),
                      'squarespace')->'steps') s
-           where (s.value->>'n')::int = 8) like '%Site Styles.%',
+           -- ⚠ 9 since 20260829120000: a practice-details step joined the sheet,
+           -- and this fixture carries no voice guide so that step is omitted.
+           where (s.value->>'n')::int = 9) like '%Site Styles.%',
          'the override did not reach the rendered checklist';
 
   delete from public.site_output_templates where id = 'squarespace.constraint.contrast';

@@ -609,3 +609,29 @@ insert into public.site_output_templates (id, target, key, body, sort_order) val
 on conflict (id) do update set body = excluded.body, sort_order = excluded.sort_order;
 
 -- <<< CTA INK TEMPLATE DATA <<<
+
+
+-- >>> PRACTITIONER AND VOICE TEMPLATE DATA (mirrored verbatim in supabase/seed.sql) >>>
+
+insert into public.site_output_templates (id, target, key, body, sort_order) values
+  ('all.identity.label_practitioner', null, 'identity.label_practitioner',
+   'Licensed practitioner', 21),
+
+  ('all.voice.heading', null, 'voice.heading', '## Voice', 46),
+  ('all.voice.intro', null, 'voice.intro',
+   'Anything you write that is not in the copy above — navigation labels, button microcopy, alt text, form labels, error messages, a 404 page — must sound like the first list and must never sound like the second.', 47),
+  ('all.voice.sounds_like_label', null, 'voice.sounds_like_label', 'Sounds like', 48),
+  ('all.voice.never_write_label', null, 'voice.never_write_label', 'Never write', 49),
+
+  ('all.sheet.step_details_title', null, 'sheet.step_details_title',
+   'Fill in your practice details', 55),
+  ('all.sheet.step_details_body', null, 'sheet.step_details_body',
+   'These go in your footer and on your contact page. Your name and license belong together wherever either appears — most boards require it.', 56),
+
+  ('all.sheet.step_voice_title', null, 'sheet.step_voice_title',
+   'Keep these in view when you write anything else', 71),
+  ('all.sheet.step_voice_body', null, 'sheet.step_voice_body',
+   'A template will ask you for words this sheet does not cover: a menu label, a button, a caption under a photo, the page someone lands on when a link breaks. Write those in your own voice, and check them against the second list before you publish.', 72)
+on conflict (id) do update set body = excluded.body, sort_order = excluded.sort_order;
+
+-- <<< PRACTITIONER AND VOICE TEMPLATE DATA <<<

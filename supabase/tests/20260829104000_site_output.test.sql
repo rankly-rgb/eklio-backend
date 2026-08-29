@@ -36,8 +36,18 @@ select jsonb_build_object(
     'cta_label','Book a consult','cta_target_url','https://elmandember.clientsecure.me'),
   'about_excerpt','I work mostly with professionals who look fine from outside. Much of that work sits with anxiety and burnout.',
   'practice_details', jsonb_build_object(
+    'practitioner_name','Nora Whitfield',
     'practice_name','Elm & Ember Therapy','license_label','LCSW','license_number','LC61234',
     'city','Portland','state','OR','email','hello@elmandember.com','phone','(503) 555-0123'),
+  'voice_guide', jsonb_build_object(
+    'sounds_like', jsonb_build_array(
+      'Plain, unhurried sentences. No throat-clearing.',
+      'Say the hard thing kindly rather than softening it away.',
+      'Write to one person who is already tired, not to an audience.'),
+    'never_write', jsonb_build_array(
+      'Heal your anxiety in 12 weeks.',
+      'My clients often tell me I changed their lives.',
+      'Limited spots available - book now!')),
   'pages', public.site_spec_default_pages(
              array['Anxiety','Burnout'],
              array['Professionals who look fine from outside']),
@@ -51,13 +61,13 @@ do $$
 declare
   spec     jsonb := (select s from snapshot_spec);
   expected text[][] := array[
-    ['lovable',     'bfef598b93dc90692aca9e0b1049cbdc'],
-    ['framer',      'bfef598b93dc90692aca9e0b1049cbdc'],
-    ['v0',          'bfef598b93dc90692aca9e0b1049cbdc'],
-    ['generic',     'bfef598b93dc90692aca9e0b1049cbdc'],
-    ['squarespace', 'b1dfca4350ffe69136a9b0ade91e40ed'],
-    ['wix',         '7dc7289685ccff569bdbf2a403b39aec'],
-    ['webflow',     '89bc9d78a3ade772f47b7c3bb5a6a44f']
+    ['lovable',     'bdcc34568f9730014dfb1bf5b1af1e4b'],
+    ['framer',      'bdcc34568f9730014dfb1bf5b1af1e4b'],
+    ['v0',          'bdcc34568f9730014dfb1bf5b1af1e4b'],
+    ['generic',     'bdcc34568f9730014dfb1bf5b1af1e4b'],
+    ['squarespace', '7d3af7dc30f1387c1dff527556716120'],
+    ['wix',         '4e00ad1ff1a5d35e73aa3c038e7927e4'],
+    ['webflow',     '9cea39a5ffb4a0496a69a72fbb08d474']
   ];
   i   int;
   got text;
@@ -139,14 +149,18 @@ begin
   assert position('## Practice' in t) < position('## Design tokens' in t)
      and position('## Design tokens' in t) < position('## Pages and sections' in t)
      and position('## Pages and sections' in t) < position('## Copy' in t)
-     and position('## Copy' in t) < position('## Constraints' in t)
+     and position('## Copy' in t) < position('## Voice' in t)
+     and position('## Voice' in t) < position('## Constraints' in t)
      and position('## Constraints' in t)
          < position('## Additional instructions from the practice owner' in t),
-         'the seven parts are out of order';
+         'the eight parts are out of order';
 
   -- identity
   assert position('Name: Elm & Ember Therapy' in t) > 0, 'the practice name is missing';
-  assert position('License: LCSW #LC61234' in t) > 0,    'the license line is missing';
+  -- ⚠ 20260829120000: the person is named beside the licence. A board that
+  -- requires the number in advertising requires the licensee's name with it.
+  assert position('Licensed practitioner: Nora Whitfield, LCSW #LC61234' in t) > 0,
+         'the credential line is missing or is not composed from the parts';
   assert position('Location: Portland, OR' in t) > 0,    'the location line is missing';
 
   -- tokens, each with the role it plays
@@ -250,8 +264,12 @@ begin
 
   -- 2. it IS in the setup sheet, exactly once, as the last step
   sheet := public.site_spec_output(spec, 'squarespace');
+  -- ⚠ pinned to "the last step" rather than to a number: steps are added and
+  -- omitted, and a hard number turns "it moved" into "the test needs editing".
   assert (select s.value->>'body' from jsonb_array_elements(sheet->'steps') s
-           where (s.value->>'n')::int = 9) = marker,
+           where (s.value->>'n')::int
+                 = (select max((x.value->>'n')::int)
+                      from jsonb_array_elements(sheet->'steps') x)) = marker,
          'extra_instructions is not the setup sheet''s last step, verbatim';
   assert (select count(*) from jsonb_array_elements(sheet->'steps') s
            where position(marker in coalesce(s.value->>'body','')) > 0) = 1,
@@ -289,9 +307,14 @@ declare
   step  jsonb;
 begin
   assert sheet->>'kind' = 'setup_sheet', 'Squarespace gets a setup sheet';
-  -- ⚠ NINE STEPS SINCE 20260829118000: the text variants got a step of their
-  -- own rather than three more swatches under "Set your six colors".
-  assert jsonb_array_length(sheet->'steps') = 9, 'the sheet must have its nine steps';
+  -- ⚠ ELEVEN STEPS SINCE 20260829120000: the text variants got a step of their
+  -- own (118000), then the practice details and the voice guide got theirs.
+  -- The details step was not a refinement — the sheet had never once told her
+  -- to put her name or her license anywhere on her own site.
+  assert jsonb_array_length(sheet->'steps') = 11, 'the sheet must have its eleven steps';
+  assert (select array_agg((s.value->>'n')::int order by (s.value->>'n')::int)
+            from jsonb_array_elements(sheet->'steps') s) = array[1,2,3,4,5,6,7,8,9,10,11],
+         'the steps she reads are not numbered 1..n without a gap';
 
   -- ⚠ The panel names are the difference between a sheet she can follow and a
   -- sheet she has to decode.
@@ -321,9 +344,10 @@ begin
 
   -- ⚠ the same five constraints as the prompt, as a checklist. A Squarespace
   -- user is under exactly the same advertising rules as everyone else.
+  -- looked up by title, not by number: steps get inserted ahead of it
   select s.value into step from jsonb_array_elements(sheet->'steps') s
-   where (s.value->>'n')::int = 8;
-  assert step->>'title' = 'Before you publish', 'the checklist step is missing';
+   where s.value->>'title' = 'Before you publish';
+  assert step is not null, 'the checklist step is missing';
   assert (select count(*) from regexp_matches(step->>'body', '\[ \] ', 'g')) = 6,
          'the checklist must carry all six constraints';
   assert position('18px bold' in step->>'body') > 0,
@@ -333,8 +357,8 @@ begin
 
   -- her notes, last, verbatim
   select s.value into step from jsonb_array_elements(sheet->'steps') s
-   where (s.value->>'n')::int = 9;
-  assert step->>'title' = 'Your own notes', 'the notes step is missing';
+   where s.value->>'title' = 'Your own notes';
+  assert step is not null, 'the notes step is missing';
   assert step->>'body' = spec->>'extra_instructions',
          'extra_instructions must be reproduced verbatim, never reworded';
 
@@ -342,7 +366,7 @@ begin
   assert not exists (
     select 1 from jsonb_array_elements(
              public.site_spec_output(spec - 'extra_instructions', 'squarespace')->'steps') s
-     where (s.value->>'n')::int = 9),
+     where s.value->>'title' = 'Your own notes'),
          'an empty notes step was emitted';
 end
 $$;

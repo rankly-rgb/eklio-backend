@@ -62,7 +62,7 @@ the output alone. `site_catalog` returns the catalog.
 
 The envelope carries `etag`. Hand it back as `If-None-Match`.
 
-It is an md5 over five inputs:
+It is an md5 over six inputs:
 
 | input | moves when |
 |---|---|
@@ -71,17 +71,24 @@ It is an md5 over five inputs:
 | `last_copied_spec_version` | **mark-copied, and nothing else** |
 | `target` | the builder is switched (also bumps `spec_version`) |
 | a catalog fingerprint | the output copy is tuned — `site_output_templates`, `section_types`, `builder_targets` |
+| the kit's `voice_guide` | the Ethics Guard rewrites it on `brand_kits` — **not on the spec row at all** |
 
 Those are every input to every key of the envelope. `preview`, `contrast` and
-`diff` read the spec row only. `output` reads the spec row and the three
-catalogs. Nothing else is consulted.
+`diff` read the spec row only. `output` reads the spec row, the three catalogs
+and the kit's voice guide. Nothing else is consulted.
 
-> ⚠ **Two of those five were missing until `20260829116000`.** If you are
-> reading an older description of this: the etag used to be
-> `(brand_kit_id, spec_version, target)`, and `site_output_mark_copied` moves
-> none of them. A client would 304 and keep the staleness banner on screen after
-> the copy that clears it. Tuning the output copy had the same shape of problem.
-> Both are fixed; the table above is current.
+> ⚠ **Three of those six were missing at one point, all with the same shape.**
+> The etag used to be `(brand_kit_id, spec_version, target)`. `mark-copied`
+> moves none of them, so a client would 304 and keep the staleness banner on
+> screen after the copy that clears it. Tuning the output copy had the same
+> problem, and so did the voice guide — it is the only envelope input that does
+> not live on `site_specs`, so editing it changed the deliverable while every
+> etag input held still. All three are fixed (`20260829116000`, `20260829120000`);
+> the table above is current.
+>
+> The lesson generalises: **anything new that reaches the output must be added
+> to the etag in the same commit.** The output is not a function of the spec row
+> alone.
 
 Verified behaviour, by real calls:
 
@@ -98,13 +105,15 @@ Verified behaviour, by real calls:
 | a contrast fix | **moves** |
 | a reset | **moves** |
 | an output copy tuning | **moves** |
+| an edit to the kit's `voice_guide` | **moves** |
 
 ---
 
 ## 2. The envelope, as real JSON
 
 Captured from `site_spec_get` on a CLAY & SAND kit: four enabled pages, real
-copy, `extra_instructions` set. 18,540 bytes. This is the complete response.
+copy, `extra_instructions` set, a practitioner named, and the kit's voice guide
+present. 18972 bytes minified. This is the complete response.
 
 ⚠ **Every contrast pair passes in it** — `passes_aa: true`, worst 4.51 — because
 the derived colours of section 3 do their job on a shipped palette. So every
@@ -122,7 +131,7 @@ not infer from this envelope that the field is always null.
             }
         ]
     },
-    "etag": "710df92493419592f4dfcadf647887bb",
+    "etag": "f0857fa29f05fdd0650bb12719857863",
     "spec": {
         "hero": {
             "subhead": "Therapy for adults who hold it together.",
@@ -334,7 +343,7 @@ not infer from this envelope that the field is always null.
         "primary": "#B4674A",
         "body_font": "Nunito Sans",
         "secondary": "#C08A3E",
-        "updated_at": "2026-08-29T11:10:39.838112+00:00",
+        "updated_at": "2026-08-29T17:14:32.593791+00:00",
         "brand_kit_id": "33333333-3333-3333-3333-333333333333",
         "dark_neutral": "#2B2A27",
         "heading_font": "Fraunces",
@@ -351,7 +360,8 @@ not infer from this envelope that the field is always null.
             "state": "OR",
             "license_label": "LCSW",
             "practice_name": "Elm & Ember Therapy",
-            "license_number": "LC61234"
+            "license_number": "LC61234",
+            "practitioner_name": "Nora Whitfield"
         },
         "extra_instructions": "Please keep the fee off the home page. Tuesday and Thursday are the only hours open right now.",
         "last_copied_spec_version": 3
@@ -461,6 +471,39 @@ not infer from this envelope that the field is always null.
             },
             {
                 "n": 6,
+                "body": "These go in your footer and on your contact page. Your name and license belong together wherever either appears — most boards require it.",
+                "title": "Fill in your practice details",
+                "values": [
+                    {
+                        "kind": "text",
+                        "label": "Name",
+                        "value": "Elm & Ember Therapy"
+                    },
+                    {
+                        "kind": "text",
+                        "label": "Licensed practitioner",
+                        "value": "Nora Whitfield, LCSW #LC61234"
+                    },
+                    {
+                        "kind": "text",
+                        "label": "Location",
+                        "value": "Portland, OR"
+                    },
+                    {
+                        "kind": "text",
+                        "label": "Email",
+                        "value": "hello@elmandember.com"
+                    },
+                    {
+                        "kind": "text",
+                        "label": "Phone",
+                        "value": "(503) 555-0123"
+                    }
+                ],
+                "builder_hint": null
+            },
+            {
+                "n": 7,
                 "body": "Every string your site needs is listed below this sheet, one block per field, in the order the sections appear. Paste them as they are.",
                 "title": "Paste your copy",
                 "values": [
@@ -468,7 +511,7 @@ not infer from this envelope that the field is always null.
                 "builder_hint": null
             },
             {
-                "n": 7,
+                "n": 8,
                 "body": "Set every call-to-action button to this link. One destination, on every page.",
                 "title": "Point the button at your booking link",
                 "values": [
@@ -496,7 +539,15 @@ not infer from this envelope that the field is always null.
                 "builder_hint": null
             },
             {
-                "n": 8,
+                "n": 9,
+                "body": "A template will ask you for words this sheet does not cover: a menu label, a button, a caption under a photo, the page someone lands on when a link breaks. Write those in your own voice, and check them against the second list before you publish.\n\nAnything you write that is not in the copy above — navigation labels, button microcopy, alt text, form labels, error messages, a 404 page — must sound like the first list and must never sound like the second.\n\nSounds like:\n- Plain, unhurried sentences. No throat-clearing.\n- Say the hard thing kindly rather than softening it away.\n- Write to one person who is already tired, not to an audience.\n\nNever write:\n- Heal your anxiety in 12 weeks.\n- My clients often tell me I changed their lives.\n- Limited spots available - book now!",
+                "title": "Keep these in view when you write anything else",
+                "values": [
+                ],
+                "builder_hint": null
+            },
+            {
+                "n": 10,
                 "body": "[ ] Use the provided copy exactly as written. Do not rewrite, expand or add copy.\n[ ] Do not invent testimonials, client quotes, statistics, credentials or awards.\n[ ] No stock photos of people; leave labeled image placeholders.\n[ ] The call to action links to https://elmandember.clientsecure.me/book. Do not add a contact form that collects health information — a mailto link, a phone number or a booking link only.\n[ ] Do not set the call-to-action label below 18px bold, or 24px if it is not bold. The button's two colors were checked for text at that size; below it the same pair stops being legible enough.\n[ ] Maintain WCAG AA text contrast.",
                 "title": "Before you publish",
                 "values": [
@@ -504,7 +555,7 @@ not infer from this envelope that the field is always null.
                 "builder_hint": null
             },
             {
-                "n": 9,
+                "n": 11,
                 "body": "Please keep the fee off the home page. Tuesday and Thursday are the only hours open right now.",
                 "title": "Your own notes",
                 "values": [
@@ -977,10 +1028,102 @@ not infer from this envelope that the field is always null.
 }
 ```
 
+### `practice_details` — the eight keys
+
+An object, patchable key by key. Every value is a string or `null`; an unknown
+key is refused with `unknown_field` naming the key you typed, so a typo is never
+silently swallowed.
+
+| key | seeded from | notes |
+|---|---|---|
+| `practitioner_name` | **nothing — see below** | the person, not the practice |
+| `practice_name` | `project_briefs.practice_name`, else the project name | |
+| `license_label` | `license_types.label` for the brief's `license_type_id` | "LCSW", "LMFT", … |
+| `license_number` | nothing | she types it |
+| `city` | `project_briefs.city` | |
+| `state` | `project_briefs.state` | **two letters**, validated; anything else is `invalid_field` |
+| `email` | nothing | not taken from her account |
+| `phone` | nothing | |
+
+**The credential line is composed, never stored.** Wherever the license appears
+— the prompt's `## Practice` block, the setup sheet's details step, the footer
+section a builder renders — the output prints:
+
+```
+Licensed practitioner: Nora Whitfield, LCSW #LC61234
+```
+
+Every part is optional and **nothing dangles**. With no name it falls back to
+`License: LCSW #LC61234`, exactly as before. With a name and no license it
+prints `Licensed practitioner: Nora Whitfield`. With a license number and no
+label it prints no line at all — a bare `#LC61234` beside no credential reads
+like an order number.
+
+Do not send a pre-composed string. There is no field for one, deliberately:
+`brand_kits.practitioner_line` already holds `"Nora Whitfield, LCSW"` for the
+signature story, and a second composed field would be a second place for the
+name to be wrong.
+
+> ⚠ **`practitioner_name` seeds empty, and the frontend has to fix that.**
+> Nothing in `project_briefs` answers it — the brief asks for the practice name,
+> not the practitioner's. So every spec seeds with the key present and the value
+> `null`, and the output prints no name.
+>
+> That is a compliance gap, not a cosmetic one: the boards that require a
+> license number in advertising require the licensee's name alongside it, and
+> until the brief carries the answer the deliverable can produce a therapist's
+> website that prints her license number and never names her. **Add a question
+> to the brief, or ask for it in the site-spec editor.** The key is patchable
+> today; only the seed source is missing.
+
+---
+
+### The voice guide
+
+`brand_kits.voice_guide` — `{sounds_like: [...], never_write: [...]}`, written by
+the Ethics Guard — is rendered into both output shapes. It is **not** part of the
+site spec: it is not in `spec`, it is not patchable through `site_spec_patch`,
+and the site-spec editor should not offer it as a field. It is read from the kit
+at render time, so an edit there shows up in the next `site_spec_get` (and moves
+the etag — see section 1).
+
+In the `prompt` shape it is a `## Voice` section sitting immediately before
+`## Constraints`: one sentence saying what it governs, then `Sounds like:` and
+`Never write:` as bullet lists. In the `setup_sheet` shape it is a step near the
+end, above the pre-publish checklist, framed for a person writing her own words
+rather than for a model.
+
+It exists because the constraints only say *do not rewrite her copy*. A builder
+still writes navigation labels, button microcopy, alt text, form labels and a
+404 page on its own, and without the guide all of it comes out in the model's
+default voice — the voice that writes "Limited spots available".
+
+> **If the kit has no guide, or an empty or malformed one, the section is
+> omitted entirely** — no heading with nothing under it, in either shape, and
+> the setup sheet's remaining steps renumber so there is no gap. Render whatever
+> `output` contains; do not reserve space for a section that may not be there.
+
+#### The ethics disclaimer is deliberately not carried over
+
+The old prompt builder appended a long boilerplate ethics disclaimer to every
+prompt. **It is not coming back, and this is a decision rather than an
+oversight.** What it was trying to do is now done by things that are checkable:
+the four advertising constraints in `## Constraints`, and the `never_write` list
+above, which is the Ethics Guard's own counter-examples in her own case rather
+than generic legal prose. A paragraph of boilerplate at the end of a prompt is
+the part a model skims; a short list of sentences never to write is the part it
+can act on. Do not restore the old wording, and do not add it client-side.
+
 ### The PATCH response
 
 Identical envelope. Below, `spec.pages`, `preview.pages` and `output` are
 elided for length — they are present and identical in shape to the read above.
+
+> ⚠ Re-captured at `20260829120000`. If you are holding an older copy of this
+> block, its `cta_label_on_primary` pair showed `fg: "#FFFFFF"` at 4.22 with a
+> `suggested_fix` that moved `primary`. That is no longer reachable: the button
+> label is painted in the derived `cta_ink` (section 3), which is why the pair
+> now reads `#10100F` at 4.51 with no fix. Nothing about the shape changed.
 
 Request: `{"p_brand_kit_id":"33333333-…","p_patch":{"hero":{"headline":"A calmer place to begin."}}}`
 
@@ -999,7 +1142,7 @@ Request: `{"p_brand_kit_id":"33333333-…","p_patch":{"hero":{"headline":"A calm
             }
         ]
     },
-    "etag": "77eb30d2755bea253fad9bb139b64c1d",
+    "etag": "e08594abf9876454472fed82551bb519",
     "spec": {
         "hero": {
             "subhead": "Therapy for adults who hold it together.",
@@ -1014,7 +1157,7 @@ Request: `{"p_brand_kit_id":"33333333-…","p_patch":{"hero":{"headline":"A calm
         "primary": "#B4674A",
         "body_font": "Nunito Sans",
         "secondary": "#C08A3E",
-        "updated_at": "2026-08-29T10:01:18.784582+00:00",
+        "updated_at": "2026-08-29T17:16:04.430165+00:00",
         "brand_kit_id": "33333333-3333-3333-3333-333333333333",
         "dark_neutral": "#2B2A27",
         "heading_font": "Fraunces",
@@ -1031,7 +1174,8 @@ Request: `{"p_brand_kit_id":"33333333-…","p_patch":{"hero":{"headline":"A calm
             "state": "OR",
             "license_label": "LCSW",
             "practice_name": "Elm & Ember Therapy",
-            "license_number": "LC61234"
+            "license_number": "LC61234",
+            "practitioner_name": "Nora Whitfield"
         },
         "extra_instructions": "Please keep the fee off the home page. Tuesday and Thursday are the only hours open right now.",
         "last_copied_spec_version": 3
@@ -1040,12 +1184,16 @@ Request: `{"p_brand_kit_id":"33333333-…","p_patch":{"hero":{"headline":"A calm
         "tokens": {
             "paper": "#FAF6EE",
             "accent": "#6E3320",
+            "cta_ink": "#10100F",
             "primary": "#B4674A",
             "body_font": "Nunito Sans",
             "secondary": "#C08A3E",
+            "accent_text": "#6E3320",
             "dark_neutral": "#2B2A27",
             "heading_font": "Fraunces",
+            "primary_text": "#A35D43",
             "light_neutral": "#F4EEE3",
+            "secondary_text": "#92692F",
             "google_fonts_url": "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Nunito+Sans:wght@400;600;700&display=swap"
         },
         "practice_name": "Elm & Ember Therapy"
@@ -1054,15 +1202,12 @@ Request: `{"p_brand_kit_id":"33333333-…","p_patch":{"hero":{"headline":"A calm
         "pairs": [
             {
                 "bg": "#B4674A",
-                "fg": "#FFFFFF",
+                "fg": "#10100F",
                 "label": "Button label on your primary color",
-                "level": "AA_large",
-                "ratio": 4.22,
+                "level": "AA",
+                "ratio": 4.51,
                 "pair_id": "cta_label_on_primary",
-                "suggested_fix": {
-                    "hex": "#AD6347",
-                    "token": "primary"
-                }
+                "suggested_fix": null
             },
             {
                 "bg": "#FAF6EE",
@@ -1075,32 +1220,26 @@ Request: `{"p_brand_kit_id":"33333333-…","p_patch":{"hero":{"headline":"A calm
             },
             {
                 "bg": "#FAF6EE",
-                "fg": "#B4674A",
-                "label": "Primary color on the page",
-                "level": "AA_large",
-                "ratio": 3.91,
+                "fg": "#A35D43",
+                "label": "Primary color as text on the page",
+                "level": "AA",
+                "ratio": 4.63,
                 "pair_id": "primary_on_paper",
-                "suggested_fix": {
-                    "hex": "#A35D43",
-                    "token": "primary"
-                }
+                "suggested_fix": null
             },
             {
                 "bg": "#FAF6EE",
-                "fg": "#C08A3E",
-                "label": "Secondary color on the page",
-                "level": "fail",
-                "ratio": 2.80,
+                "fg": "#92692F",
+                "label": "Secondary color as text on the page",
+                "level": "AA",
+                "ratio": 4.55,
                 "pair_id": "secondary_on_paper",
-                "suggested_fix": {
-                    "hex": "#92692F",
-                    "token": "secondary"
-                }
+                "suggested_fix": null
             },
             {
                 "bg": "#FAF6EE",
                 "fg": "#6E3320",
-                "label": "Accent color on the page",
+                "label": "Accent color as text on the page",
                 "level": "AAA",
                 "ratio": 9.03,
                 "pair_id": "accent_on_paper",
@@ -1125,8 +1264,8 @@ Request: `{"p_brand_kit_id":"33333333-…","p_patch":{"hero":{"headline":"A calm
                 "suggested_fix": null
             }
         ],
-        "passes_aa": false,
-        "worst_ratio": 2.80
+        "passes_aa": true,
+        "worst_ratio": 4.51
     }
 }
 ```
@@ -1767,18 +1906,43 @@ three are alternates of which:
    > Where: Site Styles › Colors
 ```
 
-⚠ **The sheet now has nine steps, not eight.** The checklist is step 8 and
-"Your own notes" is step 9. Do not hardcode step numbers; read `n`.
+⚠ **The sheet has grown twice since it was first documented — eight steps, then
+nine, now eleven.** `20260829120000` added a practice-details step (step 6) and
+a voice step near the end. Two of the eleven are conditional: the voice step
+only when the kit has a guide, "Your own notes" only when she wrote some, and
+the rest renumber to close the gap. **Do not hardcode step numbers and do not
+assume a count; read `n` and render what is there.**
+
+### The practice details step
+
+⚠ **This step did not exist before `20260829120000`, in any form.**
+`practice_details` reached the prompt's `## Practice` block and stopped there, so
+a therapist following the Squarespace sheet was never once told to put her
+practice name, her license or her contact details on her own site. Captured:
+
+```
+6. Fill in your practice details
+   These go in your footer and on your contact page. Your name and license
+   belong together wherever either appears — most boards require it.
+   - Name: Elm & Ember Therapy
+   - Licensed practitioner: Nora Whitfield, LCSW #LC61234
+   - Location: Portland, OR
+   - Email: hello@elmandember.com
+   - Phone: (503) 555-0123
+```
+
+Only the details she has filled in appear. An empty `practice_details` omits the
+step's values entirely rather than printing empty labels.
 
 ### The button step, and the size floor
 
-Step 7 carries the label, the link, the ink and a minimum size:
+It carries the label, the link, the ink and a minimum size:
 
 ```
-7. Point the button at your booking link
+8. Point the button at your booking link
    - Button label: Book a consult
    - Button links to: https://elmandember.clientsecure.me/book
-   - Button label color: #FFFFFF
+   - Button label color: #10100F
    - Smallest the label may be set: 18px bold, or 24px if it is not bold
 ```
 

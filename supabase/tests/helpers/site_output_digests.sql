@@ -30,8 +30,18 @@ select format('    [%s %s],',
         'cta_label','Book a consult','cta_target_url','https://elmandember.clientsecure.me'),
       'about_excerpt','I work mostly with professionals who look fine from outside. Much of that work sits with anxiety and burnout.',
       'practice_details', jsonb_build_object(
+        'practitioner_name','Nora Whitfield',
         'practice_name','Elm & Ember Therapy','license_label','LCSW','license_number','LC61234',
         'city','Portland','state','OR','email','hello@elmandember.com','phone','(503) 555-0123'),
+      'voice_guide', jsonb_build_object(
+        'sounds_like', jsonb_build_array(
+          'Plain, unhurried sentences. No throat-clearing.',
+          'Say the hard thing kindly rather than softening it away.',
+          'Write to one person who is already tired, not to an audience.'),
+        'never_write', jsonb_build_array(
+          'Heal your anxiety in 12 weeks.',
+          'My clients often tell me I changed their lives.',
+          'Limited spots available - book now!')),
       'pages', public.site_spec_default_pages(
                  array['Anxiety','Burnout'],
                  array['Professionals who look fine from outside']),
