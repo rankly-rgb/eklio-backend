@@ -196,11 +196,47 @@ begin
 end
 $$;
 
--- ⚠ A direction carrying the PRODUCT SPEC's palette shape. Before this
--- migration the Lot 5 CHECK accepted the row (its validator returns NULL, and
--- a CHECK passes on NULL) and then direction selection died on the NOT NULL of
--- site_specs.light_neutral_hex — a kit that stores fine becoming a direction
--- that cannot be chosen.
+-- ⚠ THE v5 PALETTE SHAPE IS NOW REFUSED AT WRITE TIME, and that is the point of
+-- `20260829112000_null_safe_jsonb_validators.sql`. Before it, the Lot 5 CHECK
+-- accepted the row — its validator returned NULL and a CHECK passes on NULL —
+-- and direction selection then died on the NOT NULL of
+-- site_specs.light_neutral_hex: a kit that stored fine became a direction that
+-- could not be chosen. Now the write fails immediately, naming the rule.
+do $$
+declare ok boolean;
+begin
+  begin
+    insert into public.brand_kits (id, project_id, directions) values (
+     'cccccccc-0000-0000-0000-00000000000f','bbbbbbbb-0000-0000-0000-000000000002',
+     jsonb_build_array(
+      jsonb_build_object('id','a','name','Alpha One','rationale',repeat('x',70),
+        'palette', jsonb_build_object('primary','#3B2C3A','secondary','#4A5361','accent','#C08A3E',
+                                      'light_neutral','#F3EDE4','dark_neutral','#241B23'),
+        'typography', jsonb_build_object('heading_font','Fraunces','body_font','B','google_fonts_url','u'),
+        'hero', jsonb_build_object('overline','o','headline','h','subhead','s','cta_label','c'),
+        'about_excerpt','x','tone_keywords',jsonb_build_array('a','b','c')),
+      jsonb_build_object('id','b','name','Beta Two','rationale',repeat('y',70),
+        'palette', jsonb_build_object('primary','#B4674A','secondary','#C08A3E','light','#F4EEE3','dark','#2B2A27','paper','#FAF6EE'),
+        'typography', jsonb_build_object('heading_font','Newsreader','body_font','B','google_fonts_url','u'),
+        'hero', jsonb_build_object('overline','o','headline','h','subhead','s','cta_label','c'),
+        'about_excerpt','x','tone_keywords',jsonb_build_array('a','b','c')),
+      jsonb_build_object('id','c','name','Gamma Three','rationale',repeat('z',70),
+        'palette', jsonb_build_object('primary','#22364F','secondary','#7A8168','light','#EDEAE5','dark','#16202E','paper','#F7F6F3'),
+        'typography', jsonb_build_object('heading_font','Lora','body_font','B','google_fonts_url','u'),
+        'hero', jsonb_build_object('overline','o','headline','h','subhead','s','cta_label','c'),
+        'about_excerpt','x','tone_keywords',jsonb_build_array('a','b','c'))));
+    ok := false;
+  exception when check_violation then ok := true; end;
+  assert ok,
+    'a v5-shaped palette was accepted by brand_kits; the NULL hole is open again';
+end
+$$;
+
+-- ⚠ AND A ROW THAT WAS WRITTEN WHILE THE HOLE WAS OPEN MUST STILL SEED. The
+-- fix stops new ones arriving; it does not remove the ones already stored, and
+-- `site_spec_palette_role` is what keeps those choosable. The constraint is
+-- dropped inside this transaction to model exactly that row.
+alter table public.brand_kits drop constraint brand_kits_directions_shape_check;
 insert into public.brand_kits (id, project_id, directions) values (
  'cccccccc-0000-0000-0000-000000000002','bbbbbbbb-0000-0000-0000-000000000002',
  jsonb_build_array(
@@ -246,8 +282,11 @@ begin
 end
 $$;
 
--- ⚠ And a palette missing roles entirely, which the Lot 5 CHECK also accepts.
--- Seeding must still not be able to make a direction unchoosable.
+
+-- ⚠ And a palette missing roles entirely — another row that could only have
+-- been written while the hole was open, and that the constraint above now
+-- refuses outright. Seeding must still not be able to make it unchoosable.
+-- (Still inside the dropped-constraint window opened above.)
 insert into public.projects (id, user_id, name) values
   ('bbbbbbbb-0000-0000-0000-000000000003','aaaaaaaa-0000-0000-0000-000000000001','Broken shape');
 insert into public.project_briefs (project_id) values ('bbbbbbbb-0000-0000-0000-000000000003');
@@ -286,6 +325,33 @@ begin
   assert s.light_neutral_hex = (select light_hex from public.palette_families where id='clay_sand'),
          'the light neutral did not fall back to CLAY & SAND';
   assert s.accent_hex <> s.secondary_hex, 'even the fallback palette must get a distinct accent';
+end
+$$;
+
+-- Restore the constraint. NOT VALID, because the two legacy rows above are
+-- exactly the kind it cannot retroactively fix — the same position the real
+-- database is in, and the reason 20260829112000 audits before re-validating.
+alter table public.brand_kits
+  add constraint brand_kits_directions_shape_check
+  check (public.brand_kit_directions_shape_valid(directions)) not valid;
+
+do $$
+declare ok boolean;
+begin
+  -- and with it back, a fresh malformed write is refused again
+  begin
+    insert into public.projects (id,user_id,name) values
+      ('bbbbbbbb-0000-0000-0000-00000000000e','aaaaaaaa-0000-0000-0000-000000000001','After');
+    insert into public.brand_kits (id, project_id, directions) values (
+      'cccccccc-0000-0000-0000-00000000000e','bbbbbbbb-0000-0000-0000-00000000000e',
+      jsonb_build_array(jsonb_build_object('id','a','name','A','rationale',repeat('x',70),
+        'palette','{}'::jsonb,
+        'typography', jsonb_build_object('heading_font','F','body_font','B','google_fonts_url','u'),
+        'hero', jsonb_build_object('overline','o','headline','h','subhead','s','cta_label','c'),
+        'about_excerpt','x','tone_keywords',jsonb_build_array('a','b','c'))));
+    ok := false;
+  exception when check_violation then ok := true; end;
+  assert ok, 'an empty palette is accepted again; the NULL hole has reopened';
 end
 $$;
 
