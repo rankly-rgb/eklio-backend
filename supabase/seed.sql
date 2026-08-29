@@ -18,16 +18,20 @@
 -- catalog is ever moved out of the migration, and so that `db reset` is
 -- self-describing.
 --
--- ⚠ THE BLOCK BELOW IS A VERBATIM COPY of the marked region of
--- `supabase/migrations/20260827100000_catalog_reference_data.sql`.
--- Never edit it here. Edit the migration, then regenerate:
+-- ⚠ THE TWO BLOCKS BELOW ARE VERBATIM COPIES of the marked regions of two
+-- migrations. Never edit them here. Edit the migration, then regenerate:
 --
 --   awk '/^-- >>> CATALOG DATA/,/^-- <<< CATALOG DATA/' \
 --     supabase/migrations/20260827100000_catalog_reference_data.sql \
 --     > /tmp/catalog.sql
 --
--- and splice /tmp/catalog.sql in below this header. The upserts are idempotent,
--- so running them after the migration has already inserted the rows is a no-op.
+--   awk '/^-- >>> SITE SPEC CATALOG DATA/,/^-- <<< SITE SPEC CATALOG DATA/' \
+--     supabase/migrations/20260829101000_site_spec_catalog.sql \
+--     > /tmp/site-spec-catalog.sql
+--
+-- and splice each in below this header, in that order. The upserts are
+-- idempotent, so running them after the migrations have already inserted the
+-- rows is a no-op.
 -- ============================================================================
 
 -- >>> CATALOG DATA (mirrored verbatim in supabase/seed.sql) >>>
@@ -276,3 +280,137 @@ on conflict (id) do update set
   label      = excluded.label;
 
 -- <<< CATALOG DATA <<<
+
+
+-- >>> SITE SPEC CATALOG DATA (mirrored verbatim in supabase/seed.sql) >>>
+
+-- ---- section_types ---------------------------------------------------------
+-- `description` is printed into the builder output as the section's purpose,
+-- so it is written as an instruction to whoever builds the page.
+insert into public.section_types
+  (id, sort_order, active, label, description, fields, default_enabled, allowed_pages, source) values
+
+  ('hero', 1, true, 'Hero',
+   'The first screen: a short overline, one headline, one supporting line, and a single call to action.',
+   '[{"key":"overline","label":"Overline","kind":"text","max_length":48},
+     {"key":"headline","label":"Headline","kind":"text","max_length":90},
+     {"key":"subhead","label":"Supporting line","kind":"longtext","max_length":220},
+     {"key":"cta_label","label":"Button label","kind":"text","max_length":28},
+     {"key":"cta_target_url","label":"Button links to","kind":"text","max_length":400}]'::jsonb,
+   true, array['home'], 'spec.hero'),
+
+  ('intro', 2, true, 'Introduction',
+   'One paragraph in the practitioner''s own voice, placed directly under the hero.',
+   '[{"key":"body","label":"Paragraph","kind":"longtext","max_length":600}]'::jsonb,
+   true, array['home','about'], 'spec.about_excerpt'),
+
+  ('specialties', 3, true, 'What I work with',
+   'A short list of the areas the practice works in. Plain labels, not diagnoses aimed at the reader.',
+   '[{"key":"heading","label":"Heading","kind":"text","max_length":80},
+     {"key":"items","label":"Areas","kind":"list","max_length":80}]'::jsonb,
+   true, array['home','services'], 'fields'),
+
+  ('who_i_work_with', 4, true, 'Who I work with',
+   'Who the practice serves, written as lived situations rather than diagnostic labels.',
+   '[{"key":"heading","label":"Heading","kind":"text","max_length":80},
+     {"key":"items","label":"Descriptions","kind":"list","max_length":120}]'::jsonb,
+   true, array['home','about'], 'fields'),
+
+  ('approach', 5, true, 'How I work',
+   'What a session is actually like, so a visitor knows before they have to ask.',
+   '[{"key":"heading","label":"Heading","kind":"text","max_length":80},
+     {"key":"body","label":"Paragraph","kind":"longtext","max_length":800}]'::jsonb,
+   false, array['home','about','services'], 'fields'),
+
+  ('services', 6, true, 'Services',
+   'What the practice offers: individual work, couples work, consultation.',
+   '[{"key":"heading","label":"Heading","kind":"text","max_length":80},
+     {"key":"body","label":"Introduction","kind":"longtext","max_length":800},
+     {"key":"items","label":"Services","kind":"list","max_length":120}]'::jsonb,
+   false, array['home','services'], 'fields'),
+
+  ('fees', 7, true, 'Fees',
+   'Session fee, sliding scale and insurance, stated plainly so the first call is not about the number.',
+   '[{"key":"heading","label":"Heading","kind":"text","max_length":80},
+     {"key":"body","label":"Introduction","kind":"longtext","max_length":800},
+     {"key":"items","label":"Lines","kind":"list","max_length":120}]'::jsonb,
+   false, array['services','contact'], 'fields'),
+
+  ('faq', 8, true, 'Common questions',
+   'A handful of questions and answers, each written as one line of question and one of answer.',
+   '[{"key":"heading","label":"Heading","kind":"text","max_length":80},
+     {"key":"items","label":"Questions and answers","kind":"list","max_length":300}]'::jsonb,
+   false, array['home','services','contact'], 'fields'),
+
+  ('credentials', 9, true, 'Training and licensure',
+   'Licence, degrees and completed training. Facts only, in the order the practitioner lists them.',
+   '[{"key":"heading","label":"Heading","kind":"text","max_length":80},
+     {"key":"items","label":"Credentials","kind":"list","max_length":120}]'::jsonb,
+   false, array['about'], 'fields'),
+
+  ('contact', 10, true, 'Contact',
+   'How to get in touch, ending in the call to action. No form that collects health information.',
+   '[{"key":"heading","label":"Heading","kind":"text","max_length":80},
+     {"key":"body","label":"Paragraph","kind":"longtext","max_length":800}]'::jsonb,
+   true, array['home','about','services','contact'], 'fields'),
+
+  ('footer', 11, true, 'Footer',
+   'Practice name, licence and location, and nothing that needs to be read twice.',
+   '[{"key":"body","label":"Footer note","kind":"longtext","max_length":300}]'::jsonb,
+   true, array['home','about','services','contact'], 'fields')
+
+on conflict (id) do update set
+  sort_order      = excluded.sort_order,
+  active          = excluded.active,
+  label           = excluded.label,
+  description     = excluded.description,
+  fields          = excluded.fields,
+  default_enabled = excluded.default_enabled,
+  allowed_pages   = excluded.allowed_pages,
+  source          = excluded.source;
+
+-- ---- builder_targets -------------------------------------------------------
+-- The panel names are where each product actually keeps the setting, named as
+-- that product names it. They are the difference between a sheet a therapist
+-- can follow and a sheet she has to decode.
+insert into public.builder_targets
+  (id, sort_order, active, label, output_kind, docs_url,
+   template_hint, color_panel, font_panel, section_panel) values
+
+  ('lovable',     1, true, 'Lovable',     'prompt', 'https://docs.lovable.dev/',
+   null, null, null, null),
+  ('framer',      2, true, 'Framer',      'prompt', 'https://www.framer.com/help/',
+   null, null, null, null),
+  ('v0',          3, true, 'v0',          'prompt', 'https://v0.app/docs',
+   null, null, null, null),
+  ('generic',     4, true, 'Another builder', 'prompt', null,
+   null, null, null, null),
+
+  ('squarespace', 5, true, 'Squarespace', 'setup_sheet', 'https://support.squarespace.com/',
+   'Start from a one-page portfolio or personal template, then delete the sections you do not need.',
+   'Site Styles › Colors',
+   'Site Styles › Fonts',
+   'Pages › Edit › Add Section'),
+  ('wix',         6, true, 'Wix',         'setup_sheet', 'https://support.wix.com/',
+   'Start from a Health & Wellness template and remove the booking widgets you will not use.',
+   'Site Design › Color Palette',
+   'Site Design › Text Themes',
+   'Add Elements › Section'),
+  ('webflow',     7, true, 'Webflow',     'setup_sheet', 'https://help.webflow.com/',
+   'Start from a blank site rather than a template: the structure below is faster to build than to unpick.',
+   'Style Manager › Variables › Colors',
+   'Style Manager › Typography',
+   'Navigator › Sections')
+
+on conflict (id) do update set
+  sort_order    = excluded.sort_order,
+  active        = excluded.active,
+  label         = excluded.label,
+  output_kind   = excluded.output_kind,
+  docs_url      = excluded.docs_url,
+  template_hint = excluded.template_hint,
+  color_panel   = excluded.color_panel,
+  font_panel    = excluded.font_panel,
+  section_panel = excluded.section_panel;
+
+-- <<< SITE SPEC CATALOG DATA <<<
