@@ -173,6 +173,20 @@ Verified behaviour, by real calls:
 | an output copy tuning | **moves** |
 | an edit to the kit's `voice_guide` | **moves** |
 
+#### ⚠ Two things about how any of this gets verified
+
+- **An assertion that passes because the state it checks was never reached proves
+  nothing.** A "mark-copied clears the banner" check ran green for a whole lot
+  while `last_copied_spec_version` was NULL and the banner had never been up —
+  it was clearing something that was already clear. When a test asserts that an
+  action changes a state, assert the state was in the *other* value first.
+- **This project's tests run against a less defensive `auth.uid()` than
+  production ships.** The local harness cast `request.jwt.claims` to `jsonb`
+  before neutralising the empty string, so a blank GUC raised instead of
+  returning NULL; Supabase's shipped definition guards it first. The harness is
+  now aligned, but anything that depends on the exact behaviour of an absent or
+  blank JWT should be confirmed against a real Supabase instance, not this one.
+
 ---
 
 ## 2. The envelope, as real JSON
