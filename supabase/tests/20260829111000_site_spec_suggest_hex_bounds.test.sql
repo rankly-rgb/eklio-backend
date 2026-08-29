@@ -179,6 +179,12 @@ begin
        where p.value->'suggested_fix'->>'token' in ('paper', 'light_neutral')),
       format('%s: a correction moves a surface', pal.id);
 
+    -- ⚠ nor a derived variant, which has no control behind it
+    assert not exists (
+      select 1 from jsonb_array_elements(c->'pairs') p
+       where p.value->'suggested_fix'->>'token' like '%_text'),
+      format('%s: a correction moves a text variant', pal.id);
+
     -- every token a correction names is one the spec actually has
     assert not exists (
       select 1 from jsonb_array_elements(c->'pairs') p
@@ -238,11 +244,16 @@ begin
   set local role authenticated;
   set local request.jwt.claims = '{"sub":"aaaaaaaa-0000-0000-0000-000000000001"}';
 
-  -- OCHRE & PAPER: its primary on its own page background is 2.71:1
+  -- ⚠ OCHRE & PAPER's primary_on_paper used to be 2.85 here. It now measures
+  -- the text variant and passes at 4.62, which is what the variant is for. The
+  -- pair that still fails on this palette is the button label on the fill.
   e := public.site_spec_get(kit);
   select p.value into pair from jsonb_array_elements(e->'contrast'->'pairs') p
    where p.value->>'pair_id' = 'primary_on_paper';
-  assert (pair->>'ratio')::numeric = 2.85, 'the fixture pair must fail at 2.85:1';
+  assert (pair->>'ratio')::numeric >= 4.5,
+         'primary_on_paper must now be measured against the text variant and pass';
+  assert pair->>'fg' <> '#C08A3E',
+         'primary_on_paper is still measuring the brand colour as text';
 
   -- ⚠ ONE CLICK. Every failing pair the panel shows, fixed in turn, must end AA.
   for id in select p.value->>'pair_id' from jsonb_array_elements(e->'contrast'->'pairs') p

@@ -547,3 +547,40 @@ update public.site_output_templates
    set body = 'Set your fonts'        where id = 'all.sheet.step3_title';
 
 -- <<< STEP TITLE DATA <<<
+
+-- >>> PALETTE TEXT VARIANT DATA (mirrored verbatim in supabase/seed.sql) >>>
+
+update public.palette_families
+   set primary_text_hex   = public.site_spec_text_variant(primary_hex,   paper_hex),
+       secondary_text_hex = public.site_spec_text_variant(secondary_hex, paper_hex),
+       accent_text_hex    = public.site_spec_text_variant(accent_hex,    paper_hex);
+
+-- <<< PALETTE TEXT VARIANT DATA <<<
+
+
+-- >>> TEXT VARIANT TEMPLATE DATA (mirrored verbatim in supabase/seed.sql) >>>
+
+insert into public.site_output_templates (id, target, key, body, sort_order) values
+  ('all.token.primary_text',   null, 'token.primary_text',
+   'Primary as text — headings and links on the page', 30),
+  ('all.token.secondary_text', null, 'token.secondary_text',
+   'Secondary as text — supporting headings on the page', 31),
+  ('all.token.accent_text',    null, 'token.accent_text',
+   'Accent as text — small highlighted words', 32),
+  ('all.token.text_variant_note', null, 'token.text_variant_note',
+   'The three "as text" values are the same brand colors, darkened only as far as legibility requires. Use an "as text" value wherever the color is text. Use the brand color for fills, bands, buttons and borders. Do not substitute one for the other, and do not add either to the palette twice.', 38),
+  ('all.sheet.step_text_title', null, 'sheet.step_text_title',
+   'Add the text versions of those three colors', 53),
+  ('all.sheet.step_text_body', null, 'sheet.step_text_body',
+   'These are the same three brand colors, darkened just enough to be readable as text on your page background. Add them alongside the others. Use them for headings and links; keep the brighter originals for fills, bands and buttons.', 54)
+on conflict (id) do update set
+  body = excluded.body, sort_order = excluded.sort_order;
+
+update public.site_output_templates set body =
+  'Primary — fills, buttons, bands and borders'      where id = 'all.token.primary';
+update public.site_output_templates set body =
+  'Secondary — supporting surfaces and fills'        where id = 'all.token.secondary';
+update public.site_output_templates set body =
+  'Accent — small marks, rules and selected states'  where id = 'all.token.accent';
+
+-- <<< TEXT VARIANT TEMPLATE DATA <<<

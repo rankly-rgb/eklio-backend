@@ -118,9 +118,16 @@ begin
   assert e <> e0, 'a target switch did not move the etag';
   e0 := e;
 
-  -- a contrast fix is a write, so it must move it
-  e := public.site_spec_fix_contrast(kit, 'secondary_on_paper')->>'etag';
-  assert e <> e0, 'a contrast fix did not move the etag';
+  -- a contrast fix is a write, so it must move it. Put the primary back to
+  -- CLAY & SAND's #B4674A first: cta_label_on_primary is 4.22 there, and it is
+  -- the pair a text variant deliberately does not rescue — a label on a fill.
+  e0 := public.site_spec_patch(kit, '{"primary":"#B4674A"}')->>'etag';
+  assert (select p.value->'suggested_fix' from jsonb_array_elements(
+            public.site_spec_get(kit)->'contrast'->'pairs') p
+           where p.value->>'pair_id' = 'cta_label_on_primary') <> 'null'::jsonb,
+         'the fixture does not actually offer a fix to apply';
+  e := public.site_spec_fix_contrast(kit, 'cta_label_on_primary')->>'etag';
+  assert e is not null and e <> e0, 'a contrast fix did not move the etag';
   e0 := e;
 
   -- a reset is a write, so it must move it

@@ -51,13 +51,13 @@ do $$
 declare
   spec     jsonb := (select s from snapshot_spec);
   expected text[][] := array[
-    ['lovable',     '0a94bf53b63075ba86171788e71b173d'],
-    ['framer',      '0a94bf53b63075ba86171788e71b173d'],
-    ['v0',          '0a94bf53b63075ba86171788e71b173d'],
-    ['generic',     '0a94bf53b63075ba86171788e71b173d'],
-    ['squarespace', '961f12af4bea2bd311c4133456b3dfcc'],
-    ['wix',         '677dcfcf7a71a7a72179d9b6062a9966'],
-    ['webflow',     'ad570b34b199d69366e8ca513909c9fd']
+    ['lovable',     '15f9e81bc776758aa7dd8b6985692e87'],
+    ['framer',      '15f9e81bc776758aa7dd8b6985692e87'],
+    ['v0',          '15f9e81bc776758aa7dd8b6985692e87'],
+    ['generic',     '15f9e81bc776758aa7dd8b6985692e87'],
+    ['squarespace', '253897e08dd856f1837a59a01a366cb0'],
+    ['wix',         'e3476120041613c2523c67b0415b3a8a'],
+    ['webflow',     'c0ce835b97f3949728aa599e9da0ee52']
   ];
   i   int;
   got text;
@@ -150,7 +150,7 @@ begin
   assert position('Location: Portland, OR' in t) > 0,    'the location line is missing';
 
   -- tokens, each with the role it plays
-  assert position('Primary — buttons, links and active states: #3B2C3A' in t) > 0,
+  assert position('Primary — fills, buttons, bands and borders: #3B2C3A' in t) > 0,
          'a design token lost its role';
   -- ⚠ the page background must be stated, or the builder defaults it to white
   -- whatever the palette says
@@ -246,7 +246,7 @@ begin
   -- 2. it IS in the setup sheet, exactly once, as the last step
   sheet := public.site_spec_output(spec, 'squarespace');
   assert (select s.value->>'body' from jsonb_array_elements(sheet->'steps') s
-           where (s.value->>'n')::int = 8) = marker,
+           where (s.value->>'n')::int = 9) = marker,
          'extra_instructions is not the setup sheet''s last step, verbatim';
   assert (select count(*) from jsonb_array_elements(sheet->'steps') s
            where position(marker in coalesce(s.value->>'body','')) > 0) = 1,
@@ -284,7 +284,9 @@ declare
   step  jsonb;
 begin
   assert sheet->>'kind' = 'setup_sheet', 'Squarespace gets a setup sheet';
-  assert jsonb_array_length(sheet->'steps') = 8, 'the sheet must have its eight steps';
+  -- ⚠ NINE STEPS SINCE 20260829118000: the text variants got a step of their
+  -- own rather than three more swatches under "Set your six colors".
+  assert jsonb_array_length(sheet->'steps') = 9, 'the sheet must have its nine steps';
 
   -- ⚠ The panel names are the difference between a sheet she can follow and a
   -- sheet she has to decode.
@@ -304,6 +306,10 @@ begin
   assert (select s.value->>'builder_hint' from jsonb_array_elements(
             public.site_spec_output(spec, 'wix')->'steps') s where (s.value->>'n')::int = 2)
          = 'Site Design › Color Palette', 'Wix must be told about its own panel';
+  -- the text-variant step points at the same panel: they are colours too
+  assert (select s.value->>'builder_hint' from jsonb_array_elements(
+            public.site_spec_output(spec, 'wix')->'steps') s where (s.value->>'n')::int = 3)
+         = 'Site Design › Color Palette', 'the text-variant step must name the colour panel';
   assert (select s.value->>'builder_hint' from jsonb_array_elements(
             public.site_spec_output(spec, 'webflow')->'steps') s where (s.value->>'n')::int = 2)
          = 'Style Manager › Variables › Colors', 'Webflow must be told about its own panel';
@@ -311,7 +317,7 @@ begin
   -- ⚠ the same five constraints as the prompt, as a checklist. A Squarespace
   -- user is under exactly the same advertising rules as everyone else.
   select s.value into step from jsonb_array_elements(sheet->'steps') s
-   where (s.value->>'n')::int = 7;
+   where (s.value->>'n')::int = 8;
   assert step->>'title' = 'Before you publish', 'the checklist step is missing';
   assert (select count(*) from regexp_matches(step->>'body', '\[ \] ', 'g')) = 5,
          'the checklist must carry all five constraints';
@@ -320,7 +326,7 @@ begin
 
   -- her notes, last, verbatim
   select s.value into step from jsonb_array_elements(sheet->'steps') s
-   where (s.value->>'n')::int = 8;
+   where (s.value->>'n')::int = 9;
   assert step->>'title' = 'Your own notes', 'the notes step is missing';
   assert step->>'body' = spec->>'extra_instructions',
          'extra_instructions must be reproduced verbatim, never reworded';
@@ -329,8 +335,52 @@ begin
   assert not exists (
     select 1 from jsonb_array_elements(
              public.site_spec_output(spec - 'extra_instructions', 'squarespace')->'steps') s
-     where (s.value->>'n')::int = 8),
+     where (s.value->>'n')::int = 9),
          'an empty notes step was emitted';
+end
+$$;
+
+-- ⚠ BOTH THE BRAND COLOUR AND ITS TEXT VARIANT, with distinct roles, in every
+-- builder. The whole decision rests on a builder not collapsing them.
+do $$
+declare
+  spec jsonb := jsonb_set((select s from snapshot_spec), '{accent_hex}', '"#C08A3E"'::jsonb);
+  t    text;
+  txt  text;
+  brand text := '#C08A3E';
+  variant text;
+begin
+  variant := public.site_spec_variant_of(spec, 'accent');
+  assert variant <> brand, 'the fixture accent must need a variant for this test to mean anything';
+
+  -- the four prompt builders
+  foreach t in array array['lovable','framer','v0','generic'] loop
+    txt := public.site_spec_output(spec, t)->>'text';
+    assert position(brand in txt) > 0,   format('%s: the brand accent is missing', t);
+    assert position(variant in txt) > 0, format('%s: the accent text variant is missing', t);
+    assert position('as text' in txt) > 0,
+           format('%s: nothing distinguishes the variant from the brand colour', t);
+    assert position('Do not substitute one for the other' in txt) > 0,
+           format('%s: the usage rule is missing', t);
+  end loop;
+
+  -- the three setup-sheet builders: a step of its own, three values
+  foreach t in array array['squarespace','wix','webflow'] loop
+    assert (select jsonb_array_length(v.value->'values')
+              from jsonb_array_elements(public.site_spec_output(spec, t)->'steps') v
+             where (v.value->>'n')::int = 3) = 3,
+           format('%s: step 3 does not carry the three text variants', t);
+    assert exists (
+      select 1 from jsonb_array_elements(public.site_spec_output(spec, t)->'steps') v
+      cross join lateral jsonb_array_elements(v.value->'values') x
+       where x.value->>'value' = variant and x.value->>'label' like '%as text%'),
+           format('%s: the variant is not labelled as a text value', t);
+    assert exists (
+      select 1 from jsonb_array_elements(public.site_spec_output(spec, t)->'steps') v
+      cross join lateral jsonb_array_elements(v.value->'values') x
+       where x.value->>'value' = brand and x.value->>'label' not like '%as text%'),
+           format('%s: the brand colour is not listed as a fill value', t);
+  end loop;
 end
 $$;
 
@@ -361,10 +411,16 @@ begin
             public.site_spec_output(spec,'squarespace')->'steps') v
            where (v.value->>'n')::int = 2) = 'Set your six colors',
          'step 2 no longer names its six colours';
+  -- the fonts step moved to 4 when the text variants took a step of their own
   assert (select v.value->>'title' from jsonb_array_elements(
             public.site_spec_output(spec,'squarespace')->'steps') v
-           where (v.value->>'n')::int = 3) = 'Set your fonts',
-         'step 3 states a count again over a mixed list';
+           where (v.value->>'n')::int = 4) = 'Set your fonts',
+         'the fonts step states a count again over a mixed list';
+  -- and the new step 3 states three, and carries three
+  assert (select v.value->>'title' from jsonb_array_elements(
+            public.site_spec_output(spec,'squarespace')->'steps') v
+           where (v.value->>'n')::int = 3) like '%three%',
+         'the text-variant step should say how many there are';
 end
 $$;
 

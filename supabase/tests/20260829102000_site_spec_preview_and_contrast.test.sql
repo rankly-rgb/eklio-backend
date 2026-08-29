@@ -216,14 +216,29 @@ begin
            where p.value->>'pair_id' = 'dark_neutral_on_paper') = '#FBF8F1',
          'body text must be measured against the page background';
 
-  assert (c->>'worst_ratio')::numeric = 2.85, 'worst_ratio must be the minimum of the seven';
-  assert (c->>'passes_aa')::boolean = false,  'a palette with a 2.71:1 pair does not pass AA';
+  -- ⚠ THIS FIXTURE NOW PASSES, and that is the point of the text variant.
+  -- primary_on_paper used to be 2.85 measuring #C08A3E, the brand ochre, as
+  -- text. It now measures #92692F — the same ochre, darkened only as far as
+  -- legibility requires — at 4.62. The brand colour is untouched and still
+  -- fills buttons and bands.
+  assert (c->>'worst_ratio')::numeric = 4.60, 'worst_ratio must be the minimum of the seven';
+  assert (c->>'passes_aa')::boolean = true,
+         'with text variants applied this palette reads at every drawn pair';
+  assert (select p.value->>'fg' from jsonb_array_elements(c->'pairs') p
+           where p.value->>'pair_id' = 'primary_on_paper') = '#92692F',
+         'primary_on_paper must measure the text variant, not the brand colour';
 
   -- The button label is white or the dark neutral, whichever reads better on
   -- the primary. On this ochre the dark neutral wins.
   assert (c->'pairs'->0->>'fg') = '#2A2118',
          'the button label must be the more readable of white and the dark neutral';
   assert (c->'pairs'->0->>'bg') = '#C08A3E', 'the button sits on the primary';
+
+  -- ⚠ A variant is never offered as a fix: she has no control for one.
+  assert not exists (
+    select 1 from jsonb_array_elements(c->'pairs') p
+     where p.value->'suggested_fix'->>'token' like '%_text'),
+         'a text variant was offered as a suggested_fix token';
 
   -- ⚠ Every offered fix must actually reach 4.5:1. A one-click fix that leaves
   -- the banner up is worse than no fix at all.

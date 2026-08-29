@@ -27,6 +27,8 @@ declare
     'identity.label_email','identity.label_phone',
     'token.primary','token.secondary','token.accent','token.light_neutral',
     'token.dark_neutral','token.heading_font','token.body_font','token.google_fonts_url',
+    'token.paper','token.primary_text','token.secondary_text','token.accent_text',
+    'token.text_variant_note','sheet.step_text_title','sheet.step_text_body',
     'constraint.copy_exact','constraint.no_invention','constraint.no_stock_photos',
     'constraint.cta_linked','constraint.cta_unlinked','constraint.contrast',
     'sheet.step1_title','sheet.step1_body','sheet.step2_title','sheet.step2_body',
@@ -117,7 +119,7 @@ begin
                        'hero', jsonb_build_object('overline','o','headline','h','subhead','s','cta_label','c'),
                        'pages', public.site_spec_default_pages(null,null)),
                      'squarespace')->'steps') s
-           where (s.value->>'n')::int = 7) like '%Site Styles.%',
+           where (s.value->>'n')::int = 8) like '%Site Styles.%',
          'the override did not reach the rendered checklist';
 
   delete from public.site_output_templates where id = 'squarespace.constraint.contrast';

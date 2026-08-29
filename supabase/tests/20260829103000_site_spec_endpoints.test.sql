@@ -72,6 +72,13 @@ begin
 
   assert e->'preview'->'tokens'->>'primary' = '#3B2C3A', 'the preview carries the tokens';
   assert jsonb_array_length(e->'contrast'->'pairs') = 7, 'the contrast panel carries seven pairs';
+  -- ⚠ the variants are rendered, never edited: in preview.tokens, not in spec
+  assert e->'preview'->'tokens' ?& array['primary_text','secondary_text','accent_text'],
+         'the mockup cannot paint text in a brand colour without the variants';
+  assert not (e->'spec' ?| array['primary_text','secondary_text','accent_text']),
+         'a derived variant leaked into the editable spec';
+  assert not ('primary_text' = any (public.site_spec_patchable_keys())),
+         'a derived variant became patchable';
   -- ⚠ paper is a token of its own again, and is not the band tint
   assert e->'spec'->>'paper' is not null, 'the envelope must carry the page background';
   assert e->'spec'->>'paper' <> e->'spec'->>'light_neutral',
@@ -368,29 +375,38 @@ declare
   e    jsonb;
   pair jsonb;
 begin
-  -- OCHRE & PAPER's primary on its own light neutral: 2.71:1, a real failure a
-  -- real palette produces.
-  e := public.site_spec_patch(kit, '{"accent":"#C08A3E","paper":"#F6F2EA"}');
+  -- ⚠ CLAY & SAND's button label: white on #B4674A is 4.22:1. This is the pair
+  -- a text variant deliberately does NOT rescue — it is a label on a fill, and
+  -- the fill is the brand colour. The three text-on-paper pairs all pass now,
+  -- so this is the one that still exercises the fix path.
+  e := public.site_spec_patch(kit, '{"primary":"#B4674A","paper":"#FAF6EE","light_neutral":"#F4EEE3","dark_neutral":"#2B2A27"}');
   select p.value into pair from jsonb_array_elements(e->'contrast'->'pairs') p
-   where p.value->>'pair_id' = 'accent_on_paper';
-  assert (pair->>'ratio')::numeric = 2.71,      'the fixture pair must fail';
-  assert pair->'suggested_fix'->>'token' = 'accent', 'the fix must move the accent';
+   where p.value->>'pair_id' = 'cta_label_on_primary';
+  assert (pair->>'ratio')::numeric = 4.22,       'the fixture pair must fail';
+  assert pair->'suggested_fix'->>'token' = 'primary', 'the fix must move the primary';
 
   -- ⚠ the spec saved anyway. Contrast is reported and fixable, never a wall.
   assert e ? 'spec', 'a failing contrast pair blocked a write';
 
-  e := public.site_spec_fix_contrast(kit, 'accent_on_paper');
+  e := public.site_spec_fix_contrast(kit, 'cta_label_on_primary');
   select p.value into pair from jsonb_array_elements(e->'contrast'->'pairs') p
-   where p.value->>'pair_id' = 'accent_on_paper';
+   where p.value->>'pair_id' = 'cta_label_on_primary';
   assert (pair->>'ratio')::numeric >= 4.5,   'the one-click fix did not reach AA';
   assert pair->'suggested_fix' = 'null'::jsonb, 'a fixed pair is still offering a fix';
-  assert e->'spec'->>'accent' <> '#C08A3E',  'the fix was not applied to the spec';
-  assert e->'spec'->>'paper' = '#F6F2EA',
+  assert e->'spec'->>'primary' <> '#B4674A', 'the fix was not applied to the spec';
+  assert e->'spec'->>'paper' = '#FAF6EE',
          'the fix moved the page background, which five other pairs are measured against';
 
   -- applying it again is a no-op with a reason, not a second edit
-  assert public.site_spec_fix_contrast(kit, 'accent_on_paper')->'error'->>'code'
+  assert public.site_spec_fix_contrast(kit, 'cta_label_on_primary')->'error'->>'code'
          = 'no_fix_needed', 'fixing an already-readable pair was treated as work';
+
+  -- ⚠ a text variant is never a token she can be asked to fix
+  assert not exists (
+    select 1 from jsonb_array_elements(
+             public.site_spec_get(kit)->'contrast'->'pairs') p
+     where p.value->'suggested_fix'->>'token' like '%_text'),
+         'a text variant was offered as a suggested_fix token';
   assert public.site_spec_fix_contrast(kit, 'nope')->'error'->>'code' = 'invalid_field',
          'an unknown pair id was accepted';
 end

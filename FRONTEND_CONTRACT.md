@@ -105,7 +105,7 @@ Verified behaviour, by real calls:
 
 Captured from `site_spec_get` on a CLAY & SAND kit: four enabled pages, real
 copy, `extra_instructions` set, one contrast pair failing and two below AA.
-17,490 bytes. This is the complete response.
+18,186 bytes. This is the complete response.
 
 ```json
 {
@@ -118,7 +118,7 @@ copy, `extra_instructions` set, one contrast pair failing and two below AA.
             }
         ]
     },
-    "etag": "c508c5acca90ea4849c26fee8f3a08ae",
+    "etag": "862e96f8034c77d1b5ff9f61bf777223",
     "spec": {
         "hero": {
             "subhead": "Therapy for adults who hold it together.",
@@ -330,7 +330,7 @@ copy, `extra_instructions` set, one contrast pair failing and two below AA.
         "primary": "#B4674A",
         "body_font": "Nunito Sans",
         "secondary": "#C08A3E",
-        "updated_at": "2026-08-29T10:26:52.323112+00:00",
+        "updated_at": "2026-08-29T10:53:51.192767+00:00",
         "brand_kit_id": "33333333-3333-3333-3333-333333333333",
         "dark_neutral": "#2B2A27",
         "heading_font": "Fraunces",
@@ -370,17 +370,17 @@ copy, `extra_instructions` set, one contrast pair failing and two below AA.
                 "values": [
                     {
                         "kind": "hex",
-                        "label": "Primary — buttons, links and active states",
+                        "label": "Primary — fills, buttons, bands and borders",
                         "value": "#B4674A"
                     },
                     {
                         "kind": "hex",
-                        "label": "Secondary — supporting headings and surfaces",
+                        "label": "Secondary — supporting surfaces and fills",
                         "value": "#C08A3E"
                     },
                     {
                         "kind": "hex",
-                        "label": "Accent — small highlights only, never body text",
+                        "label": "Accent — small marks, rules and selected states",
                         "value": "#6E3320"
                     },
                     {
@@ -403,6 +403,29 @@ copy, `extra_instructions` set, one contrast pair failing and two below AA.
             },
             {
                 "n": 3,
+                "body": "These are the same three brand colors, darkened just enough to be readable as text on your page background. Add them alongside the others. Use them for headings and links; keep the brighter originals for fills, bands and buttons.",
+                "title": "Add the text versions of those three colors",
+                "values": [
+                    {
+                        "kind": "hex",
+                        "label": "Primary as text — headings and links on the page",
+                        "value": "#A35D43"
+                    },
+                    {
+                        "kind": "hex",
+                        "label": "Secondary as text — supporting headings on the page",
+                        "value": "#92692F"
+                    },
+                    {
+                        "kind": "hex",
+                        "label": "Accent as text — small highlighted words",
+                        "value": "#6E3320"
+                    }
+                ],
+                "builder_hint": "Site Styles › Colors"
+            },
+            {
+                "n": 4,
                 "body": "Both faces are on Google Fonts. Assign the heading face to every heading level and the body face to body text, buttons and navigation.",
                 "title": "Set your fonts",
                 "values": [
@@ -425,7 +448,7 @@ copy, `extra_instructions` set, one contrast pair failing and two below AA.
                 "builder_hint": "Site Styles › Fonts"
             },
             {
-                "n": 4,
+                "n": 5,
                 "body": "Add each page, then each section inside it, top to bottom. The line after each section says what it is for.\n\n1. Home\n   1. Hero — The first screen: a short overline, one headline, one supporting line, and a single call to action.\n   2. Introduction — One paragraph in the practitioner's own voice, placed directly under the hero.\n   3. What I work with — A short list of the areas the practice works in. Plain labels, not diagnoses aimed at the reader.\n   4. Who I work with — Who the practice serves, written as lived situations rather than diagnostic labels.\n   5. Contact — How to get in touch, ending in the call to action. No form that collects health information.\n   6. Footer — Practice name, license and location, and nothing that needs to be read twice.\n2. About\n   1. Introduction — One paragraph in the practitioner's own voice, placed directly under the hero.\n   2. How I work — What a session is actually like, so a visitor knows before they have to ask.\n   3. Training and licensure — License, degrees and completed training. Facts only, in the order the practitioner lists them.\n   4. Footer — Practice name, license and location, and nothing that needs to be read twice.\n3. Services\n   1. Services — What the practice offers: individual work, couples work, consultation.\n   2. Fees — Session fee, sliding scale and insurance, stated plainly so the first call is not about the number.\n   3. Footer — Practice name, license and location, and nothing that needs to be read twice.\n4. Contact\n   1. Contact — How to get in touch, ending in the call to action. No form that collects health information.\n   2. Footer — Practice name, license and location, and nothing that needs to be read twice.",
                 "title": "Build the pages and sections in this order",
                 "values": [
@@ -433,7 +456,7 @@ copy, `extra_instructions` set, one contrast pair failing and two below AA.
                 "builder_hint": "Pages › Edit › Add Section"
             },
             {
-                "n": 5,
+                "n": 6,
                 "body": "Every string your site needs is listed below this sheet, one block per field, in the order the sections appear. Paste them as they are.",
                 "title": "Paste your copy",
                 "values": [
@@ -441,7 +464,7 @@ copy, `extra_instructions` set, one contrast pair failing and two below AA.
                 "builder_hint": null
             },
             {
-                "n": 6,
+                "n": 7,
                 "body": "Set every call-to-action button to this link. One destination, on every page.",
                 "title": "Point the button at your booking link",
                 "values": [
@@ -459,7 +482,7 @@ copy, `extra_instructions` set, one contrast pair failing and two below AA.
                 "builder_hint": null
             },
             {
-                "n": 7,
+                "n": 8,
                 "body": "[ ] Use the provided copy exactly as written. Do not rewrite, expand or add copy.\n[ ] Do not invent testimonials, client quotes, statistics, credentials or awards.\n[ ] No stock photos of people; leave labeled image placeholders.\n[ ] The call to action links to https://elmandember.clientsecure.me/book. Do not add a contact form that collects health information — a mailto link, a phone number or a booking link only.\n[ ] Maintain WCAG AA text contrast.",
                 "title": "Before you publish",
                 "values": [
@@ -467,7 +490,7 @@ copy, `extra_instructions` set, one contrast pair failing and two below AA.
                 "builder_hint": null
             },
             {
-                "n": 8,
+                "n": 9,
                 "body": "Please keep the fee off the home page. Tuesday and Thursday are the only hours open right now.",
                 "title": "Your own notes",
                 "values": [
@@ -857,9 +880,12 @@ copy, `extra_instructions` set, one contrast pair failing and two below AA.
             "primary": "#B4674A",
             "body_font": "Nunito Sans",
             "secondary": "#C08A3E",
+            "accent_text": "#6E3320",
             "dark_neutral": "#2B2A27",
             "heading_font": "Fraunces",
+            "primary_text": "#A35D43",
             "light_neutral": "#F4EEE3",
+            "secondary_text": "#92692F",
             "google_fonts_url": "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Nunito+Sans:wght@400;600;700&display=swap"
         },
         "practice_name": "Elm & Ember Therapy"
@@ -889,32 +915,26 @@ copy, `extra_instructions` set, one contrast pair failing and two below AA.
             },
             {
                 "bg": "#FAF6EE",
-                "fg": "#B4674A",
-                "label": "Primary color on the page",
-                "level": "AA_large",
-                "ratio": 3.91,
+                "fg": "#A35D43",
+                "label": "Primary color as text on the page",
+                "level": "AA",
+                "ratio": 4.63,
                 "pair_id": "primary_on_paper",
-                "suggested_fix": {
-                    "hex": "#A35D43",
-                    "token": "primary"
-                }
+                "suggested_fix": null
             },
             {
                 "bg": "#FAF6EE",
-                "fg": "#C08A3E",
-                "label": "Secondary color on the page",
-                "level": "fail",
-                "ratio": 2.80,
+                "fg": "#92692F",
+                "label": "Secondary color as text on the page",
+                "level": "AA",
+                "ratio": 4.55,
                 "pair_id": "secondary_on_paper",
-                "suggested_fix": {
-                    "hex": "#92692F",
-                    "token": "secondary"
-                }
+                "suggested_fix": null
             },
             {
                 "bg": "#FAF6EE",
                 "fg": "#6E3320",
-                "label": "Accent color on the page",
+                "label": "Accent color as text on the page",
                 "level": "AAA",
                 "ratio": 9.03,
                 "pair_id": "accent_on_paper",
@@ -940,7 +960,7 @@ copy, `extra_instructions` set, one contrast pair failing and two below AA.
             }
         ],
         "passes_aa": false,
-        "worst_ratio": 2.80
+        "worst_ratio": 4.22
     }
 }
 ```
@@ -1195,6 +1215,38 @@ Six. Display them in this order — it goes brand, then surfaces, then ink.
 | 5 | `light_neutral` | Section background | Tinted bands and cards sitting *on top of* the page. | **no — never** |
 | 6 | `dark_neutral` | Body text | Body copy, and the fill of a dark section. | **yes** |
 
+### Three derived variants — rendered, never edited
+
+`preview.tokens` carries three more values. They are **not** in `spec`, **not**
+patchable, and **not** swatches the editor should render as controls. She has no
+control that corresponds to one.
+
+| key | What it is | Where to use it |
+|---|---|---|
+| `primary_text` | `primary`, darkened only as far as 4.5:1 on `paper` requires | headings and links painted in the primary |
+| `secondary_text` | same, for `secondary` | supporting headings |
+| `accent_text` | same, for `accent` | small highlighted words |
+
+**The rule, everywhere a brand colour is painted:** if it is **text**, use the
+variant. If it is a **fill** — a background, a button, a band, a rule, a border,
+a chip — use the brand colour.
+
+Where the brand colour already reads as text, **the variant is the brand colour,
+the same string**. Ten of the eighteen shipped brand colours need no variant and
+come back untouched, so treating the variant as "always different" is wrong;
+compare, do not assume.
+
+> ⚠ **Why this exists rather than a corrected brand colour.** 4.5:1 is a *text*
+> legibility threshold. CLAY & SAND's `#C08A3E` fails it at 2.80 as text and was
+> never a problem as a fill. Correcting the brand colour would have moved it
+> ΔE 17 — ochre to a duller olive-gold — on a palette a person chose by hand. So
+> nothing she chose changes, and only the text use gets a legible value.
+
+They are maintained by a trigger: change `primary` and `primary_text` is
+recomputed on the same write and returned in the same envelope. Change `paper`
+and all three are recomputed, because the surface they are measured against
+moved.
+
 ### ⚠ `paper` and `light_neutral` are not the same colour and not the same job
 
 This is the pair that gets collapsed. Do not collapse it.
@@ -1239,6 +1291,22 @@ therefore only ever `primary`, `secondary`, `accent` or `dark_neutral`.
 `cta_label_on_primary`'s `fg` is not a token: it is white or the dark neutral,
 whichever reads better on the current primary. The backend decides; render what
 it returns.
+
+> ⚠ **Three of the seven measure a text variant, not the brand colour.**
+> `primary_on_paper`, `secondary_on_paper` and `accent_on_paper` measure a brand
+> colour *as text*, so they measure `primary_text` / `secondary_text` /
+> `accent_text` against `paper`. That is the value the mockup paints for a
+> heading or a link; measuring the brand colour there was measuring a use that
+> does not exist. The pair's `fg` is the variant, so rendering `fg` shows what
+> was actually measured.
+>
+> `cta_label_on_primary` is deliberately unchanged: it is a label on a **fill**,
+> and the fill is the brand colour.
+>
+> `suggested_fix.token` is still `primary`, `secondary` or `accent` — never a
+> variant. If one of those three ever fails, the brand colour moves and the
+> variant is recomputed from it. **A `*_text` value can never appear as a
+> `suggested_fix.token`**; there is no control behind it.
 
 `ratio` is WCAG 2.1, rounded to two decimals. `level` is derived from the
 **rounded** ratio, so they can never disagree:
@@ -1604,6 +1672,53 @@ webflow      Webflow            setup_sheet   NO — no prompt input exists
 ```
 
 `accepts_prompt` is generated from `output_kind` and cannot disagree with it.
+
+### How the output expresses the brand colour and its text variant
+
+Both, always, with the role in the label — because the reader is a therapist
+with Squarespace open, or a builder that would happily use one hex everywhere.
+
+**In the prompt**, nine token lines and a rule:
+
+```
+Primary — fills, buttons, bands and borders: #B4674A
+Primary as text — headings and links on the page: #A35D43
+Secondary — supporting surfaces and fills: #C08A3E
+Secondary as text — supporting headings on the page: #92692F
+Accent — small marks, rules and selected states: #6E3320
+Accent as text — small highlighted words: #6E3320
+Page background — the whole page sits on this: #FAF6EE
+Section background — tinted bands and cards only: #F4EEE3
+Dark neutral — body text: #2B2A27
+
+The three "as text" values are the same brand colors, darkened only as far as
+legibility requires. Use an "as text" value wherever the color is text. Use the
+brand color for fills, bands, buttons and borders. Do not substitute one for the
+other, and do not add either to the palette twice.
+```
+
+Note the accent above: brand and variant are the **same hex**, because that
+accent already reads. That is normal and the line is still printed, so the
+builder is never left guessing which value a role takes.
+
+**In the setup sheet**, the variants get a step of their own — step 3, right
+after the six palette colours — rather than three more swatches under "Set your
+six colors". A therapist entering hexes into a palette panel needs to know which
+three are alternates of which:
+
+```
+3. Add the text versions of those three colors
+   These are the same three brand colors, darkened just enough to be readable
+   as text on your page background. Add them alongside the others. Use them for
+   headings and links; keep the brighter originals for fills, bands and buttons.
+   - Primary as text — headings and links on the page: #A35D43
+   - Secondary as text — supporting headings on the page: #92692F
+   - Accent as text — small highlighted words: #6E3320
+   > Where: Site Styles › Colors
+```
+
+⚠ **The sheet now has nine steps, not eight.** The checklist is step 8 and
+"Your own notes" is step 9. Do not hardcode step numbers; read `n`.
 
 `output.kind` follows: `"prompt"` gives `{kind, text, char_count}`;
 `"setup_sheet"` gives `{kind, steps[], copy_blocks[]}` where each step is
