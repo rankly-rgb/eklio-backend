@@ -86,10 +86,18 @@ begin
   -- that one spec renders one byte-identical output every time.
   assert s.primary_hex = upper(s.primary_hex), 'hex values must be stored uppercase';
 
-  -- The direction carries no accent. It starts as a copy of the secondary, so
-  -- the very first render is a complete, legible site.
-  assert s.accent_hex = s.secondary_hex,
-         'the accent must start as a copy of the secondary, which the direction has';
+  -- ⚠ The direction carries no accent role at all (see
+  -- 20260829108000_site_spec_accent.sql for the evidence). It is DERIVED, and
+  -- the one thing it must never be is a copy of a swatch the palette already
+  -- has: two identical colors under two different labels reads as a bug in the
+  -- editor, and behaves like one the moment she moves either. Full coverage of
+  -- the derivation lives in that migration's own test file.
+  assert s.accent_hex <> s.secondary_hex, 'the accent must not be a copy of the secondary';
+  assert s.accent_hex <> s.primary_hex,   'the accent must not be a copy of the primary';
+  assert public.site_spec_delta_e(s.accent_hex, s.secondary_hex) >= 15,
+         'the accent is not perceptibly distinct from the secondary';
+  assert public.site_spec_contrast_ratio(s.accent_hex, s.light_neutral_hex) >= 4.5,
+         'the accent is not legible on the page background';
 
   assert s.heading_font    = 'Cormorant Garamond', 'the heading font comes from the direction';
   assert s.type_pairing_id = 'cormorant_source',
