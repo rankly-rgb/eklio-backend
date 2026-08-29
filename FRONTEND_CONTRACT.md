@@ -49,7 +49,7 @@ not exist. There is no `forbidden`.
 | `GET /catalog` (site-spec blocks) | `site_catalog` | none |
 | `POST /brand-kits/:id/direction` | `brand_kit_select_direction` | `p_brand_kit_id uuid`, `p_direction_id text` |
 | — (call before any model call) | `consume_generation_credit` | `p_brand_kit_id uuid` |
-| — (render the paywall) | `brand_kit_entitled` | `p_brand_kit_id uuid` |
+| `GET /brand-kits/:id/entitled` | `brand_kit_entitled` | `p_brand_kit_id uuid` |
 
 `p_scope` ∈ `all` `colors` `typography` `copy` `structure`.
 `p_target` ∈ `lovable` `framer` `v0` `generic` `squarespace` `wix` `webflow`.
@@ -91,10 +91,28 @@ The reads refuse too, because the output **is** the deliverable.
 
 **Do not re-implement the check.** `brand_kit_entitled(p_brand_kit_id)` is the
 only definition of "she has paid for this kit"; every gated RPC calls it, and a
-second copy in a route is a copy that drifts. Call it to decide what to *render*
-— a checkout button instead of an editor. Never call it to decide whether to
-*allow* something: the RPC has already decided, and it is the one holding the
-line.
+second copy in a route is a copy that drifts.
+
+> **A route that reads `brand_kits` through PostgREST rather than through the
+> gated RPCs — the PDF route, the brand kit page — must call
+> `brand_kit_entitled` and nothing else to ask whether she has paid.** It is
+> exposed for exactly that, `auth.uid()`-scoped the same way, and it is the one
+> place the sentence is written.
+
+Call it to decide what to *render* — a checkout button instead of an editor.
+Never call it to decide whether to *allow* something a gated RPC does: that RPC
+has already decided, and it is the one holding the line.
+
+It returns a bare boolean, and **`false` deliberately covers three states**: not
+signed in, not her kit, and hers but unbought. That is the disclosure ordering
+of the gated seven expressed in one bit — a stranger's kit answers exactly as an
+unpaid one does, so probing ids learns nothing. When you need to tell the last
+two apart in order to *render* — checkout versus "no such kit" — get that from
+the gated RPC you were going to call anyway: it returns `payment_required` or
+`not_found` and has already applied the same ordering.
+
+`anon` cannot execute it, or any of the entitlement RPCs. These are questions
+about a signed-in person's own kit; an anonymous caller has none.
 
 Writing `brand_kits.selected_direction_id` directly is refused by a trigger, not
 just by the RPC, so a route that reaches for the table instead of

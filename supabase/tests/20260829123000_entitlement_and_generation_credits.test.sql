@@ -117,6 +117,23 @@ begin
 end
 $$;
 
+-- ⚠ The RPC surface: signed-in callers only, and anon cannot dial any of it.
+do $$
+declare fn text;
+begin
+  foreach fn in array array[
+    'brand_kit_entitled(uuid)', 'brand_kit_is_owned(uuid)',
+    'brand_kit_select_direction(uuid,text)', 'consume_generation_credit(uuid)',
+    'site_spec_entitlement_error(uuid)'
+  ] loop
+    assert not has_function_privilege('anon', ('public.' || fn)::regprocedure, 'EXECUTE'),
+      format('anon can execute %s', fn);
+    assert has_function_privilege('authenticated', ('public.' || fn)::regprocedure, 'EXECUTE'),
+      format('a signed-in caller cannot execute %s', fn);
+  end loop;
+end
+$$;
+
 -- ⚠ never NULL. A NULL reads as "not entitled" to an `if not` and as "entitled"
 -- to a CHECK, which is exactly how a paywall ends up open on one path.
 do $$
