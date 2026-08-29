@@ -304,7 +304,7 @@ insert into public.section_types
    false, array['home','services','contact'], 'fields'),
 
   ('credentials', 9, true, 'Training and licensure',
-   'Licence, degrees and completed training. Facts only, in the order the practitioner lists them.',
+   'License, degrees and completed training. Facts only, in the order the practitioner lists them.',
    '[{"key":"heading","label":"Heading","kind":"text","max_length":80},
      {"key":"items","label":"Credentials","kind":"list","max_length":120}]'::jsonb,
    false, array['about'], 'fields'),
@@ -316,7 +316,7 @@ insert into public.section_types
    true, array['home','about','services','contact'], 'fields'),
 
   ('footer', 11, true, 'Footer',
-   'Practice name, licence and location, and nothing that needs to be read twice.',
+   'Practice name, license and location, and nothing that needs to be read twice.',
    '[{"key":"body","label":"Footer note","kind":"longtext","max_length":300}]'::jsonb,
    true, array['home','about','services','contact'], 'fields')
 
