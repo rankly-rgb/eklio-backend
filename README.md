@@ -739,6 +739,41 @@ item de liste. Ces noms de panneaux sont des **colonnes de catalogue**, pas un
 CASE au fond d'une fonction : quand un constructeur renommera un panneau, la
 correction sera une migration de données.
 
+### Le chemin chaud, et les 500 ms qui n'étaient pas du SQL
+
+La commande tient `PATCH` à 150 ms. Mesuré sur un spec amorcé, il en prenait
+**530**, et `GET` 265. Rien de tout cela n'était le SQL :
+
+| | mesuré |
+|---|---|
+| `site_spec_preview_model` | 0,8 ms |
+| `site_spec_contrast` | 6,4 ms |
+| `site_spec_diff` | 0,6 ms |
+| `site_spec_copy_blocks` | **253 ms** — 1,4 ms avec `jit = off` |
+
+`EXPLAIN ANALYZE` situait les 300 ms dans le *démarrage* d'un seul
+`Function Scan` sur dix-huit lignes : c'était la **compilation JIT**. Ces
+requêtes parcourent du jsonb — `jsonb_array_elements` imbriqué trois fois, un
+lateral par section, un `CASE` par champ — et le planificateur en chiffre le
+coût en comptant les nœuds d'expression, ce qui dépasse largement
+`jit_above_cost`. Postgres compile alors l'arbre avec LLVM pendant trois à
+quatre cents millisecondes, puis exécute soixante lignes.
+
+Le modèle de coût n'a pas tort sur la *forme* de la requête ; il a tort sur le
+nombre de lignes que cette forme verra un jour, et ici ce nombre est fixé par le
+produit : quatre pages, une vingtaine de sections. `20260829107000_site_spec_hot_path.sql`
+pose donc `set jit = 'off'` **fonction par fonction**, jamais au niveau de la
+base — `jit` est un réglage de cluster sur un projet hébergé que ce repo ne
+possède pas, et le couper partout serait laisser cette fonctionnalité décider
+pour toutes les autres requêtes. Après : `GET` 9 ms, `PATCH` 14 ms.
+
+> ⚠ Ces réglages vivent dans `pg_proc.proconfig`, qu'un
+> `create or replace function` **efface en silence** s'il ne répète pas la clause
+> `SET`. Toute migration qui remplace une de ces fonctions doit reporter
+> `set jit = 'off'`, et un garde-fou plus un test le vérifient — parce que le
+> symptôme n'est pas une erreur, c'est un autosave qui revient discrètement à
+> une demi-seconde.
+
 ### Les fonctions pures
 
 | Fonction | Volatilité | Ce qu'elle rend |
