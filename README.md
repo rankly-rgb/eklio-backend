@@ -798,6 +798,88 @@ item de liste. Ces noms de panneaux sont des **colonnes de catalogue**, pas un
 CASE au fond d'une fonction : quand un constructeur renommera un panneau, la
 correction sera une migration de données.
 
+### Le péage, dans le seul endroit par où tout passe déjà
+
+Il n'y avait pas de paywall. `paid` était une branche côté client, aucune route
+ne lisait `purchases`, et tout l'aval pendait à `selected_direction_id`. Un
+compte connecté obtenait le kit, le PDF et l'éditeur de site gratuitement,
+pendant qu'Eklio payait 0,09 à 1,80 $ la génération.
+
+**La révélation reste gratuite** — voir trois directions, c'est l'argumentaire.
+Tout ce qui suit le choix d'une direction est payant.
+
+La barrière est ici et pas dans les routes Next parce qu'il y a sept routes
+aujourd'hui, davantage demain, et qu'**une seule qui oublie annule toutes les
+autres**. Ces RPC sont déjà cadrées par `auth.uid()` ; le droit d'accès a sa
+place à côté.
+
+⚠ **La phrase est écrite une fois.** `brand_kit_entitled` est la seule définition
+de « elle a payé ce kit ». Tout le reste l'appelle. Une seconde copie dans une
+route, ou dans une policy, est une copie qui dérive — et un péage qui dérive est
+un péage ouvert sur un chemin.
+
+`generation_credits.has_paid` était précisément cette seconde copie, en attente :
+une colonne qui dit « payé » et que rien n'écrit. Elle est marquée morte.
+
+**Trois réponses, pas deux.** L'ordre est une décision de divulgation :
+
+| état | réponse |
+|---|---|
+| pas de `auth.uid()` | `unauthenticated` |
+| le kit n'est pas le sien, ou n'existe pas | `not_found` |
+| il est à elle et non payé | `payment_required` |
+| à elle, payé, mais pas de spec | `not_found` |
+
+La propriété est testée **avant** le droit d'accès, sinon `payment_required`
+confirmerait qu'un identifiant appartenant à quelqu'un d'autre existe. Et « elle
+a un kit qu'elle n'a pas payé » n'est pas « il n'y a rien ici » : l'interface
+ouvre le paiement sur l'une et s'excuse sur l'autre.
+
+Le choix d'une direction est refusé **deux fois** : par la RPC, qui rend la même
+enveloppe JSON que le reste pour que le front puisse ouvrir le paiement, et par
+un trigger sur `brand_kits`, parce que la barrière ne doit pas dépendre du fait
+que l'appelant choisisse la porte polie.
+
+> ⚠ Le trigger ne s'applique qu'à un appelant **porteur d'un JWT**. Une
+> migration, le webhook Stripe en `service_role`, une cascade : aucun n'a
+> d'`auth.uid()`, et aucun ne doit s'entendre dire qu'il n'a pas payé. Un
+> navigateur ne peut jamais arriver ici sans JWT.
+
+#### Le compteur que la partie mesurée pouvait remettre à zéro
+
+`generation_credits` existait depuis l'import du schéma et rien ne l'écrivait.
+⚠ Et la policy était `for all` avec la propriété des deux côtés : une
+propriétaire connectée pouvait faire `update generation_credits set
+regenerations_used = 0`. Un compteur que la partie mesurée peut remettre à zéro
+n'est pas un compteur. La policy devient lecture seule, les privilèges suivent.
+
+`consume_generation_credit` décrémente en **une seule instruction**. C'est le
+point : l'UPDATE prend le verrou de ligne, et en READ COMMITTED un appelant
+concurrent qui attendait réévalue le WHERE contre la ligne telle que le gagnant
+l'a laissée. Deux POST simultanés ne peuvent pas passer tous les deux. Lire les
+compteurs puis décider — en SQL ou dans une route — est exactement la course que
+cette fonction remplace.
+
+Elle échoue **fermée** : allocation épuisée, pas connectée, pas son kit, c'est
+`false` dans tous les cas. Il n'y a qu'une question posée.
+
+#### Un litige n'est pas un remboursement
+
+`pending|paid|refunded|failed` ne sait pas dire « contesté », un remboursement
+partiel n'est ni l'un ni l'autre, et `dispute.closed: won` doit **restaurer ce
+qu'il y avait avant** — ce qu'une colonne mutable seule ne peut pas faire,
+puisqu'elle ne se souvient pas.
+
+`purchase_status_events` est ajout seul : identifiant d'événement Stripe unique
+(idempotence, Stripe rejoue), statut précédent **enregistré et jamais accepté de
+l'appelant**, statut nouveau, montant, horodatage, type d'événement brut.
+`purchase_status_before(id, 'disputed')` rend ce que la transaction était
+réellement avant le litige — qui peut être `partially_refunded`, pas `paid`.
+
+⚠ L'ajout seul est un **trigger**, pas une policy : le propriétaire de la table
+et toute fonction `SECURITY DEFINER` passent au-dessus d'une policy. Seul un
+trigger refuse tout le monde.
+
 ### Le chemin chaud, et les 500 ms qui n'étaient pas du SQL
 
 La commande tient `PATCH` à 150 ms. Mesuré sur un spec amorcé, il en prenait

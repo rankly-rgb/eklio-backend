@@ -66,6 +66,15 @@ insert into public.project_briefs (project_id) values ('bbbbbbbb-0000-0000-0000-
 -- `brand_kit_directions_rendering_valid`, so they can never reach the seeder
 -- over-long. The three that can are overline, cta_label and about_excerpt —
 -- nothing in `brand_kits` bounds those.
+
+-- ⚠ These tests exercise the PAID product. Since 20260829123000 the site spec
+-- RPCs refuse an unentitled owner with `payment_required`, so the fixture has to
+-- buy the kit like a real one does.
+insert into public.purchases
+  (user_id, project_id, tier, stripe_checkout_session_id, amount_cents, status, paid_at)
+values
+  ('aaaaaaaa-0000-0000-0000-000000000001','bbbbbbbb-0000-0000-0000-000000000001','starter','cs_test_1',4900,'paid',now());
+
 insert into public.brand_kits (id,project_id,directions,selected_direction_id) values (
  'cccccccc-0000-0000-0000-000000000001','bbbbbbbb-0000-0000-0000-000000000001',
  jsonb_build_array(
@@ -137,6 +146,10 @@ begin
   insert into public.projects (id,user_id,name) values
     ('bbbbbbbb-0000-0000-0000-000000000002','aaaaaaaa-0000-0000-0000-000000000001','Fits');
   insert into public.project_briefs (project_id) values ('bbbbbbbb-0000-0000-0000-000000000002');
+  insert into public.purchases
+    (user_id, project_id, tier, stripe_checkout_session_id, amount_cents, status, paid_at)
+  values ('aaaaaaaa-0000-0000-0000-000000000001','bbbbbbbb-0000-0000-0000-000000000002',
+          'starter','cs_test_2',4900,'paid',now());
   insert into public.brand_kits (id,project_id,directions,selected_direction_id) values (
    'cccccccc-0000-0000-0000-000000000002','bbbbbbbb-0000-0000-0000-000000000002',
    jsonb_build_array(

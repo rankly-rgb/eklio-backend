@@ -35,7 +35,7 @@ listed per entry below.
 Another user's brand kit returns `not_found`, byte-identical to a kit that does
 not exist. There is no `forbidden`.
 
-### The eight entries
+### The eleven entries
 
 | Product endpoint | RPC function | Arguments |
 |---|---|---|
@@ -47,16 +47,63 @@ not exist. There is no `forbidden`.
 | `POST /brand-kits/:id/site-output/mark-copied` | `site_output_mark_copied` | `p_brand_kit_id uuid` |
 | `POST /brand-kits/:id/site-spec/fix-contrast` | `site_spec_fix_contrast` | `p_brand_kit_id uuid`, `p_pair_id text` |
 | `GET /catalog` (site-spec blocks) | `site_catalog` | none |
+| `POST /brand-kits/:id/direction` | `brand_kit_select_direction` | `p_brand_kit_id uuid`, `p_direction_id text` |
+| — (call before any model call) | `consume_generation_credit` | `p_brand_kit_id uuid` |
+| — (render the paywall) | `brand_kit_entitled` | `p_brand_kit_id uuid` |
 
 `p_scope` ∈ `all` `colors` `typography` `copy` `structure`.
 `p_target` ∈ `lovable` `framer` `v0` `generic` `squarespace` `wix` `webflow`.
 `p_format` ∈ `json` `md` `txt` (default `json`).
 `p_pair_id` ∈ the seven ids in section 4.
 
-Six of the eight return **the same envelope** (section 2): `site_spec_get`,
+Seven return **the same envelope** (section 2): `site_spec_get`,
 `site_spec_patch`, `site_spec_reset`, `site_spec_set_target`,
-`site_output_mark_copied`, `site_spec_fix_contrast`. `site_output_get` returns
-the output alone. `site_catalog` returns the catalog.
+`site_output_mark_copied`, `site_spec_fix_contrast` and
+`brand_kit_select_direction`. `site_output_get` returns the output alone.
+`site_catalog` returns the catalog. `consume_generation_credit` and
+`brand_kit_entitled` return a bare boolean.
+
+---
+
+### Payment
+
+> ⚠ **This changed at `20260829123000`, and it changed what your routes are
+> allowed to assume.** There was no paywall: `paid` was a client-side branch, no
+> route read `purchases`, and everything downstream hung off
+> `selected_direction_id`. A signed-in account got the kit, the PDF and the site
+> editor for free.
+
+**The reveal is free.** Generating three directions and looking at them costs
+nothing, because that is the sales pitch. **Everything from choosing a direction
+onward is paid.**
+
+| RPC | unentitled owner |
+|---|---|
+| `site_catalog` | **works** — it describes the product she is being asked to buy |
+| `brand_kit_entitled` | **works** — it is how you decide what to render |
+| `consume_generation_credit` | **works** — the free allowance is metered, not blocked |
+| `brand_kit_select_direction` | `payment_required` |
+| `site_spec_get`, `site_output_get` | `payment_required` |
+| `site_spec_patch`, `site_spec_reset`, `site_spec_set_target` | `payment_required` |
+| `site_spec_fix_contrast`, `site_output_mark_copied` | `payment_required` |
+
+The reads refuse too, because the output **is** the deliverable.
+
+**Do not re-implement the check.** `brand_kit_entitled(p_brand_kit_id)` is the
+only definition of "she has paid for this kit"; every gated RPC calls it, and a
+second copy in a route is a copy that drifts. Call it to decide what to *render*
+— a checkout button instead of an editor. Never call it to decide whether to
+*allow* something: the RPC has already decided, and it is the one holding the
+line.
+
+Writing `brand_kits.selected_direction_id` directly is refused by a trigger, not
+just by the RPC, so a route that reaches for the table instead of
+`brand_kit_select_direction` gets a `42501` rather than a silent bypass.
+
+Entitling statuses are `paid` and `partially_refunded`. `pending`, `failed`,
+`refunded` and `disputed` are not — a partial refund is a discount after the
+fact, a dispute is money in escrow and the deliverable comes back until it
+closes.
 
 ### ETag
 
@@ -1276,7 +1323,7 @@ Note `spec_version` went to 5 and `diff.stale` is `true`, because
 ### Error responses
 
 One shape: `{"error":{"code","message","field"?}}`. `field` is absent when the
-error is not about a field. Every code the eight entries can return:
+error is not about a field. Every code the entries can return:
 
 ```json
 {
@@ -1291,6 +1338,12 @@ error is not about a field. Every code the eight entries can return:
         "error": {
             "code": "not_found",
             "message": "No site spec for this brand kit."
+        }
+    },
+    "payment_required": {
+        "error": {
+            "code": "payment_required",
+            "message": "Your three directions are yours to look at. Choosing one, and everything that comes with it, is part of the paid kit."
         }
     },
     "invalid_body": {
@@ -1346,10 +1399,84 @@ error is not about a field. Every code the eight entries can return:
 
 Two more exist and are not shown because they need a specific state:
 
-- `unauthenticated` — `{"error":{"code":"unauthenticated","message":"Sign in to edit your site spec."}}`, returned by every write when `auth.uid()` is NULL.
+- `unauthenticated` — `{"error":{"code":"unauthenticated","message":"Sign in to open your site spec."}}`, returned by every gated entry when `auth.uid()` is NULL.
 - `no_direction` — `{"error":{"code":"no_direction","message":"This brand kit has no chosen direction to reset to."}}`, from `site_spec_reset` only.
 
 **An error means nothing was written.** Validation always precedes the write.
+
+#### ⚠ `payment_required` and `not_found` are different sentences — keep them apart
+
+They are answered in a fixed order, and the order is a disclosure decision:
+
+1. no `auth.uid()` → `unauthenticated`
+2. the kit is not hers, or does not exist → `not_found`
+3. it is hers and unpaid → `payment_required`
+4. it is hers and paid, but there is no spec yet → `not_found`
+
+Step 2 comes before step 3 so that `payment_required` never confirms that
+somebody else's kit id exists. Probing ids gets `not_found` and nothing else.
+
+On `payment_required`, **open checkout** — she has a kit, she has not bought it.
+On `not_found`, apologise; there is nothing there. Collapsing the two into one
+"something went wrong" state is the single most likely way to lose a sale, and
+showing "not found" for a kit she is looking at is the most likely way to lose
+her trust.
+
+---
+
+### Generation credits
+
+`consume_generation_credit(p_brand_kit_id) → boolean`. Call it **immediately
+before the model call**, and do not make the call when it returns false.
+
+> ⚠ **Calling it is the only correct way to check.** Reading
+> `generation_credits` and deciding from the numbers is a race: two concurrent
+> POSTs read the same count, both see room, and both proceed. This function
+> takes the row lock and decides inside a single statement, so the second caller
+> re-evaluates against the row the first one left and gets `false`.
+>
+> The counters are readable so you can *show* her what is left. They are not
+> writable — by anyone, including her. That is deliberate: until
+> `20260829123000` the policy let a signed-in owner zero her own allowance.
+
+`true` means one credit was consumed and you may spend a model call. **`false`
+means do not proceed** — and it is the answer for every reason not to: allowance
+spent, not signed in, not her kit. It fails closed on purpose; there is only one
+question being asked.
+
+| owner | generations | regenerations |
+|---|---|---|
+| unentitled | 1 | 1 |
+| entitled | `generation_credits.directions_limit` (3 today) | `regenerations_limit` (1 today) |
+
+The first calls draw on the generation allowance; once that is spent, later
+calls draw on the regeneration allowance. `directions_generated` counts **runs,
+not directions** — one run produces three directions.
+
+`generation_credits.has_paid` is dead. Nothing writes it, nothing may read it,
+and it is not entitlement — `brand_kit_entitled` is.
+
+---
+
+### Purchase history
+
+`purchases.status` is the current value and one of `pending`, `paid`,
+`partially_refunded`, `refunded`, `disputed`, `failed`.
+
+Every Stripe event that moved it is appended to `purchase_status_events`
+(purchase id, unique stripe event id, previous status, new status, amount,
+`occurred_at`, raw event type). The table is readable for your own purchases and
+writable by nobody — a trigger refuses `UPDATE` and `DELETE` outright, not just
+a policy, because a `SECURITY DEFINER` function would sail past a policy.
+
+That history is why a won dispute can be resolved correctly:
+`purchase_status_before(purchase_id, 'disputed')` returns what the charge
+actually was before the dispute opened — which may be `partially_refunded`, not
+`paid`. A single mutable status column could not answer that question, which is
+why the dispute case was unrepresentable before.
+
+`paid_at` is kept for every status that implies money was captured, including
+`refunded` — that a refund happened does not mean the payment never did.
 
 ---
 

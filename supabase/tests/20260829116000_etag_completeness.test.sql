@@ -18,6 +18,15 @@ insert into public.projects (id, user_id, name) values
 insert into public.project_briefs (project_id, practice_name, license_type_id, city, state)
 values ('22222222-2222-2222-2222-222222222222','Elm & Ember Therapy','lcsw','Portland','OR');
 
+
+-- ⚠ These tests exercise the PAID product. Since 20260829123000 the site spec
+-- RPCs refuse an unentitled owner with `payment_required`, so the fixture has to
+-- buy the kit like a real one does.
+insert into public.purchases
+  (user_id, project_id, tier, stripe_checkout_session_id, amount_cents, status, paid_at)
+values
+  ('11111111-1111-1111-1111-111111111111','22222222-2222-2222-2222-222222222222','starter','cs_test_1',4900,'paid',now());
+
 insert into public.brand_kits (id, project_id, directions, selected_direction_id) values (
  '33333333-3333-3333-3333-333333333333','22222222-2222-2222-2222-222222222222',
  jsonb_build_array(
