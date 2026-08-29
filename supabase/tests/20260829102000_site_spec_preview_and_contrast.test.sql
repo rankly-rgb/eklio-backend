@@ -160,17 +160,23 @@ begin
   assert public.site_spec_suggest_hex('#C08A3E', '#F6F2EA') = fixed,
          'the suggestion is not deterministic';
 
-  -- ⚠ AT 4.5:1 A FIX ALWAYS EXISTS, and the walk must always find it. Black
-  -- and white are candidates for every hue, black clears 4.5:1 against any
-  -- background of luminance >= 0.175 and white against any of <= 0.183, and
-  -- the two ranges overlap — so no colour is beyond reach. A therapist who is
-  -- shown a failing pair is therefore always shown a button that fixes it.
-  -- The worst case is a mid grey on itself, where the pair starts at 1:1.
+  -- ⚠ NOT ALWAYS REACHABLE, AND THAT CHANGED DELIBERATELY. This file once
+  -- asserted a fix always exists at 4.5:1, which was true only because the walk
+  -- was allowed to run to lightness 0 and 1 — that is, to black and white,
+  -- whatever the hue was. `20260829111000_site_spec_suggest_hex_bounds.sql`
+  -- bounds it to 0.05-0.95, so a genuinely hard pair now returns NULL instead
+  -- of a colour she did not choose. Full coverage of the correction lives in
+  -- that migration's own test file.
+  --
+  -- A mid grey on itself is still reachable — at lightness 0.05 it clears
+  -- 4.5:1 — and it must not come back as literal black.
   assert public.site_spec_suggest_hex('#808080', '#808080') is not null,
-         'a fix at 4.5:1 must always be reachable';
+         'a mid grey on itself is still correctable inside the bounded range';
   assert public.site_spec_contrast_ratio(
            public.site_spec_suggest_hex('#808080', '#808080'), '#808080') >= 4.5,
          'the worst-case fix does not reach 4.5:1';
+  assert public.site_spec_suggest_hex('#808080', '#808080') not in ('#000000', '#FFFFFF'),
+         'the correction walked to an end of the range instead of stopping';
 
   -- Raising the target is where NULL becomes a real answer: nothing reaches
   -- 7:1 against a mid grey, and saying so beats returning a colour that fails.
