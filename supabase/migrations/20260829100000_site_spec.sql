@@ -329,12 +329,20 @@ alter table public.site_specs
 -- told "this pair is hard to read, fix it" has been handed advice.
 
 -- ---- typography ------------------------------------------------------------
+-- Non-empty, and nothing more. `type_pairings` constrains its own URLs to be
+-- loadable `css2?family=` stylesheets, but `brand_kits.directions[].typography`
+-- does not — its shape constraint asks only for a string. Demanding the
+-- googleapis prefix here would mean a kit that is legal upstream cannot seed a
+-- spec, and because seeding runs in the AFTER trigger on direction selection,
+-- that would turn a legal kit into a direction the therapist cannot choose.
+-- The seeder falls back to the catalog's own URL when it is handed nothing
+-- usable; see §8.
 alter table public.site_specs drop constraint if exists site_specs_fonts_check;
 alter table public.site_specs
   add constraint site_specs_fonts_check check (
     btrim(heading_font) <> ''
     and btrim(body_font) <> ''
-    and google_fonts_url like 'https://fonts.googleapis.com/css2?family=%'
+    and btrim(google_fonts_url) <> ''
   );
 
 -- ---- hero: shape, then length, then link safety ----------------------------
@@ -700,15 +708,30 @@ begin
       where tp.heading_font = v_dir->'typography'->>'heading_font'
         and tp.body_font    = v_dir->'typography'->>'body_font'
       order by tp.sort_order limit 1),
-    v_dir->'typography'->>'heading_font',
-    v_dir->'typography'->>'body_font',
-    v_dir->'typography'->>'google_fonts_url',
+    coalesce(nullif(btrim(v_dir->'typography'->>'heading_font'), ''), 'Fraunces'),
+    coalesce(nullif(btrim(v_dir->'typography'->>'body_font'), ''), 'Nunito Sans'),
+    -- Same fallback pair `brief_preview` renders before any choice is made, so
+    -- a direction that carries no loadable stylesheet still produces a mockup
+    -- with real type in it rather than a browser default.
+    coalesce(nullif(btrim(v_dir->'typography'->>'google_fonts_url'), ''),
+             (select tp.google_fonts_url from public.type_pairings tp
+               where tp.id = 'fraunces_nunito')),
 
+    -- ⚠ CLAMPED, AND THE CLAMPING IS WHAT MAKES SELECTION SAFE. §1.2's limits
+    -- are stricter than anything `brand_kits` enforces on a direction's hero:
+    -- the rendering-constraints migration bounds the headline and the subhead,
+    -- but nothing upstream bounds the overline or the CTA label at all. Passed
+    -- through unclamped, a long overline would fail this table's CHECK inside
+    -- the AFTER trigger, and the whole `selected_direction_id` update would
+    -- roll back — a direction the therapist simply cannot choose, for a reason
+    -- no screen could explain. Cut on a word boundary, with the function the
+    -- repo already uses wherever one rule has to hold for the preview, the PDF
+    -- and this output at once.
     jsonb_build_object(
-      'overline',       v_dir->'hero'->>'overline',
-      'headline',       v_dir->'hero'->>'headline',
-      'subhead',        v_dir->'hero'->>'subhead',
-      'cta_label',      v_dir->'hero'->>'cta_label',
+      'overline',       public.truncate_on_word_boundary(v_dir->'hero'->>'overline',  48),
+      'headline',       public.truncate_on_word_boundary(v_dir->'hero'->>'headline',  90),
+      'subhead',        public.truncate_on_word_boundary(v_dir->'hero'->>'subhead',   220),
+      'cta_label',      public.truncate_on_word_boundary(v_dir->'hero'->>'cta_label', 28),
       -- Not known at seed time and never guessed: it is the therapist's own
       -- booking page, and Eklio has no way to find it.
       'cta_target_url', null),
@@ -918,6 +941,30 @@ begin
   if n <> 6 then
     raise exception
       'site_spec: home has % default sections, expected the 6 the product spec names.', n;
+  end if;
+
+  -- ⚠ SEEDING MUST NEVER BE ABLE TO BREAK DIRECTION SELECTION. It runs inside
+  -- the AFTER trigger on `selected_direction_id`, so a CHECK it violates does
+  -- not fail the seed — it rolls back the choice. Nothing upstream bounds a
+  -- direction's overline or CTA label, so the clamped values are what must be
+  -- proved to fit, at the worst case a legal direction can produce.
+  if not public.site_spec_hero_lengths_valid(jsonb_build_object(
+       'overline',  public.truncate_on_word_boundary(repeat('overline ', 40), 48),
+       'headline',  public.truncate_on_word_boundary(repeat('headline ', 40), 90),
+       'subhead',   public.truncate_on_word_boundary(repeat('subhead ',  60), 220),
+       'cta_label', public.truncate_on_word_boundary(repeat('label ',    30), 28))) then
+    raise exception
+      'site_spec: the seeder''s clamping does not bring an over-long direction hero inside §1.2.';
+  end if;
+  -- and the same for the one-very-long-word case, where there is no boundary
+  -- to cut on and the truncation falls back to a hard cut
+  if not public.site_spec_hero_lengths_valid(jsonb_build_object(
+       'overline',  public.truncate_on_word_boundary(repeat('x', 400), 48),
+       'headline',  public.truncate_on_word_boundary(repeat('x', 400), 90),
+       'subhead',   public.truncate_on_word_boundary(repeat('x', 400), 220),
+       'cta_label', public.truncate_on_word_boundary(repeat('x', 400), 28))) then
+    raise exception
+      'site_spec: the seeder''s clamping fails on a hero field with no word boundary.';
   end if;
 end
 $$;

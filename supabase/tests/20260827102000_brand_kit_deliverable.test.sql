@@ -187,13 +187,22 @@ declare
   rejected boolean;
   target text;
 begin
-  foreach target in array array['squarespace','lovable','framer','webflow'] loop
+  -- ⚠ WIDENED BY `20260829100000_site_spec.sql`, DELIBERATELY. This migration
+  -- shipped four targets and this test asserted `wix` was refused. The site
+  -- spec adds v0, Wix and a generic target — Wix and Squarespace and Webflow
+  -- being exactly the builders that have no prompt input and need a setup
+  -- sheet instead — and `brand_kits.site_prompt` became the cache of whichever
+  -- output the spec's target produces. Left as it was, this assertion would
+  -- have pinned the schema to the gap the site spec exists to close.
+  foreach target in array array['squarespace','lovable','framer','webflow',
+                                'v0','wix','generic'] loop
     update public.brand_kits set site_prompt_target = target
      where id='cccccccc-0000-0000-0000-000000000001';
   end loop;
 
+  -- The CHECK still has to be a closed list, or it would be decoration.
   begin
-    update public.brand_kits set site_prompt_target = 'wix'
+    update public.brand_kits set site_prompt_target = 'wordpress'
      where id='cccccccc-0000-0000-0000-000000000001';
     rejected := false;
   exception when check_violation then rejected := true; end;
