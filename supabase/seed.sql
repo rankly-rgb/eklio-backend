@@ -648,3 +648,26 @@ update public.site_output_templates set body =
  where id = 'all.sheet.value_cta_min_size';
 
 -- <<< CTA SIZE FLOOR CORRECTION <<<
+
+
+-- >>> PLAN DATA (mirrored verbatim in supabase/seed.sql) >>>
+
+-- ⚠ THE THREE PAID ROWS ARE A PROPOSAL, NOT A DECISION. Nothing in the schema
+-- ever distinguished the tiers, so there is no prior art to recover — these
+-- numbers are invented to give the table a shape, and they are meant to be
+-- changed. Changing them is an UPDATE here; it must never become a code edit.
+--
+-- The free row is not a proposal: one run of three directions and one
+-- regeneration is the allowance that was agreed.
+insert into public.plans (tier, label, price_cents, directions_limit, regenerations_limit, sort_order) values
+  ('free',      'Free',      0,     3, 1,  0),
+  ('starter',   'Starter',   7900,  3, 3,  1),
+  ('practice',  'Practice',  14900, 3, 6,  2),
+  ('signature', 'Signature', 24900, 3, 12, 3)
+on conflict (tier) do update set
+  label = excluded.label, price_cents = excluded.price_cents,
+  directions_limit = excluded.directions_limit,
+  regenerations_limit = excluded.regenerations_limit,
+  sort_order = excluded.sort_order;
+
+-- <<< PLAN DATA <<<

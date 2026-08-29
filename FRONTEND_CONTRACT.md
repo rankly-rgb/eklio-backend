@@ -50,6 +50,7 @@ not exist. There is no `forbidden`.
 | `POST /brand-kits/:id/direction` | `brand_kit_select_direction` | `p_brand_kit_id uuid`, `p_direction_id text` |
 | — (call before any model call) | `consume_generation_credit` | `p_brand_kit_id uuid` |
 | `GET /brand-kits/:id/entitled` | `brand_kit_entitled` | `p_brand_kit_id uuid` |
+| — (checkout handler, **service_role**) | `grant_plan_allowance` | `p_project_id uuid`, `p_tier text`, `p_grant_key text` |
 
 `p_scope` ∈ `all` `colors` `typography` `copy` `structure`.
 `p_target` ∈ `lovable` `framer` `v0` `generic` `squarespace` `wix` `webflow`.
@@ -1454,27 +1455,65 @@ before the model call**, and do not make the call when it returns false.
 > re-evaluates against the row the first one left and gets `false`.
 >
 > The counters are readable so you can *show* her what is left. They are not
-> writable — by anyone, including her. That is deliberate: until
-> `20260829123000` the policy let a signed-in owner zero her own allowance.
+> writable — by anyone, including her.
 
-`true` means one credit was consumed and you may spend a model call. **`false`
+`true` means one run was consumed and you may spend a model call. **`false`
 means do not proceed** — and it is the answer for every reason not to: allowance
-spent, not signed in, not her kit. It fails closed on purpose; there is only one
-question being asked.
+spent, not signed in, not her kit. It fails closed on purpose.
 
-| owner | generations | regenerations |
-|---|---|---|
-| unentitled | 1 | 1 |
-| entitled | `generation_credits.directions_limit` (3 today) | `regenerations_limit` (1 today) |
+#### The allowance lives in `plans`, and nowhere else
 
-The first calls draw on the generation allowance; once that is spent, later
-calls draw on the regeneration allowance. `directions_generated` counts **runs,
-not directions** — one run produces three directions.
+One row per tier, `free` included. **This is the only place an allowance is
+written** — not a column default, not a branch in a function, not a constant in
+a route. Changing what a tier grants is an `UPDATE` here.
 
-`generation_credits.has_paid` is dead. Nothing writes it, nothing may read it,
-and it is not entitlement — `brand_kit_entitled` is.
+| tier | label | price | `directions_limit` | `regenerations_limit` | total runs |
+|---|---|---|---|---|---|
+| `free` | Free | $0 | 3 | 1 | 2 |
+| `starter` | Starter | $79 | 3 | 3 | 4 |
+| `practice` | Practice | $149 | 3 | 6 | 7 |
+| `signature` | Signature | $249 | 3 | 12 | 13 |
 
----
+- **`directions_limit` is directions produced by one run**, not a number of runs.
+- **`regenerations_limit` is runs beyond the first.** Total runs is `1 + it`.
+
+> ⚠ **The three paid rows are a proposal.** Nothing in the schema ever
+> distinguished the tiers — they differ only in price — so these numbers were
+> invented to give the table a shape and are expected to change. Read them from
+> `plans`; never hard-code them. The `free` row is not a proposal.
+
+`generation_credits.plan_tier` records which plan a project was granted, and
+defaults to `free`. There is no `entitled ? paid : free` branch anywhere:
+entitlement decides whether she may open the deliverable, the plan decides how
+many runs she may spend, and those are different questions.
+
+#### Granting
+
+`grant_plan_allowance(p_project_id, p_tier, p_grant_key)` — **service_role
+only**, from your checkout handler. It sets the project's plan and **resets its
+meter**, once per `p_grant_key`.
+
+Pass the Stripe event id (or the checkout session id). A replay finds the key in
+`plan_grants` and returns `false` having changed nothing — which matters here
+more than usual, because a grant resets the counters and a doubled grant would
+hand her the whole allowance twice. Omitting the key falls back to the
+project's most recent purchase at that tier; a genuine re-purchase has its own
+session id, so it grants again.
+
+> ⚠ **If your checkout handler never calls this, a paying customer stays on the
+> free plan.** Entitlement will open the deliverable — that is driven by
+> `purchases` — but her allowance will still be two runs. Granting is a separate
+> call and nothing infers it.
+
+#### What a refund does to an allowance already spent
+
+**Nothing. It stays consumed.** Entitlement flips — `brand_kit_entitled` goes
+false, the gated RPCs return `payment_required` — but the meter does not run
+backwards, and the project stays on the plan it was granted. The model calls
+were made and paid for by Eklio; a refund does not un-make them.
+
+A re-purchase grants again, with a new key, and that resets the meter. That is
+the only thing that does.
 
 ### Purchase history
 

@@ -10,6 +10,27 @@ ne contient que le schéma et sa configuration Supabase.
 Trois défauts, trois lots, **une seule cause**. Chacun a été trouvé par la
 mesure, aucun n'aurait échappé à une règle. Voici la règle.
 
+> ### ⚠ La forme, quatre fois
+>
+> **Le défaut récurrent de ce dépôt n'est pas une règle fausse. C'est un défaut
+> permissif qu'il faut révoquer exprès.**
+>
+> | ce qui est permissif par défaut | ce que ça a coûté |
+> |---|---|
+> | NULL passe un CHECK | cinq validateurs troués, lot 6 |
+> | `\|\|` rend NULL sur un opérande NULL | une ligne entière effacée d'un livrable |
+> | `array_to_string` écarte les trous | trois lignes de tokens disparues sans erreur |
+> | `anon` reçoit EXECUTE sur toute fonction créée | une RPC d'**écriture** dans la surface OpenAPI anonyme |
+>
+> Aucun des quatre ne lève quoi que ce soit. Chacun rend un résultat plausible :
+> une contrainte qui accepte, une chaîne vide, une liste plus courte, une
+> fonction qui répond. C'est pour ça qu'ils survivent aux relectures.
+>
+> La question à se poser en écrivant quoi que ce soit de nouveau n'est pas
+> « est-ce que ma règle est juste ? » mais **« qu'est-ce que le défaut autorise
+> que je n'ai pas nommé ? »** — et de l'écrire, avec un garde-fou qui échoue si
+> quelqu'un l'oublie plus tard.
+
 ### Ce qui est sûr, et ce qui ne l'est pas
 
 | construction | sur une clé absente / une colonne NULL |

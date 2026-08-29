@@ -299,7 +299,7 @@ begin
   set local role authenticated;
   set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111"}';
 
-  assert (select count(*) from public.generation_credits) = 1,
+  assert (select count(*) from public.generation_credits) >= 1,
          'she must still be able to READ her allowance';
 
   begin
@@ -322,71 +322,172 @@ end
 $$;
 
 -- ---------------------------------------------------------------------------
--- consume_generation_credit — one generation and one regeneration when free
+-- consume_generation_credit — the allowance comes from the granted plan
 -- ---------------------------------------------------------------------------
+-- ⚠ There is no entitled/not branch any more. An ungranted project is on the
+-- `free` PLAN ROW — not on a pair of column defaults pretending to be one.
 do $$
 declare
   kit uuid := '33333333-3333-3333-3333-333333333333';
   gc  public.generation_credits%rowtype;
+  pl  public.plans%rowtype;
 begin
   reset role;
   update public.purchases set status = 'pending', paid_at = null
    where stripe_checkout_session_id = 'cs_nora';
-  update public.generation_credits set directions_generated = 0, regenerations_used = 0;
+  update public.generation_credits set directions_generated = 0, regenerations_used = 0
+   where project_id = '22222222-2222-2222-2222-222222222222';
+
+  select * into gc from public.generation_credits where project_id = '22222222-2222-2222-2222-222222222222';
+  assert gc.plan_tier = 'free', 'a project starts on something other than the free plan';
+  select * into pl from public.plans where tier = 'free';
+  assert (pl.directions_limit, pl.regenerations_limit) = (3::smallint, 1::smallint),
+         'the free row is not one run of three plus one regeneration';
 
   set local role authenticated;
   set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111"}';
 
-  assert public.consume_generation_credit(kit) is true,  'the free generation was refused';
-  select * into gc from public.generation_credits;
-  assert gc.directions_generated = 1 and gc.regenerations_used = 0,
-         'the first call did not draw on the generation allowance';
+  assert public.consume_generation_credit(kit) is true, 'the free run was refused';
+  select * into gc from public.generation_credits where project_id = '22222222-2222-2222-2222-222222222222';
+  -- ⚠ the counter moves by the DIRECTIONS a run produces, because that is what
+  -- `directions_limit` means now. This is the assertion that would have caught
+  -- the original misreading.
+  assert gc.directions_generated = pl.directions_limit and gc.regenerations_used = 0,
+    format('after one run the counters are %s/%s', gc.directions_generated, gc.regenerations_used);
 
-  assert public.consume_generation_credit(kit) is true,  'the free regeneration was refused';
-  select * into gc from public.generation_credits;
-  assert gc.directions_generated = 1 and gc.regenerations_used = 1,
-         'the second call did not draw on the regeneration allowance';
+  assert public.consume_generation_credit(kit) is true, 'the free regeneration was refused';
+  select * into gc from public.generation_credits where project_id = '22222222-2222-2222-2222-222222222222';
+  assert gc.directions_generated = pl.directions_limit and gc.regenerations_used = 1,
+         'the second run did not draw on the regeneration allowance';
 
-  -- ⚠ spent. And spending nothing must change nothing.
-  assert public.consume_generation_credit(kit) is false, 'a third free generation was allowed';
-  select * into gc from public.generation_credits;
-  assert gc.directions_generated = 1 and gc.regenerations_used = 1,
+  assert public.consume_generation_credit(kit) is false, 'a third free run was allowed';
+  select * into gc from public.generation_credits where project_id = '22222222-2222-2222-2222-222222222222';
+  assert gc.directions_generated = pl.directions_limit and gc.regenerations_used = 1,
          'a refused call still moved a counter';
-  assert public.consume_generation_credit(kit) is false, 'a fourth call was allowed';
 end
 $$;
 
 -- ---------------------------------------------------------------------------
--- An entitled owner draws on the plan's allowance as it stands
+-- ⚠ Granting is idempotent, because granting RESETS the meter
 -- ---------------------------------------------------------------------------
+-- A retried webhook that re-granted would hand her the whole allowance again.
 do $$
 declare
   kit uuid := '33333333-3333-3333-3333-333333333333';
+  prj uuid := '22222222-2222-2222-2222-222222222222';
   gc  public.generation_credits%rowtype;
-  i   int;
-  n   int := 0;
+  pl  public.plans%rowtype;
+  i   int; n int := 0;
 begin
   reset role;
   update public.purchases set status = 'paid', paid_at = now()
    where stripe_checkout_session_id = 'cs_nora';
-  update public.generation_credits set directions_generated = 0, regenerations_used = 0;
-  select * into gc from public.generation_credits;
+
+  assert public.grant_plan_allowance(prj, 'starter', 'evt_grant_1') is true,
+         'the first grant did nothing';
+  select * into gc from public.generation_credits where project_id = '22222222-2222-2222-2222-222222222222';
+  assert gc.plan_tier = 'starter', 'the grant did not record the plan';
+  assert gc.directions_generated = 0 and gc.regenerations_used = 0,
+         'the grant did not reset the meter';
 
   set local role authenticated;
   set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111"}';
+  assert public.consume_generation_credit(kit) is true, 'the granted run was refused';
+  reset role;
 
-  for i in 1 .. (gc.directions_limit + gc.regenerations_limit + 2) loop
+  assert public.grant_plan_allowance(prj, 'starter', 'evt_grant_1') is false,
+         'a replayed grant was applied';
+  select * into gc from public.generation_credits where project_id = '22222222-2222-2222-2222-222222222222';
+  assert gc.directions_generated > 0,
+         'a replayed grant reset the meter and handed the allowance back';
+  assert (select count(*) from public.plan_grants where project_id = prj) = 1,
+         'a replayed grant wrote a second row';
+
+  update public.generation_credits set directions_generated = 0, regenerations_used = 0
+   where project_id = '22222222-2222-2222-2222-222222222222';
+  select * into pl from public.plans where tier = 'starter';
+  set local role authenticated;
+  set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111"}';
+  for i in 1 .. (pl.regenerations_limit + 3) loop
     if public.consume_generation_credit(kit) then n := n + 1; end if;
   end loop;
+  assert n = 1 + pl.regenerations_limit,
+    format('starter gave %s runs, the plan says 1 + %s', n, pl.regenerations_limit);
+end
+$$;
 
-  assert n = gc.directions_limit + gc.regenerations_limit,
-    format('an entitled owner got %s runs, the plan allows %s + %s',
-           n, gc.directions_limit, gc.regenerations_limit);
+-- ⚠ A refund flips entitlement. It does NOT run the meter backwards.
+do $$
+declare
+  kit uuid := '33333333-3333-3333-3333-333333333333';
+  prj uuid := '22222222-2222-2222-2222-222222222222';
+  before_dirs  smallint;
+  before_regen smallint;
+begin
+  reset role;
+  select directions_generated, regenerations_used into before_dirs, before_regen
+    from public.generation_credits where project_id = '22222222-2222-2222-2222-222222222222';
+  assert before_dirs > 0, 'the fixture must have spent something first';
 
-  select * into gc from public.generation_credits;
-  assert gc.directions_generated = gc.directions_limit
-     and gc.regenerations_used = gc.regenerations_limit,
-         'the counters do not match what was handed out';
+  perform public.record_purchase_status_event(
+    (select id from public.purchases where stripe_checkout_session_id='cs_nora'),
+    'evt_refund_meter','refunded','charge.refunded',7900);
+
+  set local role authenticated;
+  set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111"}';
+  assert public.brand_kit_entitled(kit) is false, 'a refund did not remove entitlement';
+  assert public.site_spec_get(kit)->'error'->>'code' = 'payment_required',
+         'a refund did not close the deliverable';
+
+  reset role;
+  assert (select directions_generated from public.generation_credits where project_id = '22222222-2222-2222-2222-222222222222') = before_dirs
+     and (select regenerations_used from public.generation_credits where project_id = '22222222-2222-2222-2222-222222222222') = before_regen,
+         'a refund ran the meter backwards';
+  assert (select plan_tier from public.generation_credits where project_id = '22222222-2222-2222-2222-222222222222') = 'starter',
+         'a refund silently moved the project off its granted plan';
+
+  -- ⚠ and a RE-PURCHASE grants again, because it is a different key
+  insert into public.purchases
+    (user_id, project_id, tier, stripe_checkout_session_id, amount_cents, status, paid_at)
+  values ('11111111-1111-1111-1111-111111111111', prj, 'starter','cs_nora_again',7900,'paid',now());
+  assert public.grant_plan_allowance(prj, 'starter', 'evt_grant_2') is true,
+         'a re-purchase did not grant again';
+  assert (select directions_generated from public.generation_credits where project_id = '22222222-2222-2222-2222-222222222222') = 0,
+         'the re-purchase did not reset the meter';
+end
+$$;
+
+-- Granting is the webhook's, never the client's
+do $$
+declare ok boolean := false;
+begin
+  assert not has_function_privilege('authenticated',
+    'public.grant_plan_allowance(uuid,text,text)'::regprocedure, 'EXECUTE'),
+    'a signed-in client can grant herself an allowance';
+  assert not has_function_privilege('anon',
+    'public.grant_plan_allowance(uuid,text,text)'::regprocedure, 'EXECUTE'),
+    'an anonymous caller can grant an allowance';
+
+  reset role;
+  begin
+    perform public.grant_plan_allowance('22222222-2222-2222-2222-222222222222','platinum','k');
+  exception when others then ok := true; end;
+  assert ok, 'a tier that is not a plan was granted';
+end
+$$;
+
+-- The plans table is readable, and writable by nobody
+do $$
+declare ok boolean := false; n int;
+begin
+  set local role authenticated;
+  set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111"}';
+  assert (select count(*) from public.plans) = 4, 'she cannot read the plans';
+  begin
+    update public.plans set regenerations_limit = 999;
+    get diagnostics n = row_count; ok := (n = 0);
+  exception when insufficient_privilege then ok := true; end;
+  assert ok, 'a client rewrote the allowance table';
 end
 $$;
 
@@ -446,7 +547,10 @@ begin
   assert applied is false, 'a retried event was applied twice';
   assert (select status from public.purchases where id = pid) = 'partially_refunded',
          'a retried event moved the status';
-  assert (select count(*) from public.purchase_status_events where purchase_id = pid) = 1,
+  -- ⚠ scoped to the key under test: earlier blocks in this file have already
+  -- written history for this purchase, and idempotency is a claim about the KEY.
+  assert (select count(*) from public.purchase_status_events
+           where purchase_id = pid and stripe_event_id = 'evt_1') = 1,
          'a retried event wrote a second row';
 
   perform public.record_purchase_status_event(pid,'evt_2','disputed','charge.dispute.created',4900);
@@ -465,7 +569,8 @@ begin
 
   -- and the audit trail is all of it, in order
   assert (select array_agg(new_status order by occurred_at, created_at)
-            from public.purchase_status_events where purchase_id = pid)
+            from public.purchase_status_events
+           where purchase_id = pid and stripe_event_id in ('evt_1','evt_2','evt_3'))
          = array['partially_refunded','disputed','partially_refunded'],
          'the history is not the sequence that happened';
 end
@@ -481,6 +586,18 @@ declare
 begin
   reset role;
   select id into pid from public.purchases where stripe_checkout_session_id = 'cs_nora';
+
+  -- ⚠ ANY entitling purchase entitles. The re-purchase from the refund block is
+  -- still paid, so the kit is open even while `cs_nora` is refunded — assert
+  -- that, then take it out of the way so the sequence below tests one purchase.
+  set local role authenticated;
+  set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111"}';
+  assert public.brand_kit_entitled(kit) is true,
+         'a later paid purchase did not keep the kit open';
+  reset role;
+  update public.purchases set status = 'failed', paid_at = null
+   where stripe_checkout_session_id = 'cs_nora_again';
+
   for c in select * from (values
       ('paid',               true),
       ('partially_refunded', true),
