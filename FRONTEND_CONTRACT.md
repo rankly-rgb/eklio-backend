@@ -52,6 +52,13 @@ not exist. There is no `forbidden`.
 | `GET /brand-kits/:id/entitled` | `brand_kit_entitled` | `p_brand_kit_id uuid` |
 | — (checkout handler, **service_role**) | `grant_plan_allowance` | `p_project_id uuid`, `p_tier text`, `p_grant_key text` |
 
+> ⚠ **Do not hand-write these signatures.** `types/supabase.ts` is generated
+> from the database and carries every table, column and RPC parameter name.
+> Import `Database` from it: a hand-written type and a test written from that
+> same hand-written type agree with each other and pass while both are wrong.
+> Regenerate with
+> `supabase gen types typescript --db-url "$DB_URL" > types/supabase.ts`.
+
 `p_scope` ∈ `all` `colors` `typography` `copy` `structure`.
 `p_target` ∈ `lovable` `framer` `v0` `generic` `squarespace` `wix` `webflow`.
 `p_format` ∈ `json` `md` `txt` (default `json`).
@@ -1513,6 +1520,18 @@ more than usual, because a grant resets the counters and a doubled grant would
 hand her the whole allowance twice. Omitting the key falls back to the
 project's most recent purchase at that tier; a genuine re-purchase has its own
 session id, so it grants again.
+
+> ⚠ **Pick one calling form per purchase and stay with it.** The two-argument
+> form is *not* idempotent against the three-argument form for the same
+> purchase: omitting `p_grant_key` falls back to the checkout session id, which
+> is a different string from a Stripe event id. Observed — `grant(P,'starter','evt_x')`
+> then `grant(P,'starter')` returns `true` **both times**, writes two
+> `plan_grants` rows and resets the meter twice for one payment. The guard is
+> the key's uniqueness, and two different keys are two different grants.
+>
+> This is the same shape as getting a parameter name wrong: nothing raises, the
+> call succeeds, and the damage is a doubled allowance you find out about later.
+> Send the Stripe event id, always, everywhere.
 
 > ⚠ **If your checkout handler never calls this, a paying customer stays on the
 > free plan.** Entitlement will open the deliverable — that is driven by
