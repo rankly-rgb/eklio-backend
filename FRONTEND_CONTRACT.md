@@ -60,8 +60,44 @@ the output alone. `site_catalog` returns the catalog.
 
 ### ETag
 
-The envelope carries `etag`, an md5 of `(brand_kit_id, spec_version, target)`.
-All three change only on a successful write. Hand it back as `If-None-Match`.
+The envelope carries `etag`. Hand it back as `If-None-Match`.
+
+It is an md5 over five inputs:
+
+| input | moves when |
+|---|---|
+| `brand_kit_id` | never, for a given spec |
+| `spec_version` | any write to the spec itself |
+| `last_copied_spec_version` | **mark-copied, and nothing else** |
+| `target` | the builder is switched (also bumps `spec_version`) |
+| a catalog fingerprint | the output copy is tuned — `site_output_templates`, `section_types`, `builder_targets` |
+
+Those are every input to every key of the envelope. `preview`, `contrast` and
+`diff` read the spec row only. `output` reads the spec row and the three
+catalogs. Nothing else is consulted.
+
+> ⚠ **Two of those five were missing until `20260829116000`.** If you are
+> reading an older description of this: the etag used to be
+> `(brand_kit_id, spec_version, target)`, and `site_output_mark_copied` moves
+> none of them. A client would 304 and keep the staleness banner on screen after
+> the copy that clears it. Tuning the output copy had the same shape of problem.
+> Both are fixed; the table above is current.
+
+Verified behaviour, by real calls:
+
+| action | etag |
+|---|---|
+| two identical reads | **unchanged** |
+| a patch with `{}` | **unchanged** |
+| a patch setting a field to its current value | **unchanged** |
+| a patch that is refused | **unchanged** |
+| a second, redundant `mark-copied` | **unchanged** |
+| `mark-copied` that clears the banner | **moves** |
+| any real edit | **moves** |
+| a target switch | **moves** |
+| a contrast fix | **moves** |
+| a reset | **moves** |
+| an output copy tuning | **moves** |
 
 ---
 
@@ -69,7 +105,7 @@ All three change only on a successful write. Hand it back as `If-None-Match`.
 
 Captured from `site_spec_get` on a CLAY & SAND kit: four enabled pages, real
 copy, `extra_instructions` set, one contrast pair failing and two below AA.
-17,495 bytes. This is the complete response.
+17,490 bytes. This is the complete response.
 
 ```json
 {
@@ -82,7 +118,7 @@ copy, `extra_instructions` set, one contrast pair failing and two below AA.
             }
         ]
     },
-    "etag": "41e035ea852c151bae0b303ccc8cd898",
+    "etag": "c508c5acca90ea4849c26fee8f3a08ae",
     "spec": {
         "hero": {
             "subhead": "Therapy for adults who hold it together.",
@@ -294,7 +330,7 @@ copy, `extra_instructions` set, one contrast pair failing and two below AA.
         "primary": "#B4674A",
         "body_font": "Nunito Sans",
         "secondary": "#C08A3E",
-        "updated_at": "2026-08-29T10:00:40.863966+00:00",
+        "updated_at": "2026-08-29T10:26:52.323112+00:00",
         "brand_kit_id": "33333333-3333-3333-3333-333333333333",
         "dark_neutral": "#2B2A27",
         "heading_font": "Fraunces",
@@ -330,7 +366,7 @@ copy, `extra_instructions` set, one contrast pair failing and two below AA.
             {
                 "n": 2,
                 "body": "Enter each hex exactly as written and give it the role named next to it. Do not let the template keep its own palette alongside yours.",
-                "title": "Set your five colors",
+                "title": "Set your six colors",
                 "values": [
                     {
                         "kind": "hex",
@@ -368,7 +404,7 @@ copy, `extra_instructions` set, one contrast pair failing and two below AA.
             {
                 "n": 3,
                 "body": "Both faces are on Google Fonts. Assign the heading face to every heading level and the body face to body text, buttons and navigation.",
-                "title": "Set your two fonts",
+                "title": "Set your fonts",
                 "values": [
                     {
                         "kind": "font",
@@ -1245,6 +1281,69 @@ the full envelope. Calling it on a pair that already passes returns
 **Contrast never blocks a write.** There is no CHECK on a ratio. A spec with a
 failing pair saves normally. Report it, offer the button, do not gate the save.
 
+### ⚠ A fix is not local, and it is not final
+
+`suggested_fix` rewrites **one token**. Every pair that shares that token
+changes with it. In the envelope in section 2, two pairs want the same token at
+different values:
+
+```
+cta_label_on_primary  ->  primary  #AD6347
+primary_on_paper      ->  primary  #A35D43
+```
+
+They cannot both be applied. Applying either one makes the other's suggestion
+stale — the returned envelope carries the recomputed one.
+
+**A previously passing pair can drop.** Measured, on OCHRE & PAPER, applying the
+`primary_on_paper` fix:
+
+| pair | before | after | |
+|---|---|---|---|
+| `cta_label_on_primary` | 5.23, fg `#2A2118` | 4.90, fg `#FFFFFF` | **dropped** |
+| `primary_on_paper` | 2.85 | 4.62 | fixed |
+| the other five | — | unchanged | |
+
+It dropped from AA to AA and stayed above 4.5, and the button's label flipped
+from the dark neutral to white because white now reads better on the darker
+primary. Neither was predictable from the pair that was clicked.
+
+So:
+
+- **Re-render the entire `contrast` block from the returned envelope.** Do not
+  patch the one pair you clicked.
+- **Never show "all fixed" because one call succeeded.** Read
+  `contrast.passes_aa` from the returned envelope.
+- Do not cache `suggested_fix` values across a write.
+
+### Does it converge?
+
+Yes, on every palette this product ships, **applying the worst-failing pair
+first**. Simulated across all six families, to a fixed point:
+
+| family | fixes needed | worst ratio after |
+|---|---|---|
+| PLUM & BONE | 0 | 7.28 |
+| CLAY & SAND | 2 | 4.55 |
+| INK BLUE & CHALK | 1 | 4.51 |
+| OLIVE & CHALK | 1 | 4.54 |
+| OCHRE & PAPER | 1 | 4.62 |
+| SLATE & BONE | 0 | 6.14 |
+
+**The fix-all sequence worth implementing:** take the pair with the lowest
+`ratio` that carries a `suggested_fix`, apply it, re-read `contrast` from the
+returned envelope, repeat until `passes_aa` is true or no pair offers a fix.
+Bound the loop — four iterations is generous; two was the worst case observed.
+
+Worst-first matters. On CLAY & SAND, fixing `secondary_on_paper` (2.80) first
+and then `primary_on_paper` finishes in two steps; the reverse order wastes a
+write, because the first fix's suggestion is recomputed anyway.
+
+The loop terminates because every fix moves its token toward the surface's
+opposite lightness, and `paper` and `light_neutral` never move — the target is
+fixed. If a pair offers no fix (section 4's second null case), stop and show the
+warning; there is nothing further to apply.
+
 ---
 
 ## 5. Limits
@@ -1408,6 +1507,23 @@ pages appear, which sections, their order, and where each section's copy comes
 from are design decisions the backend has already made. Two implementations
 means the mockup eventually stops matching the output she is about to paste.
 
+### ⚠ `order` is a sort key, never an index
+
+Disabled sections are omitted from `preview` and the remaining `order` values
+are **not** renumbered. From the envelope in section 2, the Services page:
+
+```
+spec.pages[services].sections     services(1)  fees(2)  faq(3, disabled)  footer(4)
+preview.pages[services].sections  services(1)  fees(2)                    footer(4)
+```
+
+`order` there is `[1, 2, 4]`. It is already sorted ascending. Use it to sort, or
+just render the array in the order it arrives — it is sorted by `order`, then by
+`key`.
+
+Never use `order` as an array index, a position, or a denominator. "Section 4 of
+4" is wrong on that page; there are three.
+
 In particular: the hero section's copy is `spec.hero` and the intro section's is
 `spec.about_excerpt` — the backend has already resolved that into
 `preview.pages[].sections[].fields`. Do not resolve it again, and do not read a
@@ -1454,6 +1570,19 @@ footer           Footer                   fields             home,about,services
 `fields` object. `spec.hero` and `spec.about_excerpt` mean the top-level column
 — render the editor's inputs for those two against `spec.hero` /
 `spec.about_excerpt`, and PATCH them there.
+
+> ⚠ **`intro` is allowed on two pages and reads one field.** Its `source` is
+> `spec.about_excerpt` and its `allowed_pages` are `home` and `about`. In the
+> envelope in section 2 the identical paragraph appears in both — because there
+> is one value, rendered twice.
+>
+> Editing it changes both places. Label the input accordingly — something like
+> "Your introduction — shown on Home and About" — rather than letting her think
+> she is editing the Home page alone. There is no way to give the two pages
+> different intro text; that is the design, not a limitation to work around.
+>
+> The same is structurally true of `hero` (`spec.hero`), but it is only allowed
+> on `home`, so it renders once and the question does not arise.
 
 Each entry also carries `fields` (key, label, kind ∈ `text` `longtext` `list`,
 max_length), `default_enabled` and `active`.
