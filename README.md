@@ -92,7 +92,7 @@ course possible juste après signup, qui sera traitée côté applicatif.
 
 ## Schéma
 
-Vingt-cinq tables, RLS activée sur chacune, cloisonnement par propriétaire.
+Vingt-six tables, RLS activée sur chacune, cloisonnement par propriétaire.
 
 Les onze tables applicatives :
 
@@ -111,10 +111,11 @@ Les onze tables applicatives :
 - `launch_checklist_items` — les six étapes de lancement, six lignes par kit
 - `site_specs` — le spec de site éditable, une ligne par kit (Lot 6)
 
-Et les treize catalogues de référence, en lecture seule :
+Et les quatorze catalogues de référence, en lecture seule :
 `tone_cards`, `palette_families`, `type_pairings`, `client_persona_cards`,
 `problem_cards`, `gain_cards`, `ethics_rules`, `license_types`, `specialties`,
-`site_goals`, `primary_actions`, `section_types`, `builder_targets`.
+`site_goals`, `primary_actions`, `section_types`, `builder_targets`,
+`site_output_templates`.
 
 Aucune table n'est en `FORCE ROW LEVEL SECURITY` : le `service_role`, utilisé
 côté serveur, contourne les policies. C'est le mécanisme sur lequel repose le
@@ -794,6 +795,89 @@ livrable et la maquette **décrivent donc le même site par construction** : une
 seule fonction décide des pages listées, de leur ordre et de la copie de chaque
 section.
 
+### D'où vient l'accent
+
+⚠ **Vérifié plutôt que supposé.** `brand_kit_palette_valid`, livré au lot 5,
+exige exactement cinq rôles — `primary, secondary, light, dark, paper`. Il n'y a
+pas d'`accent`. `palette_families` a les mêmes cinq colonnes, la copie approuvée
+de l'écran 4 les mêmes cinq, et le mot « accent » n'apparaissait nulle part dans
+le schéma avant le lot 6.
+
+L'accent est donc **dérivé**, et n'est jamais une copie du secondaire : deux
+pastilles identiques sous deux libellés différents se lisent comme un bug de
+l'éditeur, et se comportent comme tel dès qu'elle déplace l'une des deux. La
+règle, déterministe de bout en bout : teinte du primaire tournée à sa
+complémentaire fendue (150°, puis sept décalages de repli), saturation plancher
+à 0,28 pour qu'un primaire quasi gris ne rende pas un accent gris, clarté prise
+sur une échelle fixe au plus près de celle du primaire tout en atteignant
+**4,5:1 sur `light_neutral`**, et distance perceptuelle d'au moins **ΔE 15** du
+primaire *et* du secondaire.
+
+Le seuil est mesuré, pas choisi : le produit livre déjà PLUM & BONE à ΔE 18,10
+entre son primaire et son secondaire, et CLAY & SAND à 25,37. ΔE est du CIE76
+sur CIELAB D65, dont la linéarisation sRGB est partagée avec
+`site_spec_relative_luminance`.
+
+`site_specs.accent_hex` lit tout de même `palette.accent` **en premier** : le
+jour où le générateur émet la palette à cinq rôles que décrit la spec produit,
+il est utilisé tel quel, sans rien changer ici.
+
+> ⚠ **Un défaut du lot 5, signalé et non corrigé ici.**
+> `brand_kit_palette_valid` rend `NULL` — pas `false` — pour une palette à
+> laquelle il manque une de ses cinq clés, parce que `NULL ~ '^#…'` vaut NULL et
+> que `true and NULL` vaut NULL. **Une contrainte CHECK passe sur NULL.** Une
+> palette de forme `{primary, secondary, accent, light_neutral, dark_neutral}`
+> est donc acceptée par `brand_kits` aujourd'hui. Resserrer ce CHECK est une
+> décision séparée, avec son propre rayon d'action, et elle reste à prendre.
+> Ce que le lot 6 fait à la place, c'est rendre l'amorçage **total** :
+> `site_spec_palette_role()` résout les deux nommages et retombe sur CLAY & SAND
+> pour un rôle absent, donc aucune forme de palette ne peut transformer un kit
+> enregistré en direction inchoisissable.
+
+### Les limites sont publiées, et le rognage n'est plus muet
+
+`GET /catalog` porte `site_spec_limits` — `hero_overline`, `hero_headline`,
+`hero_subhead`, `hero_cta_label`, `about_excerpt`, `section_text`,
+`extra_instructions` — pour que le générateur borne ce qu'il écrit. Les nombres
+sont **extraits des contraintes elles-mêmes** (`pg_get_constraintdef` pour deux,
+`prosrc` des validateurs pour cinq) et non réécrits ; un garde-fou **sonde**
+chaque validateur pour prouver que la valeur publiée est la vraie borne, n
+passant et n+1 refusé.
+
+`site_specs.seed_clamped` enregistre ce que l'amorçage a raccourci, et NULL —
+pas `{}` — quand rien ne l'a été. La note se retire d'elle-même, champ par
+champ, dès qu'elle réécrit le champ concerné ; un reset de la copie réapplique
+le même texte rogné, donc la note y survit.
+
+Mesuré : `headline` (46) et `subhead` (60) sont **déjà** bornés en amont par
+`brand_kit_directions_rendering_valid` et ne peuvent jamais arriver trop longs.
+Les trois réellement rognables sont `overline`, `cta_label` et `about_excerpt`.
+
+> ⚠ « Restaurer le texte complet » est impossible pour un champ rogné parce
+> qu'il dépassait la limite : la limite est un CHECK. L'original reste lisible
+> dans `brand_kits.directions[selected].hero`, donc la note peut le montrer et
+> la laisser réécrire à la bonne longueur — pas l'enregistrer tel quel.
+
+### La copie du livrable est un catalogue
+
+`site_output_templates`, clé de fragment et cible optionnelle. `target IS NULL`
+vaut « tous les constructeurs » ; une ligne avec cible ne prime que pour
+celui-là. Une modification de formulation est un `UPDATE`, pas une migration —
+même principe que les onze catalogues du brief.
+
+Les noms de panneaux étaient déjà de la donnée (`builder_targets.color_panel`
+et consorts). Ce qui a bougé, ce sont les titres et corps d'étapes, le bloc de
+contraintes, les en-têtes du prompt et tous les libellés de champs : environ
+deux cents littéraux répartis dans six corps de fonctions.
+
+Ce qui reste dans les fonctions est du **balisage** et non de la copie : les
+délimiteurs `"""` et ```, la puce, les sauts de ligne.
+
+Un garde-fou vérifie que chaque fragment demandé par les moteurs existe — une
+ligne manquante ne lève pas, elle rend une chaîne vide — et que les marqueurs
+`{cta_target_url}`, `{page}`, `{section}`, `{label}`, `{value}` survivent à une
+réécriture.
+
 ### Le contraste se rapporte, il ne bloque pas
 
 `site_spec_contrast` calcule les six paires que la maquette dessine réellement,
@@ -810,7 +894,17 @@ Le correctif garde teinte et saturation et ne déplace que la clarté (HSL, faut
 de bibliothèque OKLCH dans Postgres), en cherchant la valeur **la plus proche de
 la sienne** qui atteint 4,5 — pas la première d'une direction devinée. Il
 déplace toujours une couleur de marque, **jamais le fond de page** : cinq des
-six paires se mesurent contre lui.
+six paires se mesurent contre lui. `dark_neutral` reste déplaçable, lui, et
+délibérément : sur les deux paires neutre-sur-neutre il n'y a aucune couleur de
+marque dans la paire, et « texte courant sur fond de page » est la paire la plus
+importante du site.
+
+⚠ **La marche est bornée à une clarté de 0,05 à 0,95.** À 0 et 1,
+`site_spec_hsl_to_hex` rend du noir et du blanc quelle que soit la teinte : la
+marche non bornée rendait `#040301` pour une teinte 30 contre un fond `#767676`,
+ce qui passe 4,5:1 et n'est pas sa couleur. `null` est donc une réponse
+atteignable à 4,5:1, et c'est l'honnête. Les corrections déjà justes sont
+inchangées, vérifié contre la marche non bornée.
 
 > ⚠ **Aucune contrainte de contraste n'existe, et un garde-fou refuse la
 > migration si on en ajoute une.** Une thérapeute qui a déjà payé une génération

@@ -210,6 +210,65 @@ end
 $$;
 
 -- ---------------------------------------------------------------------------
+-- ⚠ extra_instructions: in the output, under its own heading, and NOWHERE ELSE
+-- ---------------------------------------------------------------------------
+-- Rule 2 in one assertion. The notes field is appended verbatim to the
+-- deliverable and is never parsed, never interpreted, and never reaches the
+-- mockup — because reaching the mockup would mean interpreting it, and
+-- interpreting free text back into the spec is the round trip the whole design
+-- forbids.
+do $$
+declare
+  spec   jsonb;
+  marker text := 'ZZQX-SENTINEL-9137';
+  t      text;
+  sheet  jsonb;
+begin
+  spec := jsonb_set((select s from snapshot_spec), '{extra_instructions}', to_jsonb(marker));
+
+  -- 1. it IS in the prompt, exactly once, and under its own heading
+  t := public.site_spec_output(spec, 'lovable')->>'text';
+  assert position(marker in t) > 0, 'extra_instructions is missing from the prompt';
+  assert (select count(*) from regexp_matches(t, marker, 'g')) = 1,
+         'extra_instructions appears more than once in the prompt';
+  assert position(marker in t) > position('## Additional instructions from the practice owner' in t),
+         'extra_instructions is printed somewhere other than under its own heading';
+  -- and nothing follows it: it is the last thing in the document
+  assert right(t, char_length(marker)) = marker,
+         'something was printed after extra_instructions';
+
+  -- 2. it IS in the setup sheet, exactly once, as the last step
+  sheet := public.site_spec_output(spec, 'squarespace');
+  assert (select s.value->>'body' from jsonb_array_elements(sheet->'steps') s
+           where (s.value->>'n')::int = 8) = marker,
+         'extra_instructions is not the setup sheet''s last step, verbatim';
+  assert (select count(*) from jsonb_array_elements(sheet->'steps') s
+           where position(marker in coalesce(s.value->>'body','')) > 0) = 1,
+         'extra_instructions appears in more than one step';
+  assert not exists (select 1 from jsonb_array_elements(sheet->'copy_blocks') b
+                      where position(marker in coalesce(b.value->>'text','')) > 0),
+         'extra_instructions leaked into the copy blocks, where it would be pasted as site copy';
+
+  -- 3. ⚠ IT IS NOT IN THE MOCKUP. Not in the tokens, not in a section's
+  -- fields, not anywhere in the preview model.
+  assert position(marker in public.site_spec_preview_model(spec)::text) = 0,
+         'extra_instructions reached buildPreviewModel; the mockup must never render it';
+
+  -- 4. nor in the contrast panel or the diff
+  assert position(marker in public.site_spec_contrast(spec)::text) = 0,
+         'extra_instructions reached the contrast report';
+
+  -- 5. and in the full envelope it appears only in `spec` (where she edits it)
+  --    and in `output` (where it is delivered) — never in `preview`
+  assert position(marker in (public.site_spec_envelope(
+           spec || jsonb_build_object('brand_kit_id','00000000-0000-0000-0000-000000000000',
+                                      'spec_version',1,'change_marks','{}'::jsonb))
+           ->'preview')::text) = 0,
+         'extra_instructions reached the preview half of the envelope';
+end
+$$;
+
+-- ---------------------------------------------------------------------------
 -- The setup sheet: steps that name the product's own panels
 -- ---------------------------------------------------------------------------
 do $$
