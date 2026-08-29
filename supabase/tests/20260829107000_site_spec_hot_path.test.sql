@@ -35,10 +35,15 @@ declare
     'public.site_catalog()',
     'public.refresh_brand_kit_site_prompt()',
     'public.site_spec_output(jsonb, text)',
-    'public.site_spec_output_prompt(jsonb)',
+    -- ⚠ these two gained an argument in 20260829110000, when the output copy
+    -- moved into site_output_templates: the prompt renderer now takes the
+    -- target so it can resolve per-builder overrides, and the structure lines
+    -- take the resolved fragment map.
+    'public.site_spec_output_prompt(jsonb, text)',
     'public.site_spec_output_setup_sheet(jsonb, text)',
     'public.site_spec_copy_blocks(jsonb)',
-    'public.site_spec_structure_lines(jsonb)',
+    'public.site_spec_structure_lines(jsonb, jsonb)',
+    'public.site_output_fragments(text)',
     'public.site_spec_envelope(jsonb)',
     'public.site_spec_preview_model(jsonb)',
     'public.site_spec_contrast(jsonb)'

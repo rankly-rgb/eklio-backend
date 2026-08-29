@@ -414,3 +414,101 @@ on conflict (id) do update set
   section_panel = excluded.section_panel;
 
 -- <<< SITE SPEC CATALOG DATA <<<
+
+
+
+-- >>> SITE OUTPUT TEMPLATE DATA (mirrored verbatim in supabase/seed.sql) >>>
+
+insert into public.site_output_templates (id, target, key, body, sort_order) values
+
+  -- ---- the prompt's skeleton ----------------------------------------------
+  ('all.prompt.role_line', null, 'prompt.role_line',
+   'Build a one-page (or multi-page) website for a therapy private practice. Follow this specification exactly.', 10),
+  ('all.prompt.heading_practice',    null, 'prompt.heading_practice',    '## Practice', 11),
+  ('all.prompt.heading_tokens',      null, 'prompt.heading_tokens',      '## Design tokens', 12),
+  ('all.prompt.heading_structure',   null, 'prompt.heading_structure',   '## Pages and sections', 13),
+  ('all.prompt.heading_copy',        null, 'prompt.heading_copy',        '## Copy', 14),
+  ('all.prompt.copy_preamble',       null, 'prompt.copy_preamble',
+   'Use every line below exactly as written. Text between """ lines is final copy, not a brief.', 15),
+  ('all.prompt.heading_constraints', null, 'prompt.heading_constraints', '## Constraints', 16),
+  ('all.prompt.heading_extra',       null, 'prompt.heading_extra',
+   '## Additional instructions from the practice owner', 17),
+  ('all.prompt.copy_section_heading', null, 'prompt.copy_section_heading', '### {page} — {section}', 18),
+  ('all.prompt.structure_section_line', null, 'prompt.structure_section_line', '{label} — {description}', 19),
+
+  -- ---- practice identity ---------------------------------------------------
+  ('all.identity.label_name',     null, 'identity.label_name',     'Name', 20),
+  ('all.identity.label_license',  null, 'identity.label_license',  'License', 21),
+  ('all.identity.label_location', null, 'identity.label_location', 'Location', 22),
+  ('all.identity.label_email',    null, 'identity.label_email',    'Email', 23),
+  ('all.identity.label_phone',    null, 'identity.label_phone',    'Phone', 24),
+
+  -- ---- design tokens, each with the role it plays --------------------------
+  ('all.token.primary',   null, 'token.primary',   'Primary — buttons, links and active states', 30),
+  ('all.token.secondary', null, 'token.secondary', 'Secondary — supporting headings and surfaces', 31),
+  ('all.token.accent',    null, 'token.accent',    'Accent — small highlights only, never body text', 32),
+  ('all.token.light_neutral', null, 'token.light_neutral', 'Light neutral — page background', 33),
+  ('all.token.dark_neutral',  null, 'token.dark_neutral',  'Dark neutral — body text', 34),
+  ('all.token.heading_font',  null, 'token.heading_font',  'Heading font', 35),
+  ('all.token.body_font',     null, 'token.body_font',     'Body font', 36),
+  ('all.token.google_fonts_url', null, 'token.google_fonts_url', 'Google Fonts stylesheet', 37),
+
+  -- ---- the constraints -----------------------------------------------------
+  -- ⚠ Four of these five are the difference between a website a licensing
+  -- board is fine with and one it is not. Tune the wording; do not drop a row.
+  ('all.constraint.copy_exact', null, 'constraint.copy_exact',
+   'Use the provided copy exactly as written. Do not rewrite, expand or add copy.', 40),
+  ('all.constraint.no_invention', null, 'constraint.no_invention',
+   'Do not invent testimonials, client quotes, statistics, credentials or awards.', 41),
+  ('all.constraint.no_stock_photos', null, 'constraint.no_stock_photos',
+   'No stock photos of people; leave labeled image placeholders.', 42),
+  ('all.constraint.cta_linked', null, 'constraint.cta_linked',
+   'The call to action links to {cta_target_url}. Do not add a contact form that collects health information — a mailto link, a phone number or a booking link only.', 43),
+  ('all.constraint.cta_unlinked', null, 'constraint.cta_unlinked',
+   'The call to action has no link yet: leave the button in place and unlinked. Do not add a contact form that collects health information — a mailto link, a phone number or a booking link only.', 44),
+  ('all.constraint.contrast', null, 'constraint.contrast',
+   'Maintain WCAG AA text contrast.', 45),
+
+  -- ---- the setup sheet -----------------------------------------------------
+  ('all.sheet.step1_title', null, 'sheet.step1_title', 'Start from the right template', 50),
+  ('all.sheet.step1_body',  null, 'sheet.step1_body',
+   'Pick a template that is already close to the structure below. You will delete more than you add.', 51),
+  ('all.sheet.step2_title', null, 'sheet.step2_title', 'Set your five colors', 52),
+  ('all.sheet.step2_body',  null, 'sheet.step2_body',
+   'Enter each hex exactly as written and give it the role named next to it. Do not let the template keep its own palette alongside yours.', 53),
+  ('all.sheet.step3_title', null, 'sheet.step3_title', 'Set your two fonts', 54),
+  ('all.sheet.step3_body',  null, 'sheet.step3_body',
+   'Both faces are on Google Fonts. Assign the heading face to every heading level and the body face to body text, buttons and navigation.', 55),
+  ('all.sheet.step4_title', null, 'sheet.step4_title', 'Build the pages and sections in this order', 56),
+  ('all.sheet.step4_body',  null, 'sheet.step4_body',
+   'Add each page, then each section inside it, top to bottom. The line after each section says what it is for.', 57),
+  ('all.sheet.step5_title', null, 'sheet.step5_title', 'Paste your copy', 58),
+  ('all.sheet.step5_body',  null, 'sheet.step5_body',
+   'Every string your site needs is listed below this sheet, one block per field, in the order the sections appear. Paste them as they are.', 59),
+  ('all.sheet.step6_title', null, 'sheet.step6_title', 'Point the button at your booking link', 60),
+  ('all.sheet.step6_body_linked', null, 'sheet.step6_body_linked',
+   'Set every call-to-action button to this link. One destination, on every page.', 61),
+  ('all.sheet.step6_body_unlinked', null, 'sheet.step6_body_unlinked',
+   'You have not set a booking link yet. Leave the button in place and unlinked, and come back to this step — do not replace it with a contact form.', 62),
+  ('all.sheet.step7_title', null, 'sheet.step7_title', 'Before you publish', 63),
+  ('all.sheet.step8_title', null, 'sheet.step8_title', 'Your own notes', 64),
+  ('all.sheet.label_cta_label',  null, 'sheet.label_cta_label',  'Button label', 65),
+  ('all.sheet.label_cta_target', null, 'sheet.label_cta_target', 'Button links to', 66),
+
+  -- ---- the md / txt renderer ----------------------------------------------
+  ('all.render.where_md',  null, 'render.where_md',  '> Where: ', 70),
+  ('all.render.where_txt', null, 'render.where_txt', 'Where: ', 71),
+  ('all.render.copy_blocks_md',  null, 'render.copy_blocks_md',  '## Copy blocks', 72),
+  ('all.render.copy_blocks_txt', null, 'render.copy_blocks_txt', 'COPY BLOCKS', 73),
+  ('all.render.copy_block_heading', null, 'render.copy_block_heading',
+   '{page} — {section} — {label}', 74),
+  ('all.render.value_line', null, 'render.value_line', '- {label}: {value}', 75)
+
+on conflict (id) do update set
+  target     = excluded.target,
+  key        = excluded.key,
+  body       = excluded.body,
+  sort_order = excluded.sort_order,
+  active     = excluded.active;
+
+-- <<< SITE OUTPUT TEMPLATE DATA <<<
