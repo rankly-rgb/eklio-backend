@@ -46,6 +46,17 @@ rollback;
 Le `rollback` final est ce qui permet de lancer les fichiers dans n'importe
 quel ordre, plusieurs fois de suite, sans `db reset` entre deux.
 
+## `helpers/`
+
+Des scripts qui ne sont **pas** des tests et que la boucle ci-dessus ne ramasse
+pas : leur nom ne finit pas par `.test.sql`. On les lance à la main, quand on
+veut régénérer une valeur attendue.
+
+- [`site_output_digests.sql`](helpers/site_output_digests.sql) — recalcule les
+  empreintes de snapshot du livrable de site, une par cible de constructeur.
+  À relancer quand un changement du rendu ou de la copie du catalogue est
+  **voulu**, et après avoir lu ce qui a bougé.
+
 ## Tester la RLS
 
 `postgres` est superutilisateur et **contourne la RLS** — un test qui lit une

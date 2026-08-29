@@ -1,0 +1,336 @@
+-- ============================================================================
+-- Tests — 20260829104000_site_output_prompt.sql
+--         20260829105000_site_output_setup_sheet.sql
+-- ============================================================================
+-- ONE SPEC, EVERY TARGET, PINNED BYTE FOR BYTE.
+--
+-- The output is a pure function of (spec, target) with no LLM call in it, and
+-- the whole product rests on that: the mockup she approves and the text she
+-- pastes have to describe the same site, the cached copy in
+-- `brand_kits.site_prompt` has to stay true, and a "copied" marker has to mean
+-- something. So the digests below are snapshots — if one moves, the deliverable
+-- moved, and somebody should look at it on purpose rather than find out from a
+-- therapist.
+--
+-- REGENERATING THEM, when a change is intended:
+--
+--   psql "$DB_URL" -At -f supabase/tests/helpers/site_output_digests.sql
+--
+-- and paste the result into the `expected` array below. Read the diff first —
+-- the point of the test is the moment of looking, not the digest.
+-- ============================================================================
+begin;
+
+-- The fixture spec. A jsonb literal rather than a row: no ids, no clock,
+-- nothing that could make one run differ from the next.
+create temporary table snapshot_spec as
+select jsonb_build_object(
+  'primary_hex','#3B2C3A','secondary_hex','#4A5361','accent_hex','#C08A3E',
+  'light_neutral_hex','#F3EDE4','dark_neutral_hex','#241B23',
+  'type_pairing_id','cormorant_source',
+  'heading_font','Cormorant Garamond','body_font','Source Sans 3',
+  'google_fonts_url','https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Source+Sans+3:wght@400;600;700&display=swap',
+  'hero', jsonb_build_object(
+    'overline','LCSW · PORTLAND, OR','headline','Experienced care, without the noise.',
+    'subhead','Therapy for high-performing adults who cannot switch off.',
+    'cta_label','Book a consult','cta_target_url','https://elmandember.clientsecure.me'),
+  'about_excerpt','I work mostly with professionals who look fine from outside. Much of that work sits with anxiety and burnout.',
+  'practice_details', jsonb_build_object(
+    'practice_name','Elm & Ember Therapy','license_label','LCSW','license_number','LC61234',
+    'city','Portland','state','OR','email','hello@elmandember.com','phone','(503) 555-0123'),
+  'pages', public.site_spec_default_pages(
+             array['Anxiety','Burnout'],
+             array['Professionals who look fine from outside']),
+  'extra_instructions','Please keep fees off the home page. Tuesday and Thursday are the only open hours right now.',
+  'target','lovable') as s;
+
+-- ---------------------------------------------------------------------------
+-- The snapshots
+-- ---------------------------------------------------------------------------
+do $$
+declare
+  spec     jsonb := (select s from snapshot_spec);
+  expected text[][] := array[
+    ['lovable',     '22930239c58ee7b443e1b6fb6b173c89'],
+    ['framer',      '22930239c58ee7b443e1b6fb6b173c89'],
+    ['v0',          '22930239c58ee7b443e1b6fb6b173c89'],
+    ['generic',     '22930239c58ee7b443e1b6fb6b173c89'],
+    ['squarespace', '82c053ac1ea541421486675b8ee24431'],
+    ['wix',         '2c7dd72e1c069e9cab093f9912353bd2'],
+    ['webflow',     '75ca997178753e150eb1a1c47bcff07f']
+  ];
+  i   int;
+  got text;
+begin
+  -- every target the spec can hold is covered here, and none is missing
+  assert (select count(*) from public.builder_targets) = array_length(expected, 1),
+         'a builder target has no snapshot; add it to this test';
+
+  for i in 1 .. array_length(expected, 1) loop
+    got := md5(public.site_spec_output_render(
+                 (select label from public.builder_targets where id = expected[i][1]),
+                 public.site_spec_output(spec, expected[i][1]), true));
+    assert got = expected[i][2],
+      format('the %s output changed (%s, expected %s). Read the diff, then regenerate.',
+             expected[i][1], got, expected[i][2]);
+  end loop;
+end
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Determinism, which is what makes the digests above mean anything
+-- ---------------------------------------------------------------------------
+do $$
+declare
+  spec jsonb := (select s from snapshot_spec);
+  t    text;
+begin
+  for t in select id from public.builder_targets loop
+    assert public.site_spec_output(spec, t) = public.site_spec_output(spec, t),
+           format('two renders of the %s output differ', t);
+  end loop;
+
+  -- A prompt does not vary by which prompt-accepting builder asked for it, and
+  -- that is deliberate: the spec is the whole instruction, and a per-builder
+  -- dialect would be four things to keep true instead of one.
+  assert public.site_spec_output(spec, 'lovable') = public.site_spec_output(spec, 'framer')
+     and public.site_spec_output(spec, 'lovable') = public.site_spec_output(spec, 'v0')
+     and public.site_spec_output(spec, 'lovable') = public.site_spec_output(spec, 'generic'),
+         'the prompt differs between builders that all just take a prompt';
+end
+$$;
+
+-- ---------------------------------------------------------------------------
+-- ⚠ The fork. This is the defect the whole feature exists to fix.
+-- ---------------------------------------------------------------------------
+do $$
+declare
+  spec jsonb := (select s from snapshot_spec);
+  t    text;
+begin
+  for t in select id from public.builder_targets where not accepts_prompt loop
+    assert public.site_spec_output(spec, t)->>'kind' = 'setup_sheet',
+           format('%s has no prompt input and was handed a prompt', t);
+  end loop;
+  for t in select id from public.builder_targets where accepts_prompt loop
+    assert public.site_spec_output(spec, t)->>'kind' = 'prompt',
+           format('%s takes a prompt and did not get one', t);
+  end loop;
+
+  assert public.site_spec_output(spec, 'wordpress')->'error'->>'code' = 'invalid_target',
+         'an unknown builder must be an error, not a silent default';
+end
+$$;
+
+-- ---------------------------------------------------------------------------
+-- The prompt: the seven parts, in the order the product spec fixes
+-- ---------------------------------------------------------------------------
+do $$
+declare
+  spec jsonb := (select s from snapshot_spec);
+  o    jsonb := public.site_spec_output(spec, 'lovable');
+  t    text  := o->>'text';
+begin
+  assert o->>'kind' = 'prompt', 'Lovable gets a prompt';
+  assert (o->>'char_count')::int = char_length(t), 'char_count must match the text';
+
+  assert t like 'Build a one-page (or multi-page) website for a therapy private practice. Follow this specification exactly.%',
+         'the role line must come first, verbatim';
+  assert position('## Practice' in t) < position('## Design tokens' in t)
+     and position('## Design tokens' in t) < position('## Pages and sections' in t)
+     and position('## Pages and sections' in t) < position('## Copy' in t)
+     and position('## Copy' in t) < position('## Constraints' in t)
+     and position('## Constraints' in t)
+         < position('## Additional instructions from the practice owner' in t),
+         'the seven parts are out of order';
+
+  -- identity
+  assert position('Name: Elm & Ember Therapy' in t) > 0, 'the practice name is missing';
+  assert position('License: LCSW #LC61234' in t) > 0,    'the license line is missing';
+  assert position('Location: Portland, OR' in t) > 0,    'the location line is missing';
+
+  -- tokens, each with the role it plays
+  assert position('Primary — buttons, links and active states: #3B2C3A' in t) > 0,
+         'a design token lost its role';
+  assert position('Cormorant Garamond' in t) > 0, 'the heading font is missing';
+  assert position('fonts.googleapis.com' in t) > 0, 'the Google Fonts stylesheet is missing';
+
+  -- copy, verbatim and fenced
+  assert position('Headline: Experienced care, without the noise.' in t) > 0,
+         'the hero headline is missing from the copy block';
+  assert position(E'"""\nI work mostly with professionals who look fine from outside.' in t) > 0,
+         'long copy must be fenced so the builder does not treat it as a brief';
+  assert position(E'- Anxiety\n- Burnout' in t) > 0, 'a list field did not render as a list';
+
+  -- ⚠ all five constraints, every time
+  assert position('Use the provided copy exactly as written.' in t) > 0, 'constraint 1 missing';
+  assert position('Do not invent testimonials, client quotes, statistics, credentials or awards.' in t) > 0,
+         'constraint 2 missing';
+  assert position('No stock photos of people; leave labeled image placeholders.' in t) > 0,
+         'constraint 3 missing';
+  assert position('The call to action links to https://elmandember.clientsecure.me.' in t) > 0,
+         'constraint 4 must name her actual booking link';
+  assert position('contact form that collects health information' in t) > 0,
+         'the health-information clause is missing';
+  assert position('Maintain WCAG AA text contrast.' in t) > 0, 'constraint 5 missing';
+
+  -- her notes, verbatim and last
+  assert right(t, 44) = 'Tuesday and Thursday are the only open hours right now.'
+         or t like '%Tuesday and Thursday are the only open hours right now.',
+         'extra_instructions must be printed verbatim';
+  assert position('Please keep fees off the home page.' in t)
+         > position('Maintain WCAG AA text contrast.' in t),
+         'extra_instructions must come after the constraints, never before';
+end
+$$;
+
+-- No booking link yet: the prompt says so rather than leaving the builder to
+-- invent a destination, which in practice means a form.
+do $$
+declare
+  spec jsonb := jsonb_set((select s from snapshot_spec), '{hero,cta_target_url}', 'null'::jsonb);
+  t    text  := public.site_spec_output(spec, 'lovable')->>'text';
+begin
+  assert position('The call to action has no link yet' in t) > 0,
+         'a spec with no booking link must say so in the constraints';
+  assert position('contact form that collects health information' in t) > 0,
+         'the health-information clause must survive the no-link branch';
+end
+$$;
+
+-- An empty notes field prints no heading at all.
+do $$
+declare
+  t text := public.site_spec_output((select s from snapshot_spec) - 'extra_instructions',
+                                    'lovable')->>'text';
+begin
+  assert position('## Additional instructions' in t) = 0,
+         'an empty notes heading was printed';
+end
+$$;
+
+-- ---------------------------------------------------------------------------
+-- The setup sheet: steps that name the product's own panels
+-- ---------------------------------------------------------------------------
+do $$
+declare
+  spec  jsonb := (select s from snapshot_spec);
+  sheet jsonb := public.site_spec_output(spec, 'squarespace');
+  step  jsonb;
+begin
+  assert sheet->>'kind' = 'setup_sheet', 'Squarespace gets a setup sheet';
+  assert jsonb_array_length(sheet->'steps') = 8, 'the sheet must have its eight steps';
+
+  -- ⚠ The panel names are the difference between a sheet she can follow and a
+  -- sheet she has to decode.
+  select s.value into step from jsonb_array_elements(sheet->'steps') s
+   where (s.value->>'n')::int = 2;
+  assert step->>'builder_hint' = 'Site Styles › Colors',
+         'step 2 must name Squarespace''s own color panel';
+  assert jsonb_array_length(step->'values') = 5, 'five hexes, each with its role';
+  assert exists (select 1 from jsonb_array_elements(step->'values') v
+                  where v.value->>'value' = '#3B2C3A' and v.value->>'kind' = 'hex'),
+         'the primary hex is missing from the color step';
+
+  -- and each product gets its own, not one generic instruction
+  assert (select s.value->>'builder_hint' from jsonb_array_elements(
+            public.site_spec_output(spec, 'wix')->'steps') s where (s.value->>'n')::int = 2)
+         = 'Site Design › Color Palette', 'Wix must be told about its own panel';
+  assert (select s.value->>'builder_hint' from jsonb_array_elements(
+            public.site_spec_output(spec, 'webflow')->'steps') s where (s.value->>'n')::int = 2)
+         = 'Style Manager › Variables › Colors', 'Webflow must be told about its own panel';
+
+  -- ⚠ the same five constraints as the prompt, as a checklist. A Squarespace
+  -- user is under exactly the same advertising rules as everyone else.
+  select s.value into step from jsonb_array_elements(sheet->'steps') s
+   where (s.value->>'n')::int = 7;
+  assert step->>'title' = 'Before you publish', 'the checklist step is missing';
+  assert (select count(*) from regexp_matches(step->>'body', '\[ \] ', 'g')) = 5,
+         'the checklist must carry all five constraints';
+  assert position('Do not invent testimonials' in step->>'body') > 0,
+         'a constraint was dropped from the checklist';
+
+  -- her notes, last, verbatim
+  select s.value into step from jsonb_array_elements(sheet->'steps') s
+   where (s.value->>'n')::int = 8;
+  assert step->>'title' = 'Your own notes', 'the notes step is missing';
+  assert step->>'body' = spec->>'extra_instructions',
+         'extra_instructions must be reproduced verbatim, never reworded';
+
+  -- and no notes step when she has written none
+  assert not exists (
+    select 1 from jsonb_array_elements(
+             public.site_spec_output(spec - 'extra_instructions', 'squarespace')->'steps') s
+     where (s.value->>'n')::int = 8),
+         'an empty notes step was emitted';
+end
+$$;
+
+-- Copy blocks: every string, individually copyable, one per list item.
+do $$
+declare
+  sheet jsonb := public.site_spec_output((select s from snapshot_spec), 'squarespace');
+begin
+  assert jsonb_array_length(sheet->'copy_blocks') >= 10,
+         'the sheet must break every string out into its own block';
+
+  assert exists (select 1 from jsonb_array_elements(sheet->'copy_blocks') b
+                  where b.value->>'page' = 'Home' and b.value->>'section' = 'Hero'
+                    and b.value->>'label' = 'Headline'
+                    and b.value->>'text' = 'Experienced care, without the noise.'),
+         'the hero headline is not an individually copyable block';
+
+  -- ⚠ ONE BLOCK PER ITEM. In a builder with no prompt input each item is typed
+  -- into its own element; a single block of newline-separated specialties would
+  -- have to be pulled apart by hand.
+  assert exists (select 1 from jsonb_array_elements(sheet->'copy_blocks') b
+                  where b.value->>'text' = 'Anxiety' and b.value->>'label' = 'Areas 1');
+  assert exists (select 1 from jsonb_array_elements(sheet->'copy_blocks') b
+                  where b.value->>'text' = 'Burnout' and b.value->>'label' = 'Areas 2'),
+         'list items must each become their own block';
+
+  -- the intro reads site_specs.about_excerpt, not its own empty fields
+  assert exists (select 1 from jsonb_array_elements(sheet->'copy_blocks') b
+                  where b.value->>'section' = 'Introduction'
+                    and b.value->>'text' like 'I work mostly with professionals%'),
+         'the intro block must carry the About text';
+
+  assert not exists (select 1 from jsonb_array_elements(sheet->'copy_blocks') b
+                      where btrim(coalesce(b.value->>'text', '')) = ''),
+         'an empty copy block is a block she would copy for nothing';
+end
+$$;
+
+-- ---------------------------------------------------------------------------
+-- The md and txt renderings
+-- ---------------------------------------------------------------------------
+do $$
+declare
+  spec jsonb := (select s from snapshot_spec);
+  md   text;
+  txt  text;
+begin
+  md  := public.site_spec_output_render('Squarespace', public.site_spec_output(spec, 'squarespace'), true);
+  txt := public.site_spec_output_render('Squarespace', public.site_spec_output(spec, 'squarespace'), false);
+
+  assert md like '# Squarespace%',            'the markdown sheet is titled with the builder';
+  assert md like '%## 2. Set your five colors%', 'the markdown sheet has step headings';
+  assert md like '%> Where: Site Styles › Colors%', 'the panel is quoted in the markdown sheet';
+  assert txt not like '%## %',                 'the plain rendering kept its markdown markers';
+  assert txt like '%SQUARESPACE%',             'the plain rendering has a title';
+  assert md <> txt,                            'md and txt must differ';
+
+  -- A prompt is already plain text with headings, so md is it as it stands and
+  -- txt is the same with the markers taken off.
+  md  := public.site_spec_output_render('Lovable', public.site_spec_output(spec, 'lovable'), true);
+  txt := public.site_spec_output_render('Lovable', public.site_spec_output(spec, 'lovable'), false);
+  assert md = public.site_spec_output(spec, 'lovable')->>'text',
+         'the markdown prompt must be the prompt itself';
+  assert txt not like '%## Constraints%' and txt like '%Constraints%',
+         'the plain prompt must lose its markers and keep its headings';
+  -- the fences are content, not markup, and must survive
+  assert position('"""' in txt) > 0, 'the plain prompt lost its copy fences';
+end
+$$;
+
+rollback;

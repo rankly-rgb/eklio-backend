@@ -229,6 +229,28 @@ as $$
       from jsonb_array_elements(p_pages) with ordinality as pg(value, ord)), '[]'::jsonb)
 $$;
 
+-- The complement: all the copy, with the structure removed. Keyed by page and
+-- section so that a section moving up the page does not read as a reworded
+-- paragraph.
+--
+-- ⚠ IT MUST IGNORE `enabled` AND `order`. Comparing the rendered preview
+-- instead would call switching a page off a copy edit, because the preview
+-- omits what is switched off — which is exactly what the skeleton comparison
+-- is already reporting, and reporting it twice under two different words is
+-- worse than not reporting it at all.
+create or replace function public.site_spec_pages_copy(p_pages jsonb)
+returns jsonb
+language sql
+immutable
+set search_path = ''
+as $$
+  select coalesce((
+    select jsonb_object_agg((pg.value->>'key') || '|' || (s.value->>'key'),
+                            coalesce(s.value->'fields', '{}'::jsonb))
+      from jsonb_array_elements(p_pages) as pg
+      cross join lateral jsonb_array_elements(pg.value->'sections') as s), '{}'::jsonb)
+$$;
+
 -- The first section text field that exceeds 800 characters, as a readable
 -- path. Only called on the failure branch, so its cost never lands on a
 -- successful autosave.
@@ -538,8 +560,8 @@ begin
        is distinct from public.site_spec_pages_skeleton(s.pages) then
       v_marks := v_marks || jsonb_build_object('structure|Page structure changed', v_next);
     end if;
-    if public.site_spec_preview_model(to_jsonb(n))->'pages'
-       is distinct from public.site_spec_preview_model(to_jsonb(s))->'pages' then
+    if public.site_spec_pages_copy(n.pages)
+       is distinct from public.site_spec_pages_copy(s.pages) then
       v_marks := v_marks || jsonb_build_object('copy|Section copy edited', v_next);
     end if;
   end if;
@@ -592,6 +614,7 @@ grant execute on function public.site_spec_envelope(jsonb)              to authe
 grant execute on function public.site_spec_get(uuid)                    to authenticated, service_role;
 grant execute on function public.site_spec_patchable_keys()             to authenticated, service_role;
 grant execute on function public.site_spec_pages_skeleton(jsonb)        to authenticated, service_role;
+grant execute on function public.site_spec_pages_copy(jsonb)            to authenticated, service_role;
 grant execute on function public.site_spec_first_overlong_field(jsonb)  to authenticated, service_role;
 grant execute on function public.site_spec_patch(uuid, jsonb)           to authenticated;
 
@@ -672,6 +695,7 @@ $$;
 -- ============================================================================
 --   drop function if exists public.site_spec_patch(uuid, jsonb);
 --   drop function if exists public.site_spec_first_overlong_field(jsonb);
+--   drop function if exists public.site_spec_pages_copy(jsonb);
 --   drop function if exists public.site_spec_pages_skeleton(jsonb);
 --   drop function if exists public.site_spec_patchable_keys();
 --   drop function if exists public.site_spec_get(uuid);

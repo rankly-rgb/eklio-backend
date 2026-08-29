@@ -92,9 +92,9 @@ course possible juste après signup, qui sera traitée côté applicatif.
 
 ## Schéma
 
-Vingt-deux tables, RLS activée sur chacune, cloisonnement par propriétaire.
+Vingt-cinq tables, RLS activée sur chacune, cloisonnement par propriétaire.
 
-Les dix tables applicatives :
+Les onze tables applicatives :
 
 - `profiles` — miroir 1:1 de `auth.users`, alimenté par le trigger
   `handle_new_user` ; `INSERT` / `DELETE` non exposés aux clients
@@ -109,11 +109,12 @@ Les dix tables applicatives :
 - `monthly_presence_content` — calendrier de contenu mensuel, **une ligne par
   item** depuis la migration de réconciliation (voir plus bas)
 - `launch_checklist_items` — les six étapes de lancement, six lignes par kit
+- `site_specs` — le spec de site éditable, une ligne par kit (Lot 6)
 
-Et les onze catalogues de référence, en lecture seule :
+Et les treize catalogues de référence, en lecture seule :
 `tone_cards`, `palette_families`, `type_pairings`, `client_persona_cards`,
 `problem_cards`, `gain_cards`, `ethics_rules`, `license_types`, `specialties`,
-`site_goals`, `primary_actions`.
+`site_goals`, `primary_actions`, `section_types`, `builder_targets`.
 
 Aucune table n'est en `FORCE ROW LEVEL SECURITY` : le `service_role`, utilisé
 côté serveur, contourne les policies. C'est le mécanisme sur lequel repose le
@@ -478,6 +479,353 @@ repo existe pour arrêter. La règle vaut pour ce qui s'écrit à partir d'ici.
 
 ---
 
+## Lot 6 — le spec de site éditable
+
+Sept migrations, du 2026-08-29. Jusqu'ici le kit de marque s'arrêtait à
+`brand_kits.site_prompt` : un bloc de texte figé, généré une fois, à prendre ou
+à laisser. Ce lot livre ce dont ce texte était fait — couleurs, typographie,
+structure de pages et de sections, copie — sous la forme d'une ligne qu'elle
+peut modifier, et qui pilote (a) une maquette rendue dans l'app et (b) un
+livrable dérivé pour le constructeur de site de son choix.
+
+### Les deux règles qui ont dicté toutes les décisions
+
+**1. Eklio n'héberge pas et ne construit pas.** Pas de page publique, pas de
+publication, pas de déploiement. La maquette est une référence de design
+affichée dans l'app authentifiée. Aucune route non authentifiée n'est ajoutée,
+aucune policy `anon` n'existe sur `site_specs`, et un garde-fou fait échouer la
+migration si une policy y devient inconditionnelle ou cesse de tester
+`auth.uid()`. La question non tranchée de `share_slug` n'est pas rouverte.
+
+**2. Le spec est la source de vérité, le livrable en est dérivé** par une
+fonction pure, sans appel LLM, jamais reparsée. Aucune colonne ne stocke un
+livrable édité à la main, parce qu'éditer le livrable n'est pas une opération
+supportée : elle édite le spec, et le rendu recommence.
+`brand_kits.site_prompt` devient un **cache** de ce rendu — la flèche ne va que
+dans un sens, et c'est ce qui autorise cette colonne à rester lisible pour ses
+consommateurs actuels.
+
+### Où vit la surface HTTP
+
+Dans `eklio-frontend`, comme toujours, et elle est mince : le handler
+authentifie, transmet le JWT de l'utilisatrice, appelle une fonction et renvoie
+ce qu'il reçoit. Rien ici ne demande d'appel LLM, de requête HTTP, d'horloge ni
+de runtime — par le test du README, tout tient donc dans ce repo.
+
+> ⚠ **Appeler ces fonctions avec le JWT de l'utilisatrice, jamais en
+> `service_role`.** C'est `auth.uid()` qui les cloisonne, et il vaut NULL sur une
+> connexion `service_role` : un appel en service_role reçoit `unauthenticated`,
+> pas le spec de quelqu'un. Même contrat que `brief_preview` et
+> `calendar_summary`.
+
+| Endpoint du produit | Fonction SQL |
+|---|---|
+| `GET /brand-kits/:id/site-spec` | `site_spec_get(uuid)` |
+| `PATCH /brand-kits/:id/site-spec` | `site_spec_patch(uuid, jsonb)` |
+| `POST /brand-kits/:id/site-spec/reset` | `site_spec_reset(uuid, text)` |
+| `POST /brand-kits/:id/site-spec/target` | `site_spec_set_target(uuid, text)` |
+| `GET /brand-kits/:id/site-output` | `site_output_get(uuid, text, text)` |
+| `POST /brand-kits/:id/site-output/mark-copied` | `site_output_mark_copied(uuid)` |
+| `POST /brand-kits/:id/site-spec/fix-contrast` | `site_spec_fix_contrast(uuid, text)` |
+| les deux nouveaux blocs de `GET /catalog` | `site_catalog()` |
+
+Toutes rendent du JSON. Les erreurs ont une seule forme,
+`{ "error": { "code", "message", "field"? } }`, et sont **retournées, pas
+levées** : un `raise` annulerait la transaction, ce qui convient à une violation
+de contrainte et pas à « votre titre dépasse de quatre caractères », que le
+front doit afficher sous le champ concerné. La validation précède toujours
+l'écriture, donc une erreur retournée signifie que rien n'a été écrit.
+
+**404 et jamais 403.** Le spec d'une autre utilisatrice n'est pas visible, donc
+chaque fonction voit zéro ligne et répond `not_found` — la même réponse, au
+caractère près, que pour un kit qui n'existe pas. Aucun chemin de code ne sait
+qu'une ligne existe et refuse de la montrer, et c'est le seul genre qui puisse
+divulguer son existence.
+
+### `GET /brand-kits/:id/site-spec` → `site_spec_get(p_brand_kit_id)`
+
+Tout l'état de l'éditeur en un aller-retour. `PATCH` rend **la même enveloppe**,
+donc une frappe d'autosave coûte un appel et le client n'a jamais à re-fetcher
+pour redessiner la maquette, le panneau de contraste et la bannière.
+
+```json
+{
+  "spec": {
+    "brand_kit_id": "cccccccc-…",
+    "spec_version": 1,
+    "last_copied_spec_version": null,
+    "updated_at": "2026-08-29T07:44:44.277880+00:00",
+    "primary": "#3B2C3A", "secondary": "#4A5361", "accent": "#4A5361",
+    "light_neutral": "#F3EDE4", "dark_neutral": "#241B23",
+    "type_pairing_id": "cormorant_source",
+    "heading_font": "Cormorant Garamond", "body_font": "Source Sans 3",
+    "google_fonts_url": "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&…",
+    "hero": {
+      "overline": "LCSW · PORTLAND, OR",
+      "headline": "Experienced care, without the noise.",
+      "subhead": "Therapy for high-performing adults.",
+      "cta_label": "Book a consult",
+      "cta_target_url": null
+    },
+    "about_excerpt": "I work mostly with professionals who look fine from outside. …",
+    "pages": [ { "key": "home", "label": "Home", "enabled": true, "sections": [
+      { "key": "hero", "type": "hero", "enabled": true, "order": 1, "fields": {} }, … ] }, … ],
+    "practice_details": {
+      "practice_name": "Elm & Ember Therapy", "license_label": "LCSW",
+      "license_number": null, "city": "Portland", "state": "OR",
+      "email": null, "phone": null
+    },
+    "extra_instructions": null,
+    "target": "squarespace"
+  },
+  "preview":  { "practice_name": "Elm & Ember Therapy", "tokens": { … }, "pages": [ … ] },
+  "contrast": { "pairs": [ … ], "worst_ratio": 6.68, "passes_aa": true },
+  "output":   { "kind": "setup_sheet", "steps": [ … ], "copy_blocks": [ … ] },
+  "diff":     { "stale": false, "changes": [] },
+  "etag":     "f84ed47d93d724c9f033c4b410fbaa36"
+}
+```
+
+`spec` ressort **avec les noms de clés que `PATCH` accepte** : ce qui se lit est
+ce qui se réécrit, sans traduction dans un seul sens. Le suffixe `_hex` des
+colonnes et la colonne de service `change_marks` ne quittent jamais la base.
+
+`etag` est un md5 de `(brand_kit_id, spec_version, target)`. Tout ce dont le
+livrable dépend est là, et ces trois valeurs ne bougent que par une écriture
+réussie : le front peut le renvoyer tel quel en `If-None-Match`.
+
+### `PATCH /brand-kits/:id/site-spec` → `site_spec_patch(p_brand_kit_id, p_patch)`
+
+Partiel, pensé pour l'autosave, **sans aucun appel LLM ni externe** : une
+recherche sur l'index unique `brand_kit_id`, de la manipulation jsonb en
+mémoire, un UPDATE, une enveloppe. Rien n'y croît avec quoi que ce soit.
+
+Clés acceptées (`site_spec_patchable_keys()`) : `primary`, `secondary`,
+`accent`, `light_neutral`, `dark_neutral`, `type_pairing_id`, `heading_font`,
+`body_font`, `google_fonts_url`, `hero`, `about_excerpt`, `pages`,
+`practice_details`, `extra_instructions`, `target`. Toute autre clé est refusée
+en la nommant.
+
+```json
+// requête
+{ "hero": { "headline": "A calmer place to start." } }
+```
+
+`hero` et `practice_details` sont **fusionnés clé par clé** : l'éditeur
+enregistre un champ à la fois, et un remplacement d'objet perdrait les quatre
+autres. `pages` est remplacé en bloc — une édition de structure est un
+réordonnancement ou une bascule, et le client tient déjà tout le tableau.
+
+Choisir `type_pairing_id` **adopte les deux fontes et la feuille de style** du
+catalogue, sauf si le même patch nomme explicitement une fonte. Un id seul
+laisserait à l'écran des polices que le sélecteur prétend avoir changées.
+
+Les hexadécimales sont mises en majuscules à l'écriture : un sélecteur de
+couleur envoie une casse arbitraire, et le livrable doit être identique octet
+pour octet à chaque rendu du même spec.
+
+```json
+// refus : la limite est nommée, et le champ aussi
+{ "error": { "code": "too_long", "field": "hero.headline",
+             "message": "This is 91 characters. The limit is 90." } }
+```
+
+Codes : `unauthenticated`, `not_found`, `invalid_body`, `unknown_field`,
+`invalid_field`, `too_long`.
+
+> ⚠ **Un patch sans effet n'incrémente pas `spec_version`.** L'autosave se
+> déclenche à chaque frappe, y compris celle qui tape un caractère et celle qui
+> l'efface : bumper là lèverait la bannière « modifié depuis votre copie » sur
+> une édition qui s'est annulée elle-même.
+
+### `POST /brand-kits/:id/site-spec/reset` → `site_spec_reset(id, scope)`
+
+`scope` ∈ `all | colors | typography | copy | structure`. Restaure cette portée
+depuis la direction choisie.
+
+> ⚠ **Réinitialiser une portée ne doit jamais en coûter une autre.** `copy`
+> restaure le texte par défaut **dans la structure qu'elle a construite** — son
+> réordonnancement et ses bascules survivent. `structure` restaure la
+> disposition par défaut en **gardant la copie** de chaque section qui y a
+> encore sa place.
+
+Deux choses qu'aucune portée ne touche, `all` compris : la **cible de
+constructeur**, qui vient du brief et non de la direction et qui a sa propre
+bascule ; et **son lien de réservation**, qu'aucune direction n'a jamais produit,
+donc qu'aucun reset ne peut restaurer ni ne doit effacer. `all` est la seule
+portée qui efface ses notes libres, parce qu'`all` veut dire « le spec
+qu'implique la direction », et ce spec n'en a pas.
+
+### `POST /brand-kits/:id/site-spec/target` → `site_spec_set_target(id, target)`
+
+Bascule le constructeur, régénère le livrable, ne touche à rien d'autre. C'est
+une enveloppe mince autour du patch, et c'est le but : « ne touche à rien
+d'autre » est déjà la garantie d'un patch partiel, donc la garantie a une seule
+implémentation au lieu d'être promise deux fois.
+
+### `GET /brand-kits/:id/site-output` → `site_output_get(id, target, format)`
+
+`format` ∈ `json | md | txt` (défaut `json`). `target` optionnel : la cible du
+spec par défaut. **Demander le livrable pour un autre constructeur ne bascule
+pas le constructeur.**
+
+```json
+{ "target": "squarespace", "format": "md", "text": "# Squarespace\n\n## 1. Start from the right template\n…" }
+```
+
+`format=md` est le chemin PDF / impression.
+
+### `POST /brand-kits/:id/site-output/mark-copied` → `site_output_mark_copied(id)`
+
+Pose `last_copied_spec_version = spec_version` et rend l'enveloppe.
+
+> ⚠ **La seule action qui ne doit pas incrémenter `spec_version`.** Enregistrer
+> qu'elle a copié la version 7 en faisant discrètement passer le spec en 8
+> laisserait la bannière levée juste après la copie censée l'éteindre.
+> Idempotente : copier deux fois est normal.
+
+### `POST /brand-kits/:id/site-spec/fix-contrast` → `site_spec_fix_contrast(id, pair_id)`
+
+Applique l'hexadécimale corrigée que `site_spec_contrast` proposait pour cette
+paire, et rend l'enveloppe complète. Elle **recalcule** la suggestion au lieu de
+faire confiance à une valeur envoyée par le client : le spec a pu bouger depuis
+que le panneau a été dessiné. Une paire déjà lisible rend `no_fix_needed`, pas
+une seconde écriture.
+
+### `GET /catalog` → `site_catalog()`
+
+Deux blocs de plus, dans la forme exacte que fixe la commande — la clé est
+`type`, pas `id` :
+
+```json
+{
+  "section_types": [
+    { "type": "hero", "label": "Hero",
+      "description": "The first screen: a short overline, one headline, …",
+      "fields": [ { "key": "headline", "label": "Headline", "kind": "text", "max_length": 90 }, … ],
+      "default_enabled": true, "allowed_pages": ["home"],
+      "source": "spec.hero", "active": true } , … ],
+  "builder_targets": [
+    { "id": "lovable",     "label": "Lovable",     "accepts_prompt": true,
+      "output_kind": "prompt",      "docs_url": "https://docs.lovable.dev/", "active": true },
+    { "id": "squarespace", "label": "Squarespace", "accepts_prompt": false,
+      "output_kind": "setup_sheet", "docs_url": "https://support.squarespace.com/", "active": true }, … ]
+}
+```
+
+`source` est la clé que la commande ne liste pas et dont l'éditeur ne peut pas
+se passer : le héros range sa copie dans `site_specs.hero` et l'intro dans
+`site_specs.about_excerpt`, pas dans les `fields` de la section. Sans elle,
+l'éditeur afficherait un formulaire sur un objet que rien ne lit.
+
+### `accepts_prompt` : le drapeau qui justifie tout le reste
+
+Lovable, Framer, v0 et une cible générique ont un champ où coller un prompt.
+**Squarespace, Wix et Webflow n'en ont aucun.** Pas un champ caché, pas un champ
+en bêta : l'interaction n'existe pas dans ces produits. Leur servir un prompt,
+c'est ne rien livrer en ayant l'air de livrer quelque chose — et c'est le défaut
+que l'unique colonne `site_prompt` porte aujourd'hui.
+
+`accepts_prompt` est donc une colonne **générée** depuis `output_kind`, pour la
+raison de `subscriptions.active` : écrite à la main, elle serait une seconde
+copie tenue par le même INSERT, et le jour où les deux divergent est celui où
+une utilisatrice Squarespace reçoit un prompt.
+
+Les trois qui n'en ont pas reçoivent une **fiche de mise en route** : des étapes
+numérotées nommant le panneau réel de leur produit — Squarespace `Site Styles ›
+Colors`, Wix `Site Design › Color Palette`, Webflow `Style Manager › Variables ›
+Colors` — et chaque chaîne à saisir isolée dans son propre bloc copiable, un par
+item de liste. Ces noms de panneaux sont des **colonnes de catalogue**, pas un
+CASE au fond d'une fonction : quand un constructeur renommera un panneau, la
+correction sera une migration de données.
+
+### Les fonctions pures
+
+| Fonction | Volatilité | Ce qu'elle rend |
+|---|---|---|
+| `site_spec_preview_model(spec)` | `IMMUTABLE` | ce que la maquette dessine |
+| `site_spec_contrast(spec)` | `IMMUTABLE` | les six paires WCAG, avec correctif |
+| `site_spec_output(spec, target)` | `STABLE` | le livrable, selon `output_kind` |
+| `site_spec_diff(spec)` | `IMMUTABLE` | `{ stale, changes }` |
+
+Elles prennent le spec **en jsonb** (`to_jsonb(site_specs)`), pas un uuid. Deux
+conséquences qui valaient d'être achetées : elles se testent contre un littéral,
+sans fixture ni RLS ni ligne ; et elles ne peuvent rien divulguer, là où une
+fonction qui prend un uuid et lit une ligne demande qu'on raisonne sur son
+cloisonnement.
+
+`site_spec_output` parcourt `site_spec_preview_model`, pas la ligne brute. Le
+livrable et la maquette **décrivent donc le même site par construction** : une
+seule fonction décide des pages listées, de leur ordre et de la copie de chaque
+section.
+
+### Le contraste se rapporte, il ne bloque pas
+
+`site_spec_contrast` calcule les six paires que la maquette dessine réellement,
+et pas le produit croisé des cinq jetons : sur vingt combinaisons la plupart
+n'apparaissent nulle part sur la page, et chaque fausse alerte apprend à ignorer
+la vraie.
+
+Arithmétique en `numeric` et non en flottant — le ratio est arrondi à deux
+décimales puis comparé à 4,5, donc une paire sur la frontière se joue au dernier
+bit. Le niveau est dérivé du ratio **arrondi**, pour qu'un « 4.50 » ne puisse
+jamais s'afficher à côté du mot `fail`.
+
+Le correctif garde teinte et saturation et ne déplace que la clarté (HSL, faute
+de bibliothèque OKLCH dans Postgres), en cherchant la valeur **la plus proche de
+la sienne** qui atteint 4,5 — pas la première d'une direction devinée. Il
+déplace toujours une couleur de marque, **jamais le fond de page** : cinq des
+six paires se mesurent contre lui.
+
+> ⚠ **Aucune contrainte de contraste n'existe, et un garde-fou refuse la
+> migration si on en ajoute une.** Une thérapeute qui a déjà payé une génération
+> et à qui l'on refuse un enregistrement parce que deux de ses couleurs sont à
+> 4,3:1 a reçu un produit cassé ; celle à qui l'on dit « cette paire est
+> difficile à lire, voici le bouton » a reçu un conseil.
+
+### `extra_instructions`
+
+Ajouté **verbatim** à la fin du livrable, sous son propre titre
+(`## Additional instructions from the practice owner`, ou une dernière étape
+« Your own notes » dans la fiche). Jamais analysé, jamais inspecté, et il
+n'atteint pas la maquette — l'y lire voudrait dire l'interpréter, et
+l'interpréter est précisément l'aller-retour par le texte libre que la règle 2
+interdit.
+
+### Ce qui n'est pas construit, et pourquoi
+
+- **Aucune table de révisions.** Annuler / refaire est côté client. Ce que la
+  table garde n'est pas un historique mais une marque haute par libellé de
+  changement (`change_marks`), ce dont la bannière a besoin et rien de plus.
+- **`stale` se décide sur la version, pas sur la liste de libellés.** Toute
+  écriture réussie incrémente `spec_version` ; si l'une d'elles change un jour
+  quelque chose qu'aucun libellé ne décrit, la bannière doit quand même se
+  lever.
+- **Aucune validation auprès d'un ordre professionnel.** `practice_details`
+  porte un numéro de licence dont Eklio n'a aucun moyen de vérifier la réalité,
+  et un produit qui laisserait croire qu'il l'a vérifié ferait une affirmation
+  sur les diplômes d'une thérapeute à sa place.
+
+### Deux points de sécurité qui ne sont pas de la cosmétique
+
+**`cta_target_url` est restreint à `https://`, `http://`, `mailto:` et `tel:`.**
+Ce lien est imprimé verbatim dans un document dont toute la raison d'être est
+d'être collé dans un constructeur de site, dont certains en feront un `href`
+vivant. Un `javascript:` ou un `data:` qui atteindrait cette sortie serait une
+charge utile avec son vecteur de livraison attaché.
+
+**`site_spec_patch` est la seule fonction `SECURITY DEFINER` du lot à être
+exposée aux clients, et elle refait explicitement le cloisonnement que la RLS
+faisait pour elle.** Elle écrit `spec_version` et `change_marks`, deux colonnes
+délibérément retirées aux clients par privilège de colonne — une version choisie
+par le client laisserait un éditeur périmé gagner en silence. Sans son
+`user_id = auth.uid()` en première ligne, ce serait un oracle de lecture-écriture
+indexé par uuid. `site_spec_seed_values`, qui lit un brief par id de kit sans
+contrôle de propriété, est pour la même raison **retirée à `authenticated`** et
+un garde-fou le vérifie.
+
+---
+
 ## Chemins de retour arrière
 
 Le CLI Supabase n'a **pas de runner de down** : `db push` ne fait qu'avancer.
@@ -505,3 +853,32 @@ hexadécimale ; l'idempotence de `seed_launch_checklist` et de
 `ensure_month_skeleton` sur deux et trois passages ; la contrainte de paywall
 sur les lignes `locked` ; et, sur chaque table possédée, **qu'un second
 utilisateur obtient zéro ligne et non une erreur de permission**.
+
+Pour le Lot 6, dans l'ordre d'importance que la commande fixe :
+
+- **des tests de snapshot sur `site_spec_output`, un spec × les sept cibles.**
+  Le livrable est une fonction pure de `(spec, target)` et tout le produit
+  repose là-dessus : la maquette qu'elle valide et le texte qu'elle colle
+  doivent décrire le même site, le cache dans `brand_kits.site_prompt` doit
+  rester vrai, et un marqueur « copié » doit vouloir dire quelque chose. Si une
+  empreinte bouge, le livrable a bougé, et quelqu'un doit le regarder exprès
+  plutôt que de l'apprendre d'une utilisatrice. Régénérer avec
+  [`supabase/tests/helpers/site_output_digests.sql`](supabase/tests/helpers/site_output_digests.sql) —
+  **après avoir lu la différence** ; l'empreinte n'est pas l'objet du test, le
+  moment où l'on regarde l'est.
+- des tests unitaires sur `site_spec_contrast` contre des ratios calculés à la
+  main et recoupés avec une implémentation indépendante, dont la borne
+  canonique AA (`#767676` passe à 4.54, `#777777` échoue à 4.48), une paire
+  d'une palette réellement livrée qui échoue (2.71:1), et **la vérification que
+  le correctif proposé atteint bien 4,5**, sans quoi un correctif en un clic
+  laisserait la bannière levée ;
+- chaque limite de longueur à sa borne exacte, y compris **à l'intérieur d'une
+  liste**, là où une limite par champ serait passée à côté ;
+- `spec_version` qui n'avance pas sur un patch sans effet, la bannière qui se
+  lève puis retombe après `mark-copied`, et `mark-copied` qui n'avance pas la
+  version ;
+- l'idempotence de l'amorçage quand on re-choisit une direction, **et qu'une
+  direction extrême mais légale ne peut pas rendre ce choix impossible** ;
+- et, sur chacune des sept fonctions exposées, qu'une seconde utilisatrice
+  reçoit `not_found` — la même réponse, au caractère près, que pour un kit
+  inexistant.
