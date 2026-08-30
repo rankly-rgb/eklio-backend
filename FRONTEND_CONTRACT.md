@@ -1571,6 +1571,7 @@ Returns one envelope:
     "name": "Elm & Ember Therapy", "city": "Portland", "state": "OR",
     "specialties": ["Anxiety", "Burnout", "Life transitions"]
   },
+  "practitioner_line": "Nora Whitfield, LCSW",
   "voice_guide": { "sounds_like": ["..."], "never_write": ["..."] },
   "social_templates": [ "... four, same shape as brand_kits.social_templates ..." ],
   "directions": [
@@ -1595,10 +1596,13 @@ Returns one envelope:
 `practice.name` is `project_briefs.practice_name`, falling back to the
 project's own name — the same seeding rule section 1's `practice_details`
 table gives for `practice_name`, applied here before a site spec exists to
-patch. `voice_guide` and `social_templates` are the kit-level values
-unchanged, re-skinned per direction at render time by the `palette_role`/
-`typography_role` each social template already carries — there is no
-per-direction copy of either.
+patch. `practitioner_line`, `voice_guide` and `social_templates` are the
+kit-level values unchanged — `practitioner_line` is `brand_kits.practitioner_line`
+verbatim, the same already-composed string section 1 says exists precisely so
+nothing re-assembles a name and a license itself, and the social templates are
+re-skinned per direction at render time by the `palette_role`/
+`typography_role` each one already carries. There is no per-direction copy
+of any of the three.
 
 `practice.specialties` is up to three `specialties.label` values, resolved
 from `project_briefs.specialty_ids` in the order she picked them — the same
