@@ -1567,7 +1567,10 @@ Returns one envelope:
 ```json
 {
   "brand_kit_id": "33333333-...",
-  "practice": { "name": "Elm & Ember Therapy", "city": "Portland", "state": "OR" },
+  "practice": {
+    "name": "Elm & Ember Therapy", "city": "Portland", "state": "OR",
+    "specialties": ["Anxiety", "Burnout", "Life transitions"]
+  },
   "voice_guide": { "sounds_like": ["..."], "never_write": ["..."] },
   "social_templates": [ "... four, same shape as brand_kits.social_templates ..." ],
   "directions": [
@@ -1596,6 +1599,16 @@ patch. `voice_guide` and `social_templates` are the kit-level values
 unchanged, re-skinned per direction at render time by the `palette_role`/
 `typography_role` each social template already carries — there is no
 per-direction copy of either.
+
+`practice.specialties` is up to three `specialties.label` values, resolved
+from `project_briefs.specialty_ids` in the order she picked them — the same
+resolution `brief_preview()` does for the brief's live rail, capped at three
+here instead of two because the reveal's homepage mockup has a three-column
+section to fill. Labels only: there is no per-specialty sentence anywhere in
+the schema before a site spec exists (that copy is generated into the site
+spec's `specialties` section only after a direction is bought), so this is
+never a fabricated one-liner. An empty array when she picked none — never
+`null`, never an error.
 
 `contrast` is `brand_kit_direction_contrast(direction)`: the same rendered
 pairs `site_spec_contrast` reports for a purchased site spec (`pair_id`,
