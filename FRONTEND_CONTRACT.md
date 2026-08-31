@@ -2351,8 +2351,8 @@ and this feature does not create one — see the header of
 | `referral_quote` | `text` | ≤ 400 chars | the highest-value field in the brief |
 | `prior_career` | `text` | ≤ 200 chars | |
 | `prior_career_public` | `boolean` | — | **`not null default false`** — the one non-nullable addition |
-| `usp_options` | `jsonb` | exactly 3 elements | shape in §9.5; `null` until generated |
-| `selected_usp_id` | `text` | — | must match an `id` present in `usp_options`; enforced by a **trigger**, not a CHECK (`project_briefs_validate_selected_usp_id`) |
+| `usp_options` | `jsonb` | 2 or 3 elements, never 1, never 0 | shape in §9.5; `null` until generated |
+| `selected_usp_id` | `text` | — | when it CHANGES to a non-null value, must match an `id` present in `usp_options`; enforced by a **trigger**, not a CHECK (`project_briefs_validate_selected_usp_id`) — see §9.12 for what "changes" means across a regeneration |
 | `usp_statement` | `text` | ≤ 200 chars | the selected statement AFTER edits — **this, not `selected_usp_id`, is what generation consumes** |
 | `tone_cards` | `jsonb` | exactly 6 elements | shape in §9.4; `null` until generated |
 | `tone_cards_inputs_hash` | `text` | — | opaque; frontend-owned, lets the client skip regenerating on unrelated saves |
@@ -2397,7 +2397,7 @@ shouldn't.
 
 ### 9.5 `project_briefs.usp_options` shape
 
-Array of exactly 3:
+Array of **2 or 3** — never 1, never 0:
 
 ```json
 {
@@ -2411,10 +2411,24 @@ Array of exactly 3:
 
 `angle` is one of `population` | `method` | `lived_experience`. CHECK
 `project_briefs_usp_options_check` (function
-`project_briefs_usp_options_valid`): exactly 3 elements, every element has
-all five keys, `statement` ≤ 200 chars, `rationale` ≤ 240 chars, `evidence`
-an array of strings, and the three elements carry **three distinct
-angles**. Same null-safe discipline as §9.4.
+`project_briefs_usp_options_valid`): 2 or 3 elements, every element has all
+five keys, `statement` ≤ 200 chars, `rationale` ≤ 240 chars, `evidence` an
+array of strings, and every element carries a **distinct `angle`** from
+every other element in the array (two elements can never share an angle;
+with only two elements present, that still leaves one of the three angles
+absent from the batch — expected, not an error). Same null-safe discipline
+as §9.4.
+
+⚠ **Originally exactly 3, relaxed in `20260831102000_...sql`.** The
+generation pipeline (`lib/generation/usp-options.ts`, eklio-frontend)
+already tried to keep going after a partial batch and already had copy for
+it (`partialMessageFor` — "We only found two that were truly yours…"), but
+the original CHECK made a genuine 2-survivor result **unwritable**: a
+regeneration that only produced 2 valid candidates could never actually be
+saved, silently defeating the partial-batch UX the frontend had already
+built. A 1-element (or empty) array is still refused — a single "choice"
+isn't a positioning screen — only the floor moved from 3 down to 2, not to
+1.
 
 `evidence` names which brief fields the statement drew from — render it as
 the "Built from: …" proof row on the positioning screen, mapped through a
@@ -2717,6 +2731,130 @@ belongs to `ethics_rules` hits alone. If a future phrase genuinely
 duplicates board-compliance intent, that is a signal to review `scarcity`'s
 patterns in `lib/ethics/rules.ts`, not to route `hype` hits through the
 compliance badge.
+
+### 9.12 `selected_usp_id` survives a regeneration — the trigger only re-validates a real change
+
+`project_briefs_validate_selected_usp_id` fires `before insert or update …
+for each row`, like every trigger on this table — it runs on **every** row
+write, not only ones that touch `selected_usp_id`. The function body itself
+decides whether there is anything to check:
+
+- **`UPDATE` where `new.selected_usp_id is not distinct from
+  old.selected_usp_id`** (the column is unchanged by this write, including
+  a write that only touched `usp_options` — a regeneration) → the trigger
+  returns immediately, no lookup against `usp_options` at all.
+- **Every other case** — an `INSERT` with `selected_usp_id` set, or an
+  `UPDATE` that actually assigns it a new value — validates as before: `new
+  .selected_usp_id`, if non-null, must match an `id` present in `new
+  .usp_options`, or the write is rejected.
+
+⚠ **Originally fired on every write regardless, in `20260831102000_...sql`
+as first authored.** "Write me three more" replaces `usp_options` in place;
+if a practitioner had already confirmed a positioning statement
+(`selected_usp_id` + `usp_statement` both set) and then regenerated, the
+stale `selected_usp_id` no longer matched anything in the freshly-written
+`usp_options` — the trigger, re-validating on every row write, refused the
+regeneration outright. That would have broken "Write me three more" for
+anyone who had already confirmed, in production. The fix does not lower the
+bar for a **genuine** reassignment: setting `selected_usp_id` to an id that
+is not present in the current `usp_options` still fails, on `INSERT` and on
+`UPDATE` alike — only a write that leaves `selected_usp_id` untouched skips
+the check.
+
+**A confirmed choice is never cleared by a regeneration — `selected_usp_id`
+and `usp_statement` are the practitioner's decision, not candidates.**
+`usp_options` is the only thing "Write me three more" replaces. If her
+confirmed id is no longer among the freshly-generated options, the
+positioning screen must show her current statement in its own block, above
+the new options, labeled "This is the positioning you're using now.", with
+a "Keep it" action that dismisses the new batch without writing anything —
+see `PositioningScreen` (eklio-frontend, `components/brief/positioning-screen.tsx`).
+Choosing one of the new candidates replaces the confirmed selection only on
+an explicit action, never as a side effect of the batch going stale.
+
+One more thing this fix does **not** do, by design: re-submitting
+`selected_usp_id` with the SAME value it already has (a no-op re-save, not
+a real reselection) is indistinguishable at the SQL level from "column not
+touched" — `NEW` and `OLD` compare equal either way — so it, too, skips
+re-validation. This is not a new hole: the value was already validated once,
+when it was first set; staleness after a later regeneration is accepted by
+design (previous paragraph), and re-affirming the same already-accepted
+value needs no second check.
+
+### 9.13 `project_briefs.data` — a typed shape for the open jsonb bucket
+
+`project_briefs.data jsonb not null default '{}'` predates this feature
+(`20260823000000`) and has never had a shape of its own — the frontend's
+own Zod layer was the only thing that ever enforced what went into it.
+Eight keys were already living there from earlier lots; this lot adds three
+more (`selected_tone_card_id`, `usp_regenerate_count`,
+`usp_options_inputs_hash`). Eleven keys deep, with zero database-level
+shape, was a schema pretending not to be one.
+
+`20260831106000_project_briefs_data_shape.sql` adds CHECK
+`project_briefs_data_shape_check` (function `project_briefs_data_valid`) —
+**open, not closed.** Unknown keys are tolerated; only the eleven KNOWN
+keys are type-checked, and only when present:
+
+| key | `jsonb_typeof` when present |
+|---|---|
+| `stage` | `string` |
+| `problem_text` | `string` |
+| `gain_text` | `string` |
+| `builder_target` | `string` |
+| `existing_url` | `string` |
+| `practitioner_name` | `string` |
+| `practitioner_line` | `string` |
+| `suggestion_notice_seen` | `boolean` |
+| `selected_tone_card_id` | `string` |
+| `usp_regenerate_count` | `number` |
+| `usp_options_inputs_hash` | `string` |
+
+Every key is **optional** — `{}` (the column default) passes, and so does
+an object carrying only some of the eleven. An unrecognized key is
+tolerated whatever shape its own value takes — this is deliberate, not an
+oversight: closing the shape would put a migration in the way of the next
+gap-fill key, exactly the friction this jsonb bucket exists to avoid. What
+the CHECK buys instead is a backstop against whatever bypasses the
+frontend's Zod layer — a future bug, a different service, a manual `psql`
+edit — writing a wrong-typed value for a key the frontend already depends
+on: `parseBriefData` (eklio-frontend) would otherwise quietly discard a
+malformed value on next read, falling back to `{}`, rather than the write
+ever surfacing as an error.
+
+⚠ **A non-object `data` value is refused too, and is the reason for the
+constraint's leading `jsonb_typeof(p) = 'object'` gate.** A naive version
+built from just the eleven `(not (p ? 'key') or jsonb_typeof(p->'key') =
+'type')` clauses AND'd together, with no top-level object-type gate,
+returns `true` for a bare JSON array, string, number or boolean — `?`
+(key/element existence) tests ARRAY MEMBERSHIP too, not just object-key
+presence, so every "not present OR correctly typed" clause is vacuously
+satisfied at once by a non-object value, with none of them ever going
+`NULL`. A present key with the WRONG type was never actually the hole in
+that naive version — `jsonb_typeof(p->'key')` on a present key is always a
+real, non-null type name, so comparing it to the expected type is an
+ordinary two-non-null-operand `=`, and a single `false` from that
+comparison dominates the whole `AND` regardless of how many other
+(optional, absent) keys evaluate to `NULL`. Same null-safe discipline as
+§9.4/§9.5 either way: `project_briefs_data_valid` is wrapped in
+`coalesce(…, false)` and never returns `NULL`.
+
+No explicit grant/revoke on `project_briefs_data_valid` — same as
+`project_briefs_tone_cards_valid` and `project_briefs_usp_options_valid`:
+a CHECK-backing shape validator must stay executable by whoever performs a
+normal write (Postgres's default `EXECUTE … TO PUBLIC` on function
+creation), and reveals nothing, unlike the locked-down trigger functions or
+a secret-bearing RPC like `usp_banned_phrases_check`.
+
+Registered in `array_validators` (not `validator_registry`) in
+`supabase/tests/20260829112000_null_safe_jsonb_validators.test.sql`'s
+shared NULL-safety suite — `validator_registry`'s own generic test asserts
+that removing any one required key must fail, which would be actively
+wrong here (`{}` is this validator's legitimate pass case, since every one
+of the eleven keys is optional); `array_validators` accommodates it under
+its documented "or has its own coverage elsewhere in the suite" clause —
+`supabase/tests/20260831106000_project_briefs_data_shape.test.sql` is that
+coverage.
 
 ### ⚠ Deviation from an earlier draft of this feature's brief
 
