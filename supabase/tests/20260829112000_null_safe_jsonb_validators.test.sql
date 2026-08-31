@@ -44,11 +44,7 @@ insert into permissive_validators values
   ('site_spec_cta_target_url_valid'),
   ('site_spec_practice_details_valid'),
   ('brand_kit_directions_rendering_valid'),
-  ('brand_kit_social_templates_rendering_valid'),
-  -- project_briefs_data_valid: every key it looks at is optional (`not (p ?
-  -- key) or ...`) — there is no required-key set for part 3's per-key removal
-  -- test to exercise, so it belongs here rather than in validator_registry.
-  ('project_briefs_data_valid');
+  ('brand_kit_social_templates_rendering_valid');
 
 -- Validators whose argument is an array or which have their own coverage
 -- elsewhere in the suite; still held to never returning NULL.
@@ -60,14 +56,25 @@ insert into array_validators values
   ('section_type_fields_valid'),
   ('site_spec_pages_valid'),
   ('site_spec_seed_clamped_valid'),
-  -- project_briefs_tone_cards_valid (exactly 6 elements) and
-  -- project_briefs_usp_options_valid (2-3 elements, relaxed from exactly-3 —
-  -- see 20260901074731_project_briefs_how_you_work_columns.sql): both take a
-  -- top-level JSON ARRAY, not an object with required keys, so they belong
-  -- here rather than in `validator_registry`. Their own missing-key coverage
-  -- lives in 20260901074731_project_briefs_how_you_work_columns.test.sql.
+  -- 20260901074731_project_briefs_how_you_work_columns.sql: both take a
+  -- top-level JSON ARRAY (exactly 6 tone cards / 2-or-3 USP options, per
+  -- the relaxation in the same file), not an object with required keys, so
+  -- they belong here rather than in `validator_registry`. Their own
+  -- missing-key and length-bound coverage lives in
+  -- 20260901074731_project_briefs_how_you_work_columns.test.sql.
   ('project_briefs_tone_cards_valid'),
-  ('project_briefs_usp_options_valid');
+  ('project_briefs_usp_options_valid'),
+  -- 20260901074933_project_briefs_data_shape.sql: an object whose ELEVEN
+  -- keys are all OPTIONAL (project_briefs.data — see FRONTEND_CONTRACT.md
+  -- §9), unlike every entry in `validator_registry` above, which has
+  -- REQUIRED keys and is tested by removing each in turn and asserting
+  -- refusal (section 3 below). That test would be actively wrong here: an
+  -- empty object `{}` is this validator's PASSING case, not its failing
+  -- one — it is the column's own default. Belongs here for "has its own
+  -- coverage elsewhere in the suite": its own missing-key-is-fine,
+  -- wrong-type-is-refused and open-unknown-key coverage lives in
+  -- 20260901074933_project_briefs_data_shape.test.sql.
+  ('project_briefs_data_valid');
 
 do $$
 declare
