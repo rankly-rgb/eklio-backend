@@ -2420,11 +2420,38 @@ angles**. Same null-safe discipline as §9.4.
 the "Built from: …" proof row on the positioning screen, mapped through a
 human-label lookup (§9.9), never as raw column names.
 
-### 9.6 The two RPCs
+### 9.6 The three RPCs — TWO ARE `service_role` ONLY, one is `authenticated`
 
-Both are `security definer` with `set search_path = ''` locked, and both
-are granted to `authenticated` (and `service_role`) — call them with the
-user's JWT, same as every other RPC in this contract.
+All three are `security definer` with `set search_path = ''` locked. Their
+grants are NOT uniform — get this wrong and either becomes a probing
+oracle:
+
+| function | grant | call it with |
+|---|---|---|
+| `usp_check_distinct` | `service_role` only | the service-role key, from the route handler |
+| `usp_banned_phrases_check` | `service_role` only | the service-role key, from the route handler |
+| `usp_fingerprint_confirm` | `authenticated` | the user's JWT, forwarded normally |
+
+⚠ **Do not forward the user's JWT to `usp_check_distinct` or
+`usp_banned_phrases_check`.** Both were originally specified as
+`authenticated`-callable "same as every other RPC in this contract" — that
+was wrong and has been corrected. Granting either to `authenticated` makes
+it directly reachable through PostgREST by any signed-in user, no route
+handler involved:
+- `usp_check_distinct` returns another practitioner's confirmed statement
+  text on collision (`conflicting_statement`). Direct access turns it into
+  a **competitor-probing oracle** — try candidate statements against a
+  `scope_key` and read back what's already claimed there.
+- `usp_banned_phrases_check` becomes a **phrase-testing oracle** for the
+  exact list gate 1 of the USP pipeline enforces — probe it directly and
+  iterate until a phrasing returns zero hits, defeating gate 1 before gate
+  2 ever runs.
+
+The route handler is what authorizes these two calls (checking the caller
+owns the brief in question via the normal session check), then calls
+Supabase with the service-role key. This is the one deliberate exception
+in this contract to "call every RPC with the user's JWT" — everywhere else
+in this document, that instruction still holds.
 
 #### `usp_check_distinct(p_scope_key text, p_statement text, p_exclude_brief uuid default null) returns jsonb`
 
@@ -2433,16 +2460,17 @@ user's JWT, same as every other RPC in this contract.
 ```
 
 `distinct` is `false` when `best_similarity >= app_settings['usp_similarity_threshold']`
-(seeded `0.55`, tunable without a migration). `conflicting_statement` is
-populated only on collision, and is **always another user's text** — see the
-"never render" rule in §9.10. `p_exclude_brief` lets a brief re-check its
-own already-confirmed statement without colliding with itself.
+(seeded `0.55`, tunable without a migration — read on every call, not
+cached or hardcoded). `conflicting_statement` is populated only on
+collision, and is **always another user's text** — see the "never render"
+rule in §9.10. `p_exclude_brief` lets a brief re-check its own
+already-confirmed statement without colliding with itself.
 
 `scope_key` is computed the same way in both places (frontend, before
-calling; the fingerprint row, when written):
+calling; `usp_fingerprint_confirm`, when writing):
 `lower(primary_specialty_id) || ':' || lower(coalesce(state, 'us'))`.
 
-Example call:
+Example call (service-role key, from the route handler):
 
 ```sql
 select usp_check_distinct('trauma_informed:or', 'I work with first responders carrying trauma from the job.', '5c2e...-brief-id'::uuid);
@@ -2451,22 +2479,34 @@ select usp_check_distinct('trauma_informed:or', 'I work with first responders ca
 #### `usp_banned_phrases_check(p_text text) returns text[]`
 
 Returns the matched phrases (empty array if none). This is the ONLY path
-from an authenticated JWT to a yes/no read of `banned_phrases` — the table
-itself has no policies and has had `anon`/`authenticated` privileges
-revoked (§9.8). Word-boundary matching (Postgres `\y`), case-insensitive,
-does not false-positive on a substring inside another word.
+to a yes/no read of `banned_phrases` — the table itself has no policies
+and has had `anon`/`authenticated` privileges revoked (§9.8). Word-boundary
+matching (Postgres `\y`), case-insensitive, does not false-positive on a
+substring inside another word.
 
 ```sql
 select usp_banned_phrases_check('This is a safe space for everyone.');
 -- {"safe space"}
 ```
 
-Writing a confirmed USP fingerprint (after `usp_check_distinct` passes, or
-the user chooses "Keep mine" on a collision warning) is a plain
-`insert into usp_fingerprints (user_id, brief_id, scope_key, statement, normalized) values (auth.uid(), …, …, …, …)`
-— RLS on `usp_fingerprints` allows a user to insert her own rows directly;
-there is no wrapping RPC for the write side. **Only a CONFIRMED USP writes
-a fingerprint row — never a discarded candidate.**
+#### `usp_fingerprint_confirm(p_brief_id uuid, p_statement text) returns uuid`
+
+The ONLY sanctioned write path for `usp_fingerprints` — **direct INSERT is
+denied** (RLS policy `with check (false)` plus a revoked table privilege,
+belt-and-suspenders). There is deliberately no `p_scope_key` parameter:
+the function derives it itself from `project_briefs.specialty_ids[1]` /
+`state` on the brief identified by `p_brief_id`, after confirming
+`auth.uid()` owns that brief — a caller cannot supply, and therefore
+cannot spoof, the scope a statement gets checked against. Call it with the
+user's JWT, after `usp_check_distinct` passes (or the user chooses "Keep
+mine" on a collision warning).
+
+```sql
+select usp_fingerprint_confirm('5c2e...-brief-id'::uuid, 'I work with first responders carrying trauma from the job.');
+```
+
+**Only a CONFIRMED USP writes a fingerprint row — never a discarded
+candidate.** Never call this for a candidate the user hasn't chosen.
 
 ### 9.7 Step renumbering
 
