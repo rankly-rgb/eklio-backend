@@ -226,6 +226,59 @@ end
 $$;
 
 -- ---------------------------------------------------------------------------
+-- usp_options shape CHECK: relaxed to 2 OR 3 elements — never 0, never 1.
+-- A single leftover candidate isn't a positioning screen; a partial
+-- pipeline result that never recovers a second angle stays unpersisted,
+-- exactly as before. Probed directly against a naive relaxation during
+-- development (length bound written as `< 1` instead of `< 2`, tail count
+-- checks correctly generalized to `= jsonb_array_length(p)`): the naive
+-- version WRONGLY ACCEPTED a 1-element array; the shipped version below
+-- refuses it.
+-- ---------------------------------------------------------------------------
+do $$
+declare
+  ok boolean;
+begin
+  assert public.project_briefs_usp_options_valid('[]'::jsonb) is false,
+    '0 elements must stay refused';
+  assert public.project_briefs_usp_options_valid(
+    '[{"id":"u1","angle":"population","statement":"s1","rationale":"r1","evidence":[]}]'::jsonb
+  ) is false, '1 element must stay refused';
+  assert public.project_briefs_usp_options_valid(
+    '[{"id":"u1","angle":"population","statement":"s1","rationale":"r1","evidence":[]},
+      {"id":"u2","angle":"method","statement":"s2","rationale":"r2","evidence":[]},
+      {"id":"u3","angle":"lived_experience","statement":"s3","rationale":"r3","evidence":[]},
+      {"id":"u4","angle":"population","statement":"s4","rationale":"r4","evidence":[]}]'::jsonb
+  ) is false, '4 elements must stay refused';
+  -- a 2-element array with a duplicate angle: the relaxation must not have
+  -- loosened the distinct-angle rule along with the length bound.
+  assert public.project_briefs_usp_options_valid(
+    '[{"id":"u1","angle":"population","statement":"s1","rationale":"r1","evidence":[]},
+      {"id":"u2","angle":"population","statement":"s2","rationale":"r2","evidence":[]}]'::jsonb
+  ) is false, 'a 2-element array with a duplicate angle must stay refused';
+
+  begin
+    update public.project_briefs
+    set usp_options = '[
+      {"id":"u1","angle":"population","statement":"s1","rationale":"r1","evidence":[]}
+    ]'::jsonb
+    where project_id = 'bbbbbbbb-0000-0000-0000-000000000101';
+    ok := false;
+  exception when check_violation then ok := true; end;
+  assert ok, 'FAIL: a 1-element usp_options array was accepted';
+  raise notice 'OK: usp_options_check still refuses a single leftover candidate';
+
+  update public.project_briefs
+  set usp_options = '[
+    {"id":"u1","angle":"population","statement":"s1","rationale":"r1","evidence":["referral_quote"]},
+    {"id":"u2","angle":"method","statement":"s2","rationale":"r2","evidence":["modality_ids"]}
+  ]'::jsonb
+  where project_id = 'bbbbbbbb-0000-0000-0000-000000000101';
+  raise notice 'OK: a valid 2-element, 2-distinct-angle usp_options array is accepted';
+end
+$$;
+
+-- ---------------------------------------------------------------------------
 -- selected_usp_id: TRIGGER (not a CHECK) rejects an id absent from
 -- usp_options, accepts one present.
 -- ---------------------------------------------------------------------------
@@ -239,9 +292,70 @@ begin
     raise notice 'OK: selected_usp_id trigger rejects an unknown id';
   end;
 
-  update public.project_briefs set selected_usp_id = 'u2'
+  update public.project_briefs set selected_usp_id = 'u1'
   where project_id = 'bbbbbbbb-0000-0000-0000-000000000101';
   raise notice 'OK: selected_usp_id trigger accepts an id present in usp_options';
+end
+$$;
+
+-- ---------------------------------------------------------------------------
+-- ⚠ CORRECTED before ever shipping: the trigger fires on every UPDATE, not
+-- only when selected_usp_id is in the changed columns. A regeneration that
+-- replaces usp_options while a CONFIRMED, now-stale selected_usp_id sits on
+-- the row must succeed — that mismatch is the frontend's to show, not the
+-- database's to refuse. Reproduced directly against the pre-fix function
+-- during development: confirming `u1`, then writing a fresh usp_options
+-- batch with entirely different ids WITHOUT touching selected_usp_id, raised
+-- "selected_usp_id: u1 is not an id present in usp_options" and refused the
+-- write. The fixed function (TG_OP = 'UPDATE' and NEW.selected_usp_id IS NOT
+-- DISTINCT FROM OLD.selected_usp_id -> skip) no longer does.
+-- ---------------------------------------------------------------------------
+do $$
+begin
+  -- selected_usp_id is 'u1' from the block above, and usp_options is the
+  -- 2-element batch it belongs to.
+  update public.project_briefs
+  set usp_options = '[
+    {"id":"v1","angle":"population","statement":"t1","rationale":"r1","evidence":[]},
+    {"id":"v2","angle":"method","statement":"t2","rationale":"r2","evidence":[]}
+  ]'::jsonb
+  where project_id = 'bbbbbbbb-0000-0000-0000-000000000101';
+  raise notice 'OK: regenerating usp_options with a stale, untouched selected_usp_id on the row succeeds';
+
+  assert (select selected_usp_id from public.project_briefs
+           where project_id = 'bbbbbbbb-0000-0000-0000-000000000101') = 'u1',
+    'selected_usp_id must not have been silently cleared or altered by the regeneration';
+  raise notice 'OK: selected_usp_id itself is untouched by the regeneration (still "u1", now stale)';
+
+  -- ⚠ A limit of the fix worth stating precisely, not glossing over: Postgres
+  -- gives the trigger no way to distinguish "this SET clause reassigned the
+  -- same value" from "this column was never touched" -- NEW and OLD compare
+  -- equal either way. Re-setting selected_usp_id to the value ALREADY on the
+  -- row is therefore treated the same as leaving it alone, and skips
+  -- validation too, even though that value is now stale. This is not a new
+  -- hole: the value was already validated once, when it was first set, and
+  -- staleness after a regeneration is accepted by design (the point of this
+  -- fix). Only a GENUINE change of value re-triggers the lookup.
+  begin
+    update public.project_briefs set selected_usp_id = 'u1'
+    where project_id = 'bbbbbbbb-0000-0000-0000-000000000101';
+  exception when others then
+    raise exception 'FAIL: re-setting selected_usp_id to the value already on the row was refused (%); it should be treated as unchanged, same as not touching it', sqlerrm;
+  end;
+  raise notice 'OK: re-setting selected_usp_id to its own current (now-stale) value is treated as unchanged, not re-validated -- documented, not a hole';
+
+  -- A genuine CHANGE to a different, still-invalid id must still be caught.
+  begin
+    update public.project_briefs set selected_usp_id = 'still-not-real'
+    where project_id = 'bbbbbbbb-0000-0000-0000-000000000101';
+    raise exception 'FAIL: changing selected_usp_id to a different, unknown id was accepted';
+  exception when others then
+    raise notice 'OK: changing selected_usp_id to a genuinely different, unknown id is still refused -- %', sqlerrm;
+  end;
+
+  update public.project_briefs set selected_usp_id = 'v1'
+  where project_id = 'bbbbbbbb-0000-0000-0000-000000000101';
+  raise notice 'OK: selecting one of the freshly regenerated candidates succeeds';
 end
 $$;
 

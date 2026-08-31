@@ -194,8 +194,25 @@ alter table public.project_briefs add constraint project_briefs_tone_cards_check
   check (public.project_briefs_tone_cards_valid(tone_cards));
 
 -- ============================================================================
--- 5. usp_options shape — exactly 3, every key present, three distinct angles
+-- 5. usp_options shape — 2 OR 3 (never 0, never 1), every key present,
+--    distinct angles across whatever elements are present
 -- ============================================================================
+-- ⚠ RELAXED after shipping strict-3: a partial pipeline result (fewer than
+-- three candidates survive the four gates, even after the one retry) cannot
+-- be persisted at all under an exactly-3 CHECK — the frontend was silently
+-- discarding a partial batch on every navigation instead of ever storing it.
+-- One option, not "any count": a single leftover candidate isn't a choice
+-- screen, so 1 and 0 stay refused exactly as before.
+--
+-- The naive first pass at this — before the version below — only touched the
+-- length bound (`jsonb_array_length(p) < 1` in place of `<> 3`) and left the
+-- two tail count checks generalized to `= jsonb_array_length(p)` (needed
+-- regardless, or a genuinely valid 2-element array could never pass at all).
+-- Probed: `project_briefs_usp_options_valid('[{one well-formed candidate}]')`
+-- returned `true` — a 1-element array was ACCEPTED, because `1 < 1` is
+-- false. Classic off-by-one on the lower bound; fixed below by writing it as
+-- two explicit bounds, `< 2` and `> 3`, rather than a single loose "not
+-- empty" test.
 
 create or replace function public.project_briefs_usp_options_valid(p jsonb)
 returns boolean
@@ -206,7 +223,8 @@ as $$
   select case
     when p is null then true
     when jsonb_typeof(p) <> 'array' then false
-    when jsonb_array_length(p) <> 3 then false
+    when jsonb_array_length(p) < 2 then false
+    when jsonb_array_length(p) > 3 then false
     else
       not exists (
         select 1
@@ -226,8 +244,11 @@ as $$
                 where jsonb_typeof(e.value) is distinct from 'string'
               )
       )
-      and (select count(distinct c.value ->> 'id') from jsonb_array_elements(p) c) = 3
-      and (select count(distinct c.value ->> 'angle') from jsonb_array_elements(p) c) = 3
+      -- Distinct across WHATEVER LENGTH the array actually is (2 or 3) --
+      -- hardcoding `= 3` here would make a genuinely valid 2-element array
+      -- unpassable, since two elements can have at most two distinct ids.
+      and (select count(distinct c.value ->> 'id') from jsonb_array_elements(p) c) = jsonb_array_length(p)
+      and (select count(distinct c.value ->> 'angle') from jsonb_array_elements(p) c) = jsonb_array_length(p)
   end
 $$;
 
@@ -242,8 +263,26 @@ alter table public.project_briefs add constraint project_briefs_usp_options_chec
 -- see `usp_options` unless written as a same-row multi-column CHECK, which
 -- Postgres allows but which reads badly next to the shape CHECK above and
 -- would duplicate `jsonb_array_elements` traversal on every write regardless
--- of whether `selected_usp_id` changed. The trigger only runs the lookup when
--- `selected_usp_id` is being set to a non-null value.
+-- of whether `selected_usp_id` changed.
+--
+-- ⚠ CORRECTED, before this ever shipped: `before insert or update ... for
+-- each row` fires on EVERY update of the row, and the function body's `if
+-- new.selected_usp_id is not null` guard runs the lookup whenever the
+-- RESULTING value is non-null — regardless of whether THIS statement's SET
+-- clause touched `selected_usp_id` at all. Reproduced directly: confirm a
+-- selection against one `usp_options` batch, then regenerate `usp_options`
+-- alone (the frontend's `writeUspOptions` never touches `selected_usp_id`,
+-- by design — see FRONTEND_CONTRACT.md) — the second `UPDATE` raised
+-- `selected_usp_id: u2 is not an id present in usp_options` and was refused,
+-- because the OLD, untouched `selected_usp_id` no longer matched anything in
+-- the freshly-written `usp_options`. A regeneration while a confirmed
+-- selection exists would have failed outright in production.
+--
+-- The trigger only runs the lookup when `selected_usp_id` is being SET —
+-- literally: when this statement changes it, not merely when it ends up
+-- non-null. On UPDATE, that means comparing against `OLD`; `OLD` is only
+-- ever referenced inside the `TG_OP = 'UPDATE'` branch, since a combined
+-- `before insert or update` trigger has no `OLD` on the INSERT path.
 
 create or replace function public.project_briefs_validate_selected_usp_id()
 returns trigger
@@ -252,6 +291,15 @@ security definer
 set search_path = ''
 as $function$
 begin
+  if TG_OP = 'UPDATE' then
+    if new.selected_usp_id is not distinct from old.selected_usp_id then
+      -- Unchanged: a regeneration may have replaced `usp_options` underneath
+      -- it, and that is allowed now — the frontend surfaces the mismatch
+      -- explicitly rather than the database refusing the write.
+      return new;
+    end if;
+  end if;
+
   if new.selected_usp_id is not null then
     if new.usp_options is null or jsonb_typeof(new.usp_options) <> 'array' then
       raise exception 'project_briefs.selected_usp_id: usp_options is empty, cannot select %', new.selected_usp_id;
