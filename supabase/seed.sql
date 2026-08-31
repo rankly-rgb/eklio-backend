@@ -668,3 +668,67 @@ on conflict (tier) do update set
   sort_order = excluded.sort_order;
 
 -- <<< PLAN DATA <<<
+
+
+-- >>> HOW YOU WORK CATALOG DATA (mirrored verbatim in supabase/seed.sql) >>>
+insert into public.session_style_cards (id, sort_order, active, label, description, voice_hints) values
+  ('asks_questions', 1, true, 'I ask a lot of questions', 'You''ll do more answering than listening, and the questions get more specific over time.', array['curious','precise','engaged']),
+  ('mostly_listens', 2, true, 'I mostly listen, and I don''t rush you', 'Long silences are allowed. You set the pace of what gets said.', array['patient','unhurried','spacious']),
+  ('direct', 3, true, 'I''m direct — I''ll say the thing', 'If I notice a pattern, you''ll hear about it that session, not three months later.', array['direct','candid','plainspoken']),
+  ('structured', 4, true, 'We work from a plan you can see', 'Sessions have a shape, and you''ll know what we''re working toward and why.', array['clear','structured','methodical']),
+  ('follows', 5, true, 'I follow where you go', 'No fixed agenda. What you bring in on the day is what we work with.', array['responsive','open','adaptive']),
+  ('homework', 6, true, 'There''s work between sessions', 'What happens in the room is a fraction of it. You''ll leave with something to try.', array['practical','applied','active']),
+  ('humor', 7, true, 'Humor has a place in the room', 'Hard things get talked about, and sometimes we laugh while doing it.', array['warm','human','light-footed']),
+  ('body', 8, true, 'We pay attention to what the body is doing', 'What shows up physically is data, not a distraction.', array['grounded','embodied','attentive'])
+on conflict (id) do update set
+  sort_order  = excluded.sort_order,
+  active      = excluded.active,
+  label       = excluded.label,
+  description = excluded.description,
+  voice_hints = excluded.voice_hints;
+
+insert into public.not_a_fit_cards (id, sort_order, active, label, referral_note) values
+  ('wants_advice', 1, true, 'Someone looking for advice rather than exploration', 'I''ll point you toward resources built for direct advice.'),
+  ('quick_fix', 2, true, 'Someone who wants this resolved in three sessions', 'I''ll be upfront about the pace this kind of work actually takes.'),
+  ('court_ordered', 3, true, 'Court-ordered work and formal evaluations', 'I''ll refer you to a practice set up for court-ordered work.'),
+  ('higher_level_care', 4, true, 'Anyone in active crisis who needs a higher level of care', 'I''ll help you find the right level of care before we start.'),
+  ('med_management', 5, true, 'Someone whose primary need is medication management', 'I''ll refer you to a prescriber and can work alongside them.'),
+  ('reluctant_partner', 6, true, 'Couples work where one partner is there under pressure', 'I''ll help you find a starting point that doesn''t depend on both people being ready.'),
+  ('not_ready_for_past', 7, true, 'Someone who''d rather not look at the past right now', 'I''ll point you toward a present-focused approach instead.'),
+  ('wants_silent_therapist', 8, true, 'Someone who wants a therapist who mostly stays quiet', 'I''ll be upfront that you''ll hear from me during sessions.')
+on conflict (id) do update set
+  sort_order    = excluded.sort_order,
+  active        = excluded.active,
+  label         = excluded.label,
+  referral_note = excluded.referral_note;
+
+insert into public.modality_cards (id, sort_order, active, label, full_name) values
+  ('emdr', 1, true, 'EMDR', 'Eye Movement Desensitization and Reprocessing'),
+  ('ifs', 2, true, 'IFS', 'Internal Family Systems'),
+  ('somatic_experiencing', 3, true, 'Somatic Experiencing', 'Somatic Experiencing'),
+  ('dbt', 4, true, 'DBT', 'Dialectical Behavior Therapy'),
+  ('act', 5, true, 'ACT', 'Acceptance and Commitment Therapy'),
+  ('cbt', 6, true, 'CBT', 'Cognitive Behavioral Therapy'),
+  ('gottman', 7, true, 'Gottman Method', 'Gottman Method'),
+  ('eft', 8, true, 'EFT', 'Emotionally Focused Therapy'),
+  ('psychodynamic', 9, true, 'Psychodynamic', 'Psychodynamic Therapy'),
+  ('play_therapy', 10, true, 'Play Therapy', 'Play Therapy'),
+  ('narrative_therapy', 11, true, 'Narrative Therapy', 'Narrative Therapy'),
+  ('motivational_interviewing', 12, true, 'MI', 'Motivational Interviewing'),
+  ('art', 13, true, 'ART', 'Accelerated Resolution Therapy'),
+  ('brainspotting', 14, true, 'Brainspotting', 'Brainspotting')
+on conflict (id) do update set
+  sort_order = excluded.sort_order,
+  active     = excluded.active,
+  label      = excluded.label,
+  full_name  = excluded.full_name;
+
+insert into public.modality_prominence_options (id, sort_order, active, label) values
+  ('lead_with_it', 1, true, 'Lead with it'),
+  ('mention_it', 2, true, 'Mention it'),
+  ('keep_it_back', 3, true, 'Keep it in the background')
+on conflict (id) do update set
+  sort_order = excluded.sort_order,
+  active     = excluded.active,
+  label      = excluded.label;
+-- <<< HOW YOU WORK CATALOG DATA <<<
