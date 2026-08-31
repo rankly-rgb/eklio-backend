@@ -112,70 +112,97 @@ $$;
 reset role;
 
 -- ---------------------------------------------------------------------------
--- usp_fingerprint_confirm is the ONLY sanctioned write path. It DERIVES
--- scope_key from the brief's own specialties (by catalog sort_order, not
--- array position) and state -- there is no p_scope_key parameter, so
--- there is nothing for a caller to override.
+-- ⚠ usp_fingerprint_confirm IS service_role ONLY. `authenticated` must be
+-- refused OUTRIGHT -- it once held this grant, checking ownership itself
+-- against auth.uid(), but that grant had no remaining use once
+-- FRONTEND_CONTRACT.md settled on calling all three USP RPCs from the
+-- route handler with the service-role key. A client-callable write path
+-- nothing in the intended architecture calls is pure attack surface.
 -- ---------------------------------------------------------------------------
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"aaaaaaaa-0000-0000-0000-000000000301"}';
 
 do $$
-declare
-  v_id uuid;
-  v_row record;
 begin
-  v_id := public.usp_fingerprint_confirm('bbbbbbbb-0000-0000-0000-000000000301'::uuid, 'A confirmed, real statement about my practice');
-  assert v_id is not null;
-
-  -- select as authenticated (RLS-gated, own row) -- everything except
-  -- `normalized` is checked here; `usp_normalize` itself is not SECURITY
-  -- DEFINER (it is only ever meant to be called FROM inside one), so it
-  -- cannot read usp_stopwords when called directly as authenticated --
-  -- that comparison runs after `reset role` below instead.
-  select * into v_row from public.usp_fingerprints where id = v_id;
-  assert v_row.user_id = 'aaaaaaaa-0000-0000-0000-000000000301', 'the row must be owned by the caller';
-  assert v_row.brief_id = 'bbbbbbbb-0000-0000-0000-000000000301', 'the row must be attached to the brief the caller confirmed';
-  assert v_row.scope_key = 'trauma:or',
-    format('scope_key must be DERIVED from the brief''s own specialties (catalog sort_order, ''trauma'') and state (''OR''), got %s', v_row.scope_key);
-  assert v_row.statement = 'A confirmed, real statement about my practice';
-
-  raise notice 'OK: usp_fingerprint_confirm wrote a row with server-derived scope_key %', v_row.scope_key;
+  begin
+    perform public.usp_fingerprint_confirm('bbbbbbbb-0000-0000-0000-000000000301'::uuid, 'authenticated should never reach this');
+    raise exception 'FAIL: authenticated could call usp_fingerprint_confirm directly';
+  exception when insufficient_privilege then
+    raise notice 'OK: authenticated has no EXECUTE grant on usp_fingerprint_confirm';
+  end;
 end
 $$;
 
 reset role;
 
+set local role anon;
 do $$
 begin
-  assert (select normalized from public.usp_fingerprints where statement = 'A confirmed, real statement about my practice')
-       = public.usp_normalize('A confirmed, real statement about my practice'),
-    'normalized must match usp_normalize() of the confirmed statement';
+  begin
+    perform public.usp_fingerprint_confirm('bbbbbbbb-0000-0000-0000-000000000301'::uuid, 'anon should never reach this either');
+    raise exception 'FAIL: anon could call usp_fingerprint_confirm at all';
+  exception when insufficient_privilege then
+    raise notice 'OK: anon has no EXECUTE grant on usp_fingerprint_confirm';
+  end;
+end
+$$;
+reset role;
+
+-- ---------------------------------------------------------------------------
+-- usp_fingerprint_confirm, called the way the route handler actually calls
+-- it: with the service-role key. It DERIVES scope_key from the brief's own
+-- specialties (by catalog sort_order, not array position) and state --
+-- there is no p_scope_key parameter, so there is nothing for a caller to
+-- override.
+--
+-- ⚠ IT NO LONGER CHECKS OWNERSHIP ITSELF. Now that it is service_role
+-- only, it trusts its caller completely -- the same trust model as
+-- `seed_site_spec` (`20260829100000_site_spec.sql`): it resolves the
+-- brief's actual owner from the FK chain rather than an argument, so
+-- there is no id through which a foreign owner could be smuggled in, but
+-- verifying the CALL ITSELF is legitimate is entirely the route handler's
+-- job now (checking the user's own JWT before ever reaching for the
+-- service-role key -- see FRONTEND_CONTRACT.md §9.6). That division is
+-- exactly why the grant test above matters: the moment this leaked to
+-- `authenticated`, there would be no ownership check left anywhere to
+-- catch it.
+-- ---------------------------------------------------------------------------
+set local role service_role;
+
+do $$
+declare
+  v_id  uuid;
+  v_row record;
+begin
+  v_id := public.usp_fingerprint_confirm('bbbbbbbb-0000-0000-0000-000000000301'::uuid, 'A confirmed, real statement about my practice');
+  assert v_id is not null;
+
+  select * into v_row from public.usp_fingerprints where id = v_id;
+  assert v_row.user_id = 'aaaaaaaa-0000-0000-0000-000000000301', 'the row must be owned by the brief''s actual owner';
+  assert v_row.brief_id = 'bbbbbbbb-0000-0000-0000-000000000301', 'the row must be attached to the confirmed brief';
+  assert v_row.scope_key = 'trauma:or',
+    format('scope_key must be DERIVED from the brief''s own specialties (catalog sort_order, ''trauma'') and state (''OR''), got %s', v_row.scope_key);
+  assert v_row.statement = 'A confirmed, real statement about my practice';
+  assert v_row.normalized = public.usp_normalize('A confirmed, real statement about my practice');
+
+  raise notice 'OK: usp_fingerprint_confirm wrote a row with server-derived scope_key %', v_row.scope_key;
 end
 $$;
 
 -- ---------------------------------------------------------------------------
 -- ⚠ AT MOST ONE ROW PER BRIEF. Without the unique constraint + upsert, a
--- direct RPC call lets an authenticated caller flood her own bucket with
--- unlimited rows -- the frontend's 20/hour rate limit does not protect
--- this path, since the RPC is reachable directly by anyone holding the
--- EXECUTE grant `authenticated` legitimately has. Re-confirming must
+-- direct RPC call would let a caller flood a bucket with unlimited rows --
+-- the frontend's 20/hour rate limit does not protect this path, since it
+-- lives in the route handler, not the database. Re-confirming must
 -- REPLACE the row, carrying the new statement, not add a second one.
 -- ---------------------------------------------------------------------------
-set local role authenticated;
-set local request.jwt.claims = '{"sub":"aaaaaaaa-0000-0000-0000-000000000301"}';
-
 do $$
 declare
   n     int;
   v_row record;
 begin
-  -- Confirm once, then confirm AGAIN on the same brief with an edited
-  -- statement (this brief already has one row from the block above).
-  perform public.usp_fingerprint_confirm(
-    'bbbbbbbb-0000-0000-0000-000000000301'::uuid,
-    'A confirmed, real statement about my practice'
-  );
+  -- This brief already has one row from the block above; confirm again
+  -- with an edited statement.
   perform public.usp_fingerprint_confirm(
     'bbbbbbbb-0000-0000-0000-000000000301'::uuid,
     'A different, edited statement about my practice'
@@ -191,8 +218,6 @@ begin
   raise notice 'OK: two confirms on the same brief leave exactly one row, carrying the second statement';
 end
 $$;
-
-reset role;
 
 -- ---------------------------------------------------------------------------
 -- ⚠ scope_key DERIVATION MUST NOT DEPEND ON specialty_ids ARRAY ORDER.
@@ -211,9 +236,6 @@ insert into public.projects (id, user_id, name) values
 insert into public.project_briefs (project_id, specialty_ids, state) values
   ('bbbbbbbb-0000-0000-0000-000000000304', array['adhd', 'anxiety', 'trauma'], 'CA'),
   ('bbbbbbbb-0000-0000-0000-000000000305', array['trauma', 'adhd', 'anxiety'], 'CA');
-
-set local role authenticated;
-set local request.jwt.claims = '{"sub":"aaaaaaaa-0000-0000-0000-000000000301"}';
 
 do $$
 declare
@@ -237,11 +259,6 @@ begin
 end
 $$;
 
-reset role;
-
-set local role authenticated;
-set local request.jwt.claims = '{"sub":"aaaaaaaa-0000-0000-0000-000000000301"}';
-
 do $$
 begin
   -- No p_scope_key parameter exists, so "overriding" it isn't a matter of
@@ -257,61 +274,16 @@ begin
 end
 $$;
 
--- Attempting to confirm a brief she does NOT own must be refused.
+-- A brief that does not exist at all is still refused (basic input
+-- validation, not an ownership check -- there is no such thing to check
+-- against anymore).
 do $$
 begin
   begin
-    perform public.usp_fingerprint_confirm('bbbbbbbb-0000-0000-0000-000000000302'::uuid, 'Trying to write into the stranger''s brief');
-    raise exception 'FAIL: confirmed a fingerprint against a brief owned by another user';
+    perform public.usp_fingerprint_confirm('00000000-0000-0000-0000-000000000000'::uuid, 'a brief that does not exist');
+    raise exception 'FAIL: confirmed a fingerprint against a nonexistent brief';
   exception when others then
-    raise notice 'OK: usp_fingerprint_confirm refuses to write against a brief the caller does not own';
-  end;
-end
-$$;
-
-reset role;
-
--- ---------------------------------------------------------------------------
--- `anon` must be refused BOTH ways: no EXECUTE grant at all, and even if it
--- somehow had one, the ownership check inside the function must still
--- reject a NULL auth.uid() rather than silently pass (the `<>` vs
--- `IS DISTINCT FROM` bug: `IF NULL THEN` is treated as FALSE in PL/pgSQL,
--- so `v_user_id <> NULL` would have skipped the raise entirely for an
--- anon caller).
--- ---------------------------------------------------------------------------
-set local role anon;
-
-do $$
-begin
-  begin
-    perform public.usp_fingerprint_confirm('bbbbbbbb-0000-0000-0000-000000000301'::uuid, 'anon should never reach this');
-    raise exception 'FAIL: anon could call usp_fingerprint_confirm at all';
-  exception when insufficient_privilege then
-    raise notice 'OK: anon has no EXECUTE grant on usp_fingerprint_confirm';
-  end;
-end
-$$;
-
-reset role;
-
--- Defense in depth: call it as service_role (which DOES have EXECUTE) but
--- with no request.jwt.claims set, so auth.uid() is NULL -- simulating what
--- would happen if the grant above were ever loosened by mistake. Must
--- still be refused, by the function's own NULL-safe ownership check.
--- `reset` clears any request.jwt.claims left over from earlier in this
--- transaction (`set local` persists until changed or the transaction
--- ends) -- without this, auth.uid() would still resolve to whichever user
--- was last set, and the NULL case would never actually be exercised.
-reset request.jwt.claims;
-set local role service_role;
-
-do $$
-begin
-  begin
-    perform public.usp_fingerprint_confirm('bbbbbbbb-0000-0000-0000-000000000301'::uuid, 'null auth.uid() should never reach this either');
-    raise exception 'FAIL: a NULL auth.uid() was accepted as owning the brief';
-  exception when others then
-    raise notice 'OK: NULL auth.uid() is correctly refused by IS DISTINCT FROM, not silently passed by <>';
+    raise notice 'OK: usp_fingerprint_confirm refuses a brief_id that does not resolve to any project_briefs row';
   end;
 end
 $$;
@@ -325,8 +297,7 @@ insert into public.projects (id, user_id, name) values
 insert into public.project_briefs (project_id, specialty_ids, state) values
   ('bbbbbbbb-0000-0000-0000-000000000303', array['anxiety'], null);
 
-set local role authenticated;
-set local request.jwt.claims = '{"sub":"aaaaaaaa-0000-0000-0000-000000000301"}';
+set local role service_role;
 
 do $$
 declare

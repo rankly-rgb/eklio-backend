@@ -110,7 +110,8 @@ create index if not exists usp_fingerprints_normalized_trgm_idx
 -- `usp_fingerprint_confirm()` below, which DERIVES `scope_key` itself from
 -- the brief's own specialty selections (by catalog `sort_order`, not array
 -- position — see the function's own header) and `state` — never from a
--- caller-supplied value — after confirming the caller owns that brief.
+-- caller-supplied value. `usp_fingerprint_confirm` is `service_role` only
+-- (not `authenticated`) — see its own header for why.
 --
 -- No direct UPDATE/DELETE policy either — a client can never modify a row
 -- in place through PostgREST. Re-confirming DOES change the row, but only
@@ -172,18 +173,22 @@ revoke insert on table public.usp_fingerprints from authenticated;
 -- against the CATALOG's own `sort_order` instead: the array's order
 -- cannot affect the result, only its membership can.
 --
--- Ownership is checked explicitly rather than left to RLS, because this
--- function runs as its owner (bypassing RLS by construction as SECURITY
--- DEFINER) — the ownership check here IS the access control, not a
--- redundant belt-and-suspenders on top of a policy.
---
--- UPSERT on `usp_fingerprints_brief_id_key`: at most one row per brief.
--- Re-confirming (an edited statement, or the same one again) REPLACES the
--- row rather than adding another — without this, a direct RPC call lets
--- an authenticated caller flood her own specialty:state bucket with
--- unlimited legitimate-looking rows (the frontend's 20/hour rate limit
--- does not protect this path; the RPC is reachable directly by anyone
--- holding an EXECUTE grant, and `authenticated` holds one here by design).
+-- ⚠ `service_role` ONLY — NOT `authenticated`. An earlier version granted
+-- `authenticated` and checked ownership internally against `auth.uid()`.
+-- That grant had no remaining use once FRONTEND_CONTRACT.md's Phase 2 note
+-- settled on calling all three USP RPCs (this one included) from the route
+-- handler with the service-role key: a client-callable write path that
+-- nothing in the intended architecture actually calls is pure attack
+-- surface, kept alive for no reason. Revoked. Ownership is now the route
+-- handler's job ENTIRELY — it must verify from the user's own JWT that she
+-- owns `p_brief_id` BEFORE calling this with the service-role key (see
+-- FRONTEND_CONTRACT.md §9.6). This function trusts its caller completely,
+-- the same as `seed_site_spec` (`20260829100000_site_spec.sql`) trusts
+-- its: it resolves the brief's actual owner from the FK chain rather than
+-- taking one as an argument, so there is no id through which a foreign
+-- owner could be smuggled in, but it does NOT itself re-verify that the
+-- call is legitimate — the grant (`service_role` only, never reaching the
+-- browser) is what makes that safe, not an internal check.
 
 create or replace function public.usp_fingerprint_confirm(
   p_brief_id  uuid,
@@ -207,14 +212,8 @@ begin
   join public.projects p on p.id = pb.project_id
   where pb.project_id = p_brief_id;
 
-  -- `IS DISTINCT FROM`, not `<>`: for an unauthenticated (`anon`) caller,
-  -- `auth.uid()` is NULL, and `v_user_id <> NULL` evaluates to NULL, which
-  -- `IF NULL THEN raise exception` treats as FALSE -- silently skipping the
-  -- ownership check and letting the row be written anyway. `IS DISTINCT
-  -- FROM` is NULL-safe: NULL is treated as a real, distinct value, so a
-  -- NULL `auth.uid()` correctly fails this check instead of bypassing it.
-  if v_user_id is null or v_user_id is distinct from (select auth.uid()) then
-    raise exception 'usp_fingerprint_confirm: brief % is not owned by the caller', p_brief_id;
+  if v_user_id is null then
+    raise exception 'usp_fingerprint_confirm: brief % does not exist', p_brief_id;
   end if;
 
   select s.id into v_specialty
@@ -244,11 +243,11 @@ begin
 end;
 $function$;
 
-revoke all on function public.usp_fingerprint_confirm(uuid, text) from public, anon;
-grant execute on function public.usp_fingerprint_confirm(uuid, text) to authenticated, service_role;
+revoke all on function public.usp_fingerprint_confirm(uuid, text) from public, anon, authenticated;
+grant execute on function public.usp_fingerprint_confirm(uuid, text) to service_role;
 
 -- DOWN
--- revoke all on function public.usp_fingerprint_confirm(uuid, text) from authenticated, service_role;
+-- revoke all on function public.usp_fingerprint_confirm(uuid, text) from service_role;
 -- drop function if exists public.usp_fingerprint_confirm(uuid, text);
 -- drop table if exists public.usp_fingerprints;
 -- drop function if exists public.usp_normalize(text);
