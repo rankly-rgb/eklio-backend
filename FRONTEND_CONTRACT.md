@@ -2613,7 +2613,11 @@ readable by `authenticated` — RLS enabled, zero policies, and
 `anon`/`authenticated` privileges explicitly revoked, same lockdown as
 `stripe_events`. `app_settings` (the `usp_similarity_threshold` row) is
 locked down the same way. The only path to any of the three is through the
-two security-definer RPCs in §9.6.
+two security-definer RPCs in §9.6 — see §9.11 for why `banned_phrases`
+specifically must never be folded into `readCatalog()`, even for
+convenience, and how it differs from the pre-existing `ethics_rules`
+catalog (a different table, not part of this lot, which IS read through
+`readCatalog()`).
 
 ### 9.9 Evidence field → human label lookup (frontend-owned)
 
@@ -2651,6 +2655,68 @@ first place.
 **Never write a `usp_fingerprints` row for a discarded candidate.** Only a
 confirmed selection (after `usp-confirm`) writes one — an unused-text-filled
 store starts rejecting legitimate future statements.
+
+### 9.11 `banned_phrases` vs `ethics_rules` — two catalogs, two engines, not merged
+
+Both catalogs exist in this schema and both gate generated copy, but they
+have different natures, different consequences, and must stay on different
+code paths in Phase 2.
+
+`ethics_rules` (six rows: `timeframe`, `proven`, `client_voice`,
+`credential`, `scarcity`, `diagnosis`) stores **principles** — board/ACA/APA
+advertising-compliance rules whose detection is compiled regex in
+`lib/ethics/rules.ts` (`FORBIDDEN_PATTERNS`), fetched today through
+`readCatalog()` with the user's own JWT, same as every other brief-building
+catalog. The table supplies human-readable TEXT only (`short_label`,
+`description`, `example_forbidden`) for the generation prompt and the
+BOARD-SAFE COPY tooltip — never the detection logic itself, which is code
+and requires a deploy to change.
+
+`banned_phrases` stores **literal strings** — directory-cliché marketing
+language, matched verbatim and meant to be edited without a deploy. That
+editability is exactly why it must never be readable directly:
+
+1. **`banned_phrases` is never exposed to the client and never joins
+   `readCatalog()`. Its only access path is the service-role RPC**
+   (`usp_banned_phrases_check`, §9.6, called with the service-role key from
+   the server-side route handler). `readCatalog()` runs through PostgREST
+   with the user's own JWT — batching a service-role-only table into it
+   would either fail outright or force reopening the table to
+   `authenticated`, which is precisely the enumeration/bypass risk the
+   lockdown in §9.8 exists to prevent. Do not add `banned_phrases` to
+   `readCatalog()` under any consolidation. The tone-card and USP
+   generators share this read path by calling the same server-side `lib`
+   module that wraps `usp_banned_phrases_check` — never by fetching the
+   table twice through two ad hoc queries, and never by fetching the table
+   at all.
+
+2. **The ethics guard rewrites the offending field in place; the USP
+   pipeline discards the candidate and regenerates. This divergence is
+   deliberate: rewriting a candidate that failed the specificity gate
+   produces exactly the generic output the gate exists to prevent.**
+   `enforceEthics` (`lib/ethics/guard.ts`) targeted-rewrites a flagged
+   direction field because the field's specificity was never in question —
+   only its compliance wording was. A USP candidate that hits gate 2
+   (specificity) failed on the one property the whole USP pipeline exists
+   to guarantee; rewriting it in place would launder a generic statement
+   into passing shape without making it any less generic. Anyone who later
+   "harmonizes" these two strategies — makes the USP pipeline rewrite
+   instead of discard, or makes the ethics guard discard instead of
+   rewrite — breaks either the differentiation guarantee or the
+   two-model-call cap, respectively. Keep them different on purpose.
+
+**One overlap in intent, not in content, today:** `ethics_rules`' `scarcity`
+rule ("no scarcity or ranking language") and `banned_phrases`' `hype`
+category (`amazing`, `life-changing`, `transformational`, `revolutionary`,
+`game-changer`) both push against inflated, pressure-selling language — but
+no phrase appears in both tables today, and they must not be treated as one
+signal. A `hype`-category hit is a **voice-quality signal only** — it means
+the copy reads like a directory, not that it puts a license at risk — and
+must **never** be surfaced with the BOARD-SAFE COPY badge. That badge
+belongs to `ethics_rules` hits alone. If a future phrase genuinely
+duplicates board-compliance intent, that is a signal to review `scarcity`'s
+patterns in `lib/ethics/rules.ts`, not to route `hype` hits through the
+compliance badge.
 
 ### ⚠ Deviation from an earlier draft of this feature's brief
 
