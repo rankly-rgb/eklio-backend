@@ -2453,6 +2453,22 @@ Supabase with the service-role key. This is the one deliberate exception
 in this contract to "call every RPC with the user's JWT" — everywhere else
 in this document, that instruction still holds.
 
+⚠ **Carry this into every Phase 2 route handler that touches these three
+RPCs, verbatim:** the route handler calls `usp_check_distinct`,
+`usp_banned_phrases_check` and `usp_fingerprint_confirm` with the
+service-role key, which bypasses RLS entirely. The handler must therefore
+verify from the user's own JWT that she owns the brief BEFORE any
+service-role call, and must never pass a `brief_id` that came from the
+request body without that check. The database no longer protects this
+path; the handler is the only thing that does.
+
+`usp_fingerprint_confirm` is the exception to reach for the service-role
+key: it is `authenticated`-only (see the table above) and re-derives
+ownership itself from `auth.uid()`, so call it by forwarding the user's
+JWT normally, not with the service-role key — called with the service-role
+key and no forwarded JWT, `auth.uid()` is NULL and every call fails its own
+ownership check by design (see §9.6's own function doc above).
+
 #### `usp_check_distinct(p_scope_key text, p_statement text, p_exclude_brief uuid default null) returns jsonb`
 
 ```json
@@ -2466,14 +2482,22 @@ collision, and is **always another user's text** — see the "never render"
 rule in §9.10. `p_exclude_brief` lets a brief re-check its own
 already-confirmed statement without colliding with itself.
 
-`scope_key` is computed the same way in both places (frontend, before
-calling; `usp_fingerprint_confirm`, when writing):
-`lower(primary_specialty_id) || ':' || lower(coalesce(state, 'us'))`.
+`scope_key` is `lower(primary_specialty_id) || ':' || lower(coalesce(state, 'us'))`.
+Compute it the SAME WAY the database does when calling `usp_check_distinct`
+(the frontend has no other source of truth for a brief's specialty scope):
+**the primary specialty is the one with the LOWEST `sort_order` in the
+`specialties` catalog among those selected on the brief — NOT
+`specialty_ids[0]` / the first array element.** `project_briefs.specialty_ids`
+has no guaranteed order (plain array, written verbatim by autosave); an
+earlier version of this schema derived from array position and that was a
+real bug — reordering her own specialty selections would have silently
+moved her into a different collision-detection bucket. `usp_fingerprint_confirm`
+(below) derives it the same way server-side, so the two can never disagree.
 
 Example call (service-role key, from the route handler):
 
 ```sql
-select usp_check_distinct('trauma_informed:or', 'I work with first responders carrying trauma from the job.', '5c2e...-brief-id'::uuid);
+select usp_check_distinct('trauma:or', 'I work with first responders carrying trauma from the job.', '5c2e...-brief-id'::uuid);
 ```
 
 #### `usp_banned_phrases_check(p_text text) returns text[]`
@@ -2494,12 +2518,28 @@ select usp_banned_phrases_check('This is a safe space for everyone.');
 The ONLY sanctioned write path for `usp_fingerprints` — **direct INSERT is
 denied** (RLS policy `with check (false)` plus a revoked table privilege,
 belt-and-suspenders). There is deliberately no `p_scope_key` parameter:
-the function derives it itself from `project_briefs.specialty_ids[1]` /
-`state` on the brief identified by `p_brief_id`, after confirming
-`auth.uid()` owns that brief — a caller cannot supply, and therefore
-cannot spoof, the scope a statement gets checked against. Call it with the
-user's JWT, after `usp_check_distinct` passes (or the user chooses "Keep
-mine" on a collision warning).
+the function derives it itself (lowest `sort_order` in `specialties` among
+the brief's selections, same rule as §9.6's `usp_check_distinct` note
+above — never `specialty_ids[0]`) from `project_briefs` on the brief
+identified by `p_brief_id`, after confirming `auth.uid()` owns that
+brief — a caller cannot supply, and therefore cannot spoof, the scope a
+statement gets checked against. Call it with the user's JWT, after
+`usp_check_distinct` passes (or the user chooses "Keep mine" on a
+collision warning).
+
+⚠ **AT MOST ONE ROW PER BRIEF — `usp_fingerprints.brief_id` is UNIQUE, and
+this function is an UPSERT on it.** Calling it again for the same brief
+(the user edits her USP and re-confirms) REPLACES the existing row —
+including its `scope_key`, if her specialties changed in between — rather
+than adding a second one. This is deliberate, not an implementation detail
+to work around: without it, this RPC is reachable directly by any
+`authenticated` caller (the 20/hour frontend rate limit does not protect
+it — that limit lives in the route handler, not the database), so nothing
+stopped a caller from confirming the same brief repeatedly and flooding
+her own specialty:state bucket with unlimited legitimate-looking rows,
+degrading collision detection for everyone sharing that bucket. Do not
+build a "call it in a loop to log every candidate" pattern — it will not
+do what that implies, and the last call always wins.
 
 ```sql
 select usp_fingerprint_confirm('5c2e...-brief-id'::uuid, 'I work with first responders carrying trauma from the job.');
