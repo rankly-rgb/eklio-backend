@@ -132,6 +132,16 @@ create trigger project_briefs_validate_how_you_work_refs
   before insert or update on public.project_briefs
   for each row execute function public.project_briefs_validate_how_you_work_refs();
 
+-- A trigger fires regardless of EXECUTE grants on its function (Postgres
+-- invokes it internally, not via a direct call the grantee system gates) --
+-- but Postgres still grants EXECUTE to PUBLIC by default on every new
+-- function, which `anon`/`authenticated` inherit their own copy of via
+-- Supabase's default privileges. Revoked here so this function is not
+-- directly callable by anyone outside its trigger context, matching the
+-- "grant nothing to anon" rule for every other non-catalog function in this
+-- lot.
+revoke all on function public.project_briefs_validate_how_you_work_refs() from public, anon, authenticated;
+
 -- ============================================================================
 -- 4. tone_cards shape — exactly 6, every key present, sample_hero <= 46
 -- ============================================================================
@@ -263,6 +273,8 @@ drop trigger if exists project_briefs_validate_selected_usp_id on public.project
 create trigger project_briefs_validate_selected_usp_id
   before insert or update on public.project_briefs
   for each row execute function public.project_briefs_validate_selected_usp_id();
+
+revoke all on function public.project_briefs_validate_selected_usp_id() from public, anon, authenticated;
 
 -- DOWN
 -- drop trigger if exists project_briefs_validate_selected_usp_id on public.project_briefs;

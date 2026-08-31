@@ -6,6 +6,24 @@
 -- justifying every SECURITY DEFINER at the point it's declared (see
 -- `seed_site_spec` in `20260829100000_site_spec.sql` for the prior-art
 -- rationale this follows).
+--
+-- ⚠ BOTH ARE `service_role` ONLY, NOT `authenticated`. Call them from the
+-- Next.js server-side route handler using the service-role key, never by
+-- forwarding the user's JWT -- the route handler itself is what checks the
+-- caller owns the brief in question. Granting either to `authenticated`
+-- would make it directly callable through PostgREST by any signed-in user:
+--   - `usp_check_distinct` returns another practitioner's confirmed
+--     statement text on collision (`conflicting_statement`). Direct access
+--     turns it into a competitor-probing oracle -- try candidate USPs
+--     against a scope_key and read back what's already claimed there.
+--   - `usp_banned_phrases_check` becomes a phrase-testing oracle for the
+--     very list it exists to enforce: probe it directly and iterate until
+--     a phrasing returns zero hits, defeating gate 1 of the generation
+--     pipeline before gate 2 ever runs.
+-- A plain `revoke ... from public` is NOT enough on its own: `anon` and
+-- `authenticated` each get their own EXECUTE grant from Supabase's default
+-- privileges at function-creation time, independent of the `public`
+-- pseudo-role -- both must be revoked by name.
 
 -- ============================================================================
 -- 1. usp_check_distinct
@@ -69,8 +87,8 @@ begin
 end;
 $function$;
 
-revoke all on function public.usp_check_distinct(text, text, uuid) from public;
-grant execute on function public.usp_check_distinct(text, text, uuid) to authenticated, service_role;
+revoke all on function public.usp_check_distinct(text, text, uuid) from public, anon, authenticated;
+grant execute on function public.usp_check_distinct(text, text, uuid) to service_role;
 
 -- ============================================================================
 -- 2. usp_banned_phrases_check
@@ -105,11 +123,11 @@ as $function$
     and p_text ~* ('\y' || regexp_replace(bp.phrase, '([.^$*+?()\[\]{}\\|])', '\\\1', 'g') || '\y')
 $function$;
 
-revoke all on function public.usp_banned_phrases_check(text) from public;
-grant execute on function public.usp_banned_phrases_check(text) to authenticated, service_role;
+revoke all on function public.usp_banned_phrases_check(text) from public, anon, authenticated;
+grant execute on function public.usp_banned_phrases_check(text) to service_role;
 
 -- DOWN
--- revoke all on function public.usp_banned_phrases_check(text) from authenticated, service_role;
+-- revoke all on function public.usp_banned_phrases_check(text) from service_role;
 -- drop function if exists public.usp_banned_phrases_check(text);
--- revoke all on function public.usp_check_distinct(text, text, uuid) from authenticated, service_role;
+-- revoke all on function public.usp_check_distinct(text, text, uuid) from service_role;
 -- drop function if exists public.usp_check_distinct(text, text, uuid);
