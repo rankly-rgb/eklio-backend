@@ -61,6 +61,17 @@ $$;
 -- `lower(specialty_id) || ':' || lower(coalesce(state, 'us'))`: a brief with
 -- no state falls into the national `:us` bucket, the strictest scope (most
 -- rows to collide against), not the loosest.
+--
+-- ⚠ AT MOST ONE ROW PER BRIEF. `brief_id` is UNIQUE. Without this, a
+-- direct RPC call (the frontend rate limit does not protect this path --
+-- see the grant note on `usp_fingerprint_confirm` below) lets an
+-- authenticated caller invoke `usp_fingerprint_confirm` repeatedly on her
+-- OWN brief and flood her specialty:state bucket with hundreds of
+-- legitimate-looking, correctly-owned rows, making collision detection
+-- useless for everyone else sharing that bucket -- a volume attack, not a
+-- content-spoofing one, so the scope_key-derivation fix above does not
+-- touch it. `usp_fingerprint_confirm` is an UPSERT on this key: confirming
+-- an edited statement REPLACES her one row rather than adding another.
 
 create table if not exists public.usp_fingerprints (
   id         uuid        primary key default gen_random_uuid(),
@@ -72,8 +83,10 @@ create table if not exists public.usp_fingerprints (
   created_at timestamptz not null default now()
 );
 
+alter table public.usp_fingerprints drop constraint if exists usp_fingerprints_brief_id_key;
+alter table public.usp_fingerprints add constraint usp_fingerprints_brief_id_key unique (brief_id);
+
 create index if not exists usp_fingerprints_user_id_idx  on public.usp_fingerprints (user_id);
-create index if not exists usp_fingerprints_brief_id_idx on public.usp_fingerprints (brief_id);
 create index if not exists usp_fingerprints_scope_key_idx on public.usp_fingerprints (scope_key);
 create index if not exists usp_fingerprints_normalized_trgm_idx
   on public.usp_fingerprints using gin (normalized gin_trgm_ops);
@@ -95,13 +108,17 @@ create index if not exists usp_fingerprints_normalized_trgm_idx
 -- `stripe_events` "RLS + no policy + revoked privileges" belt-and-suspenders
 -- pattern), and the only sanctioned write path is
 -- `usp_fingerprint_confirm()` below, which DERIVES `scope_key` itself from
--- the brief's own stored `specialty_ids[1]` / `state` — never from a
+-- the brief's own specialty selections (by catalog `sort_order`, not array
+-- position — see the function's own header) and `state` — never from a
 -- caller-supplied value — after confirming the caller owns that brief.
 --
--- No update/delete policy either: a confirmed fingerprint is immutable
--- history (editing a USP after confirming writes a NEW row via a fresh
--- confirm call), same convention as `stripe_events` never being updated in
--- place.
+-- No direct UPDATE/DELETE policy either — a client can never modify a row
+-- in place through PostgREST. Re-confirming DOES change the row, but only
+-- through `usp_fingerprint_confirm`'s own UPSERT (also SECURITY DEFINER,
+-- so it bypasses these policies as its owner, same as the INSERT path
+-- does): at most one row per brief, so editing a confirmed USP replaces
+-- that one row rather than either leaving stale history or letting the
+-- old and new statements collide as two separate fingerprints.
 
 alter table public.usp_fingerprints enable row level security;
 
@@ -138,17 +155,35 @@ revoke insert on table public.usp_fingerprints from authenticated;
 -- caller's behalf to derive `scope_key` itself — a value the caller never
 -- gets to supply. `p_scope_key` is deliberately NOT a parameter.
 --
--- `specialty_ids[1]` is this brief's PRIMARY specialty: `project_briefs`
--- has no dedicated `primary_specialty_id` column (specialties are a plain
--- array), and the existing convention for "which array element leads" is
--- `palette_family_ids` index 0 = leading (`20260827101000_...`) — here,
--- Postgres arrays are 1-indexed, so `specialty_ids[1]` is that same
--- convention applied to this array.
+-- ⚠ THE PRIMARY SPECIALTY IS THE LOWEST `sort_order` IN THE `specialties`
+-- CATALOG AMONG THOSE SELECTED — NOT `specialty_ids[1]`. `project_briefs`
+-- has no dedicated `primary_specialty_id` column, and `specialty_ids` has
+-- NO GUARANTEED ORDER: it is `text[] not null default '{}'`, written
+-- verbatim by frontend autosave, with nothing in the schema constraining
+-- insertion order or re-sorting it on write. An earlier version of this
+-- function used `specialty_ids[1]`, reasoning from `palette_family_ids`
+-- (index 0 IS documented as "leading" there) — but `palette_family_ids`
+-- and `specialty_ids` are not the same kind of array, and nothing
+-- documents `specialty_ids` as order-meaningful. Deriving scope from
+-- array position would mean reordering her own selections (deselecting
+-- and reselecting a specialty checkbox, or any future UI change to how
+-- the array is written) silently moves her USP into a different bucket
+-- and dodges collision detection entirely, undetectably. Deterministic
+-- against the CATALOG's own `sort_order` instead: the array's order
+-- cannot affect the result, only its membership can.
 --
 -- Ownership is checked explicitly rather than left to RLS, because this
 -- function runs as its owner (bypassing RLS by construction as SECURITY
 -- DEFINER) — the ownership check here IS the access control, not a
 -- redundant belt-and-suspenders on top of a policy.
+--
+-- UPSERT on `usp_fingerprints_brief_id_key`: at most one row per brief.
+-- Re-confirming (an edited statement, or the same one again) REPLACES the
+-- row rather than adding another — without this, a direct RPC call lets
+-- an authenticated caller flood her own specialty:state bucket with
+-- unlimited legitimate-looking rows (the frontend's 20/hour rate limit
+-- does not protect this path; the RPC is reachable directly by anyone
+-- holding an EXECUTE grant, and `authenticated` holds one here by design).
 
 create or replace function public.usp_fingerprint_confirm(
   p_brief_id  uuid,
@@ -166,8 +201,8 @@ declare
   v_scope_key  text;
   v_id         uuid;
 begin
-  select p.user_id, pb.specialty_ids[1], pb.state
-  into v_user_id, v_specialty, v_state
+  select p.user_id, pb.state
+  into v_user_id, v_state
   from public.project_briefs pb
   join public.projects p on p.id = pb.project_id
   where pb.project_id = p_brief_id;
@@ -182,14 +217,27 @@ begin
     raise exception 'usp_fingerprint_confirm: brief % is not owned by the caller', p_brief_id;
   end if;
 
+  select s.id into v_specialty
+  from public.project_briefs pb
+  join public.specialties s on s.id = any(pb.specialty_ids)
+  where pb.project_id = p_brief_id
+  order by s.sort_order
+  limit 1;
+
   if v_specialty is null then
     raise exception 'usp_fingerprint_confirm: brief % has no primary specialty to scope against', p_brief_id;
   end if;
 
   v_scope_key := lower(v_specialty) || ':' || lower(coalesce(v_state, 'us'));
 
-  insert into public.usp_fingerprints (user_id, brief_id, scope_key, statement, normalized)
-  values (v_user_id, p_brief_id, v_scope_key, p_statement, public.usp_normalize(p_statement))
+  insert into public.usp_fingerprints (user_id, brief_id, scope_key, statement, normalized, created_at)
+  values (v_user_id, p_brief_id, v_scope_key, p_statement, public.usp_normalize(p_statement), now())
+  on conflict (brief_id) do update set
+    user_id    = excluded.user_id,
+    scope_key  = excluded.scope_key,
+    statement  = excluded.statement,
+    normalized = excluded.normalized,
+    created_at = excluded.created_at
   returning id into v_id;
 
   return v_id;

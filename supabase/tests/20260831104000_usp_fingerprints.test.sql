@@ -35,12 +35,12 @@ insert into public.projects (id, user_id, name) values
   ('bbbbbbbb-0000-0000-0000-000000000301', 'aaaaaaaa-0000-0000-0000-000000000301', 'Owner Practice'),
   ('bbbbbbbb-0000-0000-0000-000000000302', 'aaaaaaaa-0000-0000-0000-000000000302', 'Stranger Practice');
 insert into public.project_briefs (project_id, specialty_ids, state) values
-  ('bbbbbbbb-0000-0000-0000-000000000301', array['trauma_informed'], 'OR'),
-  ('bbbbbbbb-0000-0000-0000-000000000302', array['trauma_informed'], 'OR');
+  ('bbbbbbbb-0000-0000-0000-000000000301', array['trauma'], 'OR'),
+  ('bbbbbbbb-0000-0000-0000-000000000302', array['trauma'], 'OR');
 
 insert into public.usp_fingerprints (user_id, brief_id, scope_key, statement, normalized) values
-  ('aaaaaaaa-0000-0000-0000-000000000301', 'bbbbbbbb-0000-0000-0000-000000000301', 'trauma_informed:or', 'Owner statement', public.usp_normalize('Owner statement')),
-  ('aaaaaaaa-0000-0000-0000-000000000302', 'bbbbbbbb-0000-0000-0000-000000000302', 'trauma_informed:or', 'Stranger statement', public.usp_normalize('Stranger statement'));
+  ('aaaaaaaa-0000-0000-0000-000000000301', 'bbbbbbbb-0000-0000-0000-000000000301', 'trauma:or', 'Owner statement', public.usp_normalize('Owner statement')),
+  ('aaaaaaaa-0000-0000-0000-000000000302', 'bbbbbbbb-0000-0000-0000-000000000302', 'trauma:or', 'Stranger statement', public.usp_normalize('Stranger statement'));
 
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"aaaaaaaa-0000-0000-0000-000000000301"}';
@@ -79,7 +79,7 @@ begin
     insert into public.usp_fingerprints (user_id, brief_id, scope_key, statement, normalized)
     values (
       'aaaaaaaa-0000-0000-0000-000000000301', 'bbbbbbbb-0000-0000-0000-000000000301',
-      'trauma_informed:or', 'A perfectly legitimate-looking statement',
+      'trauma:or', 'A perfectly legitimate-looking statement',
       public.usp_normalize('A perfectly legitimate-looking statement')
     );
     raise exception 'FAIL: authenticated could INSERT into usp_fingerprints directly, even under her own identity';
@@ -113,8 +113,9 @@ reset role;
 
 -- ---------------------------------------------------------------------------
 -- usp_fingerprint_confirm is the ONLY sanctioned write path. It DERIVES
--- scope_key from the brief's own specialty_ids[1]/state -- there is no
--- p_scope_key parameter, so there is nothing for a caller to override.
+-- scope_key from the brief's own specialties (by catalog sort_order, not
+-- array position) and state -- there is no p_scope_key parameter, so
+-- there is nothing for a caller to override.
 -- ---------------------------------------------------------------------------
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"aaaaaaaa-0000-0000-0000-000000000301"}';
@@ -135,8 +136,8 @@ begin
   select * into v_row from public.usp_fingerprints where id = v_id;
   assert v_row.user_id = 'aaaaaaaa-0000-0000-0000-000000000301', 'the row must be owned by the caller';
   assert v_row.brief_id = 'bbbbbbbb-0000-0000-0000-000000000301', 'the row must be attached to the brief the caller confirmed';
-  assert v_row.scope_key = 'trauma_informed:or',
-    format('scope_key must be DERIVED from the brief''s own specialty_ids[1] (''trauma_informed'') and state (''OR''), got %s', v_row.scope_key);
+  assert v_row.scope_key = 'trauma:or',
+    format('scope_key must be DERIVED from the brief''s own specialties (catalog sort_order, ''trauma'') and state (''OR''), got %s', v_row.scope_key);
   assert v_row.statement = 'A confirmed, real statement about my practice';
 
   raise notice 'OK: usp_fingerprint_confirm wrote a row with server-derived scope_key %', v_row.scope_key;
@@ -152,6 +153,91 @@ begin
     'normalized must match usp_normalize() of the confirmed statement';
 end
 $$;
+
+-- ---------------------------------------------------------------------------
+-- ⚠ AT MOST ONE ROW PER BRIEF. Without the unique constraint + upsert, a
+-- direct RPC call lets an authenticated caller flood her own bucket with
+-- unlimited rows -- the frontend's 20/hour rate limit does not protect
+-- this path, since the RPC is reachable directly by anyone holding the
+-- EXECUTE grant `authenticated` legitimately has. Re-confirming must
+-- REPLACE the row, carrying the new statement, not add a second one.
+-- ---------------------------------------------------------------------------
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"aaaaaaaa-0000-0000-0000-000000000301"}';
+
+do $$
+declare
+  n     int;
+  v_row record;
+begin
+  -- Confirm once, then confirm AGAIN on the same brief with an edited
+  -- statement (this brief already has one row from the block above).
+  perform public.usp_fingerprint_confirm(
+    'bbbbbbbb-0000-0000-0000-000000000301'::uuid,
+    'A confirmed, real statement about my practice'
+  );
+  perform public.usp_fingerprint_confirm(
+    'bbbbbbbb-0000-0000-0000-000000000301'::uuid,
+    'A different, edited statement about my practice'
+  );
+
+  select count(*) into n from public.usp_fingerprints where brief_id = 'bbbbbbbb-0000-0000-0000-000000000301';
+  assert n = 1, format('expected exactly one row per brief after two confirms, got %s', n);
+
+  select * into v_row from public.usp_fingerprints where brief_id = 'bbbbbbbb-0000-0000-0000-000000000301';
+  assert v_row.statement = 'A different, edited statement about my practice',
+    format('the single remaining row must carry the SECOND (latest) statement, got: %s', v_row.statement);
+
+  raise notice 'OK: two confirms on the same brief leave exactly one row, carrying the second statement';
+end
+$$;
+
+reset role;
+
+-- ---------------------------------------------------------------------------
+-- ⚠ scope_key DERIVATION MUST NOT DEPEND ON specialty_ids ARRAY ORDER.
+-- `specialty_ids` has no guaranteed order (plain `text[]`, written verbatim
+-- by frontend autosave). Two briefs selecting the SAME set of specialties
+-- in a DIFFERENT array order must resolve to the SAME scope_key --
+-- otherwise reordering her own selections would silently move her USP
+-- into a different bucket and dodge collision detection.
+-- ---------------------------------------------------------------------------
+insert into public.projects (id, user_id, name) values
+  ('bbbbbbbb-0000-0000-0000-000000000304', 'aaaaaaaa-0000-0000-0000-000000000301', 'Order A Practice'),
+  ('bbbbbbbb-0000-0000-0000-000000000305', 'aaaaaaaa-0000-0000-0000-000000000301', 'Order B Practice');
+
+-- Same three specialties (anxiety=1, trauma=3, adhd=12 by catalog
+-- sort_order), inserted in two different, deliberately non-sorted orders.
+insert into public.project_briefs (project_id, specialty_ids, state) values
+  ('bbbbbbbb-0000-0000-0000-000000000304', array['adhd', 'anxiety', 'trauma'], 'CA'),
+  ('bbbbbbbb-0000-0000-0000-000000000305', array['trauma', 'adhd', 'anxiety'], 'CA');
+
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"aaaaaaaa-0000-0000-0000-000000000301"}';
+
+do $$
+declare
+  v_id_a uuid;
+  v_id_b uuid;
+  v_scope_a text;
+  v_scope_b text;
+begin
+  v_id_a := public.usp_fingerprint_confirm('bbbbbbbb-0000-0000-0000-000000000304'::uuid, 'Statement from the array-order-A brief');
+  v_id_b := public.usp_fingerprint_confirm('bbbbbbbb-0000-0000-0000-000000000305'::uuid, 'Statement from the array-order-B brief');
+
+  select scope_key into v_scope_a from public.usp_fingerprints where id = v_id_a;
+  select scope_key into v_scope_b from public.usp_fingerprints where id = v_id_b;
+
+  assert v_scope_a = v_scope_b,
+    format('permuting specialty_ids must NOT change scope_key: got %s vs %s', v_scope_a, v_scope_b);
+  assert v_scope_a = 'anxiety:ca',
+    format('the primary specialty must be the LOWEST catalog sort_order among those selected (anxiety, sort_order=1), not array position, got %s', v_scope_a);
+
+  raise notice 'OK: scope_key is order-independent -- both permutations resolved to %', v_scope_a;
+end
+$$;
+
+reset role;
 
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"aaaaaaaa-0000-0000-0000-000000000301"}';
