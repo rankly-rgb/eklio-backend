@@ -61,8 +61,11 @@ insert into array_validators values
   ('site_spec_pages_valid'),
   ('site_spec_seed_clamped_valid'),
   -- project_briefs_tone_cards_valid (exactly 6 elements) and
-  -- project_briefs_usp_options_valid (2-3 elements): both take a jsonb ARRAY,
-  -- not an object with required keys.
+  -- project_briefs_usp_options_valid (2-3 elements, relaxed from exactly-3 —
+  -- see 20260901074731_project_briefs_how_you_work_columns.sql): both take a
+  -- top-level JSON ARRAY, not an object with required keys, so they belong
+  -- here rather than in `validator_registry`. Their own missing-key coverage
+  -- lives in 20260901074731_project_briefs_how_you_work_columns.test.sql.
   ('project_briefs_tone_cards_valid'),
   ('project_briefs_usp_options_valid');
 
