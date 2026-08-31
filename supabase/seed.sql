@@ -732,3 +732,64 @@ on conflict (id) do update set
   active     = excluded.active,
   label      = excluded.label;
 -- <<< HOW YOU WORK CATALOG DATA <<<
+
+
+-- >>> USP GUARDRAIL DATA (mirrored verbatim in supabase/seed.sql) >>>
+insert into public.banned_phrases (phrase, category) values
+  ('safe space', 'directory_cliche'),
+  ('judgment-free', 'directory_cliche'),
+  ('judgement-free', 'directory_cliche'),
+  ('you deserve', 'directory_cliche'),
+  ('your journey', 'directory_cliche'),
+  ('take the first step', 'directory_cliche'),
+  ('here to help', 'directory_cliche'),
+  ('meet you where you are', 'directory_cliche'),
+  ('holistic approach', 'directory_cliche'),
+  ('whole person', 'directory_cliche'),
+  ('authentic self', 'directory_cliche'),
+  ('unlock your potential', 'directory_cliche'),
+  ('live your best life', 'directory_cliche'),
+  ('mind body and spirit', 'directory_cliche'),
+  ('compassionate care', 'directory_cliche'),
+  ('tailored to your needs', 'directory_cliche'),
+  ('a place to heal', 'directory_cliche'),
+  ('ready to take the next step', 'directory_cliche'),
+  ('your path to healing', 'directory_cliche'),
+  ('empower you to', 'directory_cliche'),
+  ('guaranteed results', 'outcome_promise'),
+  ('will heal', 'outcome_promise'),
+  ('cure your', 'outcome_promise'),
+  ('proven to eliminate', 'outcome_promise'),
+  ('you will feel better', 'outcome_promise'),
+  ('amazing', 'hype'),
+  ('life-changing', 'hype'),
+  ('transformational', 'hype'),
+  ('revolutionary', 'hype'),
+  ('game-changer', 'hype')
+on conflict (lower(phrase)) do update set
+  category = excluded.category,
+  active   = true;
+
+insert into public.usp_stopwords (word) values
+  ('a'),('an'),('the'),('and'),('or'),('but'),('of'),('to'),('in'),('on'),
+  ('at'),('for'),('with'),('is'),('are'),('was'),('were'),('be'),('been'),
+  ('being'),('this'),('that'),('these'),('those'),('it'),('its'),('as'),
+  ('by'),('from'),('into'),('about'),('than'),('then'),('so'),('such'),
+  ('not'),('no'),('nor'),('if'),('because'),('while'),('who'),('whom'),
+  ('whose'),('which'),('what'),('when'),('where'),('why'),('how'),('all'),
+  ('each'),('few'),('more'),('most'),('other'),('some'),('any'),('both'),
+  ('either'),('neither'),('one'),('two'),('i'),('you'),('he'),('she'),
+  ('we'),('they'),('them'),('his'),('her'),('their'),('our'),('your'),
+  ('my'),('me'),('him'),('us'),('do'),('does'),('did'),('have'),('has'),
+  ('had'),('can'),('could'),('will'),('would'),('shall'),('should'),
+  ('may'),('might'),('must'),('up'),('down'),('out'),('over'),('under'),
+  ('again'),('further'),('once'),('here'),('there'),('very'),('just'),
+  ('also'),
+  ('therapy'),('therapist'),('counseling'),('counselor'),('practice'),
+  ('clients'),('people')
+on conflict (word) do nothing;
+
+insert into public.app_settings (key, value) values
+  ('usp_similarity_threshold', '0.55')
+on conflict (key) do nothing;
+-- <<< USP GUARDRAIL DATA <<<
