@@ -104,6 +104,7 @@ language sql
 immutable
 as $$
   select case p_step
+    when 4 then 4::smallint  -- no old equivalent; falls through unchanged
     when 5 then 4::smallint
     when 6 then 5::smallint  -- lossy: could have been old 5, old 6, or both
     when 7 then 7::smallint
@@ -158,6 +159,35 @@ begin
   assert v_down <> array[1,2,3,5,6]::smallint[],
     'up-then-down of a completed-both-5-and-6 brief must NOT recover the original set -- the collapse is genuinely lossy';
   assert v_down = array[1,2,3,5]::smallint[], format('expected the documented arbitrary down-choice {1,2,3,5}, got %s', v_down);
+end
+$$;
+
+-- ---------------------------------------------------------------------------
+-- The REALISTIC rollback scenario: a rollback happening AFTER users have
+-- answered the NEW step 4 ("How you work"), which does not exist pre-
+-- migration. progress_step = 4, completed_steps containing a literal 4.
+-- ---------------------------------------------------------------------------
+do $$
+declare
+  v_progress_down  int;
+  v_completed_down smallint[];
+begin
+  -- She finished 1, 2, 3 and just finished "How you work" too, now sitting
+  -- on (not yet completed) new step 5.
+  v_progress_down  := least(pg_temp.brief_step_renumber_down(4::smallint)::int, 7);
+  v_completed_down := pg_temp.brief_completed_steps_renumber_down(array[1,2,3,4]::smallint[]);
+
+  -- No duplicates: the literal 4 is DROPPED before remapping, so it can
+  -- never collide with a value something else maps to.
+  assert v_completed_down = array[1,2,3]::smallint[],
+    format('completed_steps={1,2,3,4} must down-map to {1,2,3} (4 dropped, no duplicates), got %s', v_completed_down);
+  assert array_length(v_completed_down, 1) = (select count(distinct x) from unnest(v_completed_down) x),
+    'down-mapped completed_steps must never contain a duplicate';
+
+  -- progress_step passes through unchanged -- documented as coincidence,
+  -- not recovered data: old step 4 is a DIFFERENT question (voice & tone).
+  assert v_progress_down = 4,
+    format('progress_step=4 must down-map to 4 (falls through, lands at OLD step 4 / voice & tone -- documented, not a bug), got %s', v_progress_down);
 end
 $$;
 

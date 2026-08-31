@@ -20,6 +20,37 @@
 -- already-migrated rows would remap them a second time and corrupt
 -- `completed_steps` — matching every other data-shape migration in this
 -- repo, none of which are written to tolerate double-application either.
+--
+-- ⚠ A ROLLBACK AFTER USERS HAVE ANSWERED THE NEW STEP 4 IS A SEPARATE LOSSY
+-- CASE FROM THE 5/6 COLLAPSE, DOCUMENTED HERE SEPARATELY. If the DOWN
+-- script below runs after some briefs have `4` in `completed_steps` and/or
+-- `progress_step = 4` (meaning: she answered "How you work," a step that
+-- does not exist pre-migration), verified behavior is:
+--   - `completed_steps`: any literal `4` is DROPPED, not remapped — there
+--     is no old step for it to become. No duplicates result: the filter
+--     removes literal `4` entries BEFORE the remaining values are mapped,
+--     so a `4` can never be confused with a value that maps TO 4 (nothing
+--     does — old step 4 mapped UP to new 5, and down-mapping is applied
+--     only after the drop, so a post-drop `4` never appears via mapping
+--     either).
+--   - `progress_step`: a value of `4` passes through the down-map
+--     UNCHANGED (see the explicit `when 4 then 4` case below) — NOT
+--     because 4 has a real old-step meaning that matches what she
+--     answered, but because there is nothing sensible to remap it TO, and
+--     4 happens to also be a valid old step number (voice & tone). This is
+--     coincidence, not recovered data: the old app has no "How you work"
+--     screen, so `progress_step = 4` will resume her into the OLD step 4
+--     (voice & tone) — a DIFFERENT question than the one she was actually
+--     on. She has no old-schema voice & tone answer either way (that data
+--     lived at old step 4 under the old numbering, and under the up-map
+--     her voice & tone answers moved to new step 5, i.e. `tone_card_id` is
+--     untouched by either direction of this migration), so nothing is
+--     overwritten — but her actual progress ("finished 1–3, mid-way
+--     through How you work") is NOT preserved, only approximated by
+--     landing at the nearest old step boundary. The `session_style_ids` /
+--     `not_a_fit_ids` / `referral_quote` / etc. answers themselves are
+--     untouched by this migration in either direction; only the two
+--     position pointers are reinterpreted.
 
 -- ============================================================================
 -- 1. brief_step_renumber_up — single value, old step number -> new
@@ -113,6 +144,10 @@ set
 -- -- set search_path = ''
 -- -- as $$
 -- --   select case p_step
+-- --     when 4 then 4::smallint  -- no old equivalent; falls through unchanged,
+-- --                              -- landing at OLD step 4 (voice & tone) -- a
+-- --                              -- coincidence of numbering, not recovered
+-- --                              -- data. See the header note above.
 -- --     when 5 then 4::smallint
 -- --     when 6 then 5::smallint  -- lossy: could have been old 5, old 6, or both
 -- --     when 7 then 7::smallint
