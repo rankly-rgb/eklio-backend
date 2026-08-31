@@ -2420,23 +2420,25 @@ angles**. Same null-safe discipline as §9.4.
 the "Built from: …" proof row on the positioning screen, mapped through a
 human-label lookup (§9.9), never as raw column names.
 
-### 9.6 The three RPCs — TWO ARE `service_role` ONLY, one is `authenticated`
+### 9.6 The three RPCs — ALL THREE are `service_role` ONLY
 
-All three are `security definer` with `set search_path = ''` locked. Their
-grants are NOT uniform — get this wrong and either becomes a probing
-oracle:
+All three are `security definer` with `set search_path = ''` locked, and
+**none of the three are granted to `authenticated`.** Get this wrong and
+each becomes its own kind of attack surface:
 
 | function | grant | call it with |
 |---|---|---|
 | `usp_check_distinct` | `service_role` only | the service-role key, from the route handler |
 | `usp_banned_phrases_check` | `service_role` only | the service-role key, from the route handler |
-| `usp_fingerprint_confirm` | `authenticated` | the user's JWT, forwarded normally |
+| `usp_fingerprint_confirm` | `service_role` only | the service-role key, from the route handler |
 
-⚠ **Do not forward the user's JWT to `usp_check_distinct` or
-`usp_banned_phrases_check`.** Both were originally specified as
-`authenticated`-callable "same as every other RPC in this contract" — that
-was wrong and has been corrected. Granting either to `authenticated` makes
-it directly reachable through PostgREST by any signed-in user, no route
+⚠ **Do not forward the user's JWT to any of the three.** `usp_check_distinct`
+and `usp_banned_phrases_check` were originally specified as
+`authenticated`-callable "same as every other RPC in this contract," and
+`usp_fingerprint_confirm` briefly held an `authenticated` grant with its
+own internal `auth.uid()` ownership check — all of that was wrong and has
+been corrected. Granting any of the three to `authenticated` makes it
+directly reachable through PostgREST by any signed-in user, no route
 handler involved:
 - `usp_check_distinct` returns another practitioner's confirmed statement
   text on collision (`conflicting_statement`). Direct access turns it into
@@ -2446,12 +2448,21 @@ handler involved:
   exact list gate 1 of the USP pipeline enforces — probe it directly and
   iterate until a phrasing returns zero hits, defeating gate 1 before gate
   2 ever runs.
+- `usp_fingerprint_confirm` is a write path with no rate limit inside the
+  database (the frontend's 20/hour limit lives in the route handler, not
+  here). Direct access lets a caller flood her own bucket with confirms —
+  the one-row-per-brief upsert (below) bounds the damage per brief, but a
+  reachable RPC is still attack surface a caller should never have needed
+  in the first place: nothing in the intended architecture calls it that
+  way, so the grant existed for no reason.
 
-The route handler is what authorizes these two calls (checking the caller
-owns the brief in question via the normal session check), then calls
-Supabase with the service-role key. This is the one deliberate exception
-in this contract to "call every RPC with the user's JWT" — everywhere else
-in this document, that instruction still holds.
+The route handler is what authorizes every one of these three calls
+(checking the caller owns the brief in question via the normal session
+check on the user's own JWT), then calls Supabase with the service-role
+key for all three. This is a deliberate, total exception in this contract
+to "call every RPC with the user's JWT" — everywhere else in this
+document, that instruction still holds; these three are the only ones
+that don't.
 
 ⚠ **Carry this into every Phase 2 route handler that touches these three
 RPCs, verbatim:** the route handler calls `usp_check_distinct`,
@@ -2462,12 +2473,17 @@ service-role call, and must never pass a `brief_id` that came from the
 request body without that check. The database no longer protects this
 path; the handler is the only thing that does.
 
-`usp_fingerprint_confirm` is the exception to reach for the service-role
-key: it is `authenticated`-only (see the table above) and re-derives
-ownership itself from `auth.uid()`, so call it by forwarding the user's
-JWT normally, not with the service-role key — called with the service-role
-key and no forwarded JWT, `auth.uid()` is NULL and every call fails its own
-ownership check by design (see §9.6's own function doc above).
+`usp_fingerprint_confirm` in particular no longer performs any ownership
+check of its own — earlier it verified `auth.uid()` internally, but once
+it became `service_role`-only that check could never see a real caller
+identity anyway (a service-role call carries no user JWT unless the
+handler forges one, which it must not do). It now trusts its caller
+completely, resolving the brief's actual owner from the FK chain rather
+than an argument — the same trust model `seed_site_spec`
+(`20260829100000_site_spec.sql`) already uses for a service-role-only
+write in this schema. The route handler's own pre-call ownership check is
+the ENTIRE access control for this function now — there is no second
+layer inside the database to catch a handler that skips it.
 
 #### `usp_check_distinct(p_scope_key text, p_statement text, p_exclude_brief uuid default null) returns jsonb`
 
@@ -2521,25 +2537,23 @@ belt-and-suspenders). There is deliberately no `p_scope_key` parameter:
 the function derives it itself (lowest `sort_order` in `specialties` among
 the brief's selections, same rule as §9.6's `usp_check_distinct` note
 above — never `specialty_ids[0]`) from `project_briefs` on the brief
-identified by `p_brief_id`, after confirming `auth.uid()` owns that
-brief — a caller cannot supply, and therefore cannot spoof, the scope a
-statement gets checked against. Call it with the user's JWT, after
-`usp_check_distinct` passes (or the user chooses "Keep mine" on a
-collision warning).
+identified by `p_brief_id` — a caller cannot supply, and therefore cannot
+spoof, the scope a statement gets checked against. Call it with the
+**service-role key**, after the route handler has itself verified from the
+user's own JWT that she owns `p_brief_id`, and after `usp_check_distinct`
+passes (or the user chooses "Keep mine" on a collision warning). The
+function performs no ownership check of its own — see §9.6.
 
 ⚠ **AT MOST ONE ROW PER BRIEF — `usp_fingerprints.brief_id` is UNIQUE, and
 this function is an UPSERT on it.** Calling it again for the same brief
 (the user edits her USP and re-confirms) REPLACES the existing row —
 including its `scope_key`, if her specialties changed in between — rather
 than adding a second one. This is deliberate, not an implementation detail
-to work around: without it, this RPC is reachable directly by any
-`authenticated` caller (the 20/hour frontend rate limit does not protect
-it — that limit lives in the route handler, not the database), so nothing
-stopped a caller from confirming the same brief repeatedly and flooding
-her own specialty:state bucket with unlimited legitimate-looking rows,
-degrading collision detection for everyone sharing that bucket. Do not
-build a "call it in a loop to log every candidate" pattern — it will not
-do what that implies, and the last call always wins.
+to work around: reachable-by-anyone-with-the-key write paths degrade
+gracefully into "at most one row" rather than "unbounded rows," bounding
+the damage of a route-handler bug that calls this more than once for the
+same confirm. Do not build a "call it in a loop to log every candidate"
+pattern — it will not do what that implies, and the last call always wins.
 
 ```sql
 select usp_fingerprint_confirm('5c2e...-brief-id'::uuid, 'I work with first responders carrying trauma from the job.');
@@ -2627,9 +2641,12 @@ offers alternatives — never the colliding text itself.
 **Never print `prior_career` anywhere `prior_career_public` is not `true`.**
 Not in a preview, not in a mockup, not in a generated deliverable.
 
-**Never call `usp_banned_phrases_check` or `usp_check_distinct` from a
-client component.** Both are server-side RPC calls from a route handler
-under `app/api/`, same rule as every model call in this contract.
+**Never call `usp_banned_phrases_check`, `usp_check_distinct`, or
+`usp_fingerprint_confirm` from a client component.** All three are
+service-role-only, server-side RPC calls from a route handler under
+`app/api/`, same rule as every model call in this contract — none of the
+three has an `authenticated` grant to call with the user's session in the
+first place.
 
 **Never write a `usp_fingerprints` row for a discarded candidate.** Only a
 confirmed selection (after `usp-confirm`) writes one — an unused-text-filled
