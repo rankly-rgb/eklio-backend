@@ -13,6 +13,11 @@ on:
 jobs:
   db-tests:
     runs-on: ubuntu-latest
+    # A hang here (a container stuck on its health check) must fail loudly,
+    # not silently burn the default 360-minute job timeout — this exact
+    # workflow hung on `supabase start` before this line was added; see the
+    # PR description.
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -27,8 +32,17 @@ jobs:
       - name: Install Supabase CLI 2.116.0
         run: npm install -g supabase@2.116.0
 
-      - name: Start local Supabase stack
-        run: supabase start
+      # supabase/tests/*.test.sql talk to Postgres directly over psql — none
+      # of them go through Auth, Storage, Realtime, the API gateway, the
+      # dashboard, or edge functions. Excluding those containers (the full
+      # --exclude list from `supabase start --help` on this pinned version)
+      # is not a scope change to what gets tested: it is fewer images to pull
+      # and fewer health checks that can hang, on a stack that only ever
+      # needed Postgres, which is not excludable and always starts.
+      - name: Start local Supabase stack (Postgres only)
+        run: |
+          supabase start --exclude \
+            gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
 
       # Full reset from zero: replays every migration in
       # supabase/migrations/, then runs supabase/seed.sql (db.seed.enabled =
