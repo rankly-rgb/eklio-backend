@@ -47,12 +47,6 @@ do $$
 begin
   set local role authenticated;
   set local request.jwt.claims = '{"sub":"a0000001-0001-0001-0001-000000000001"}';
-  -- TEMPORARY DIAGNOSTIC — not a fix, see PR description. Removed once (a)-(c)
-  -- are answered with evidence.
-  raise notice 'DIAG auth.uid() = %', (select auth.uid());
-  raise notice 'DIAG brand_kit_is_owned = %', public.brand_kit_is_owned('e0000001-0001-0001-0001-000000000001');
-  raise notice 'DIAG brand_kit_entitled = %', public.brand_kit_entitled('e0000001-0001-0001-0001-000000000001');
-  raise notice 'DIAG site_spec_entitlement_error = %', public.site_spec_entitlement_error('e0000001-0001-0001-0001-000000000001');
   assert public.brand_kit_entitled('e0000001-0001-0001-0001-000000000001') is false,
          'a kit with no purchase and no grant was entitled';
   assert public.site_spec_entitlement_error('e0000001-0001-0001-0001-000000000001')->>'code'
