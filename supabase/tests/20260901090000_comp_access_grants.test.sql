@@ -107,9 +107,8 @@ begin
   values ('c0000001-0001-0001-0001-000000000001', 're-granted after revoke', 'ops',
           now() + interval '30 days');
 
-  -- THROWAWAY BREAK — deliberately wrong, for the red/green CI proof. Revert next.
   assert (select count(*) from public.comp_grants
-           where user_id = 'c0000001-0001-0001-0001-000000000001' and revoked_at is null) = 2,
+           where user_id = 'c0000001-0001-0001-0001-000000000001' and revoked_at is null) = 1,
          'revoking and re-granting did not leave exactly one active row';
   assert (select count(*) from public.comp_grants
            where user_id = 'c0000001-0001-0001-0001-000000000001') = 2,
