@@ -27,8 +27,14 @@ begin
   set local role authenticated;
   set local request.jwt.claims = '{"sub":"c0000001-0001-0001-0001-000000000001"}';
 
-  assert (select count(*) from public.comp_grants) = 0,
-         'authenticated could read comp_grants, even her own row';
+  -- ⚠ REVOKE ALL raises `permission denied` on a bare SELECT; it does not
+  -- silently return zero rows. That is a stronger guarantee than "empty
+  -- result", so the test has to expect the error, not a count.
+  ok := false;
+  begin
+    perform (select count(*) from public.comp_grants);
+  exception when insufficient_privilege then ok := true; end;
+  assert ok, 'authenticated could read comp_grants, even her own row';
 
   ok := false;
   begin
@@ -47,7 +53,11 @@ begin
   reset role;
   set local role anon;
 
-  assert (select count(*) from public.comp_grants) = 0, 'anon could read comp_grants';
+  ok := false;
+  begin
+    perform (select count(*) from public.comp_grants);
+  exception when insufficient_privilege then ok := true; end;
+  assert ok, 'anon could read comp_grants';
 
   ok := false;
   begin
