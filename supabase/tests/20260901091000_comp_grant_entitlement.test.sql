@@ -49,7 +49,7 @@ begin
   set local request.jwt.claims = '{"sub":"a0000001-0001-0001-0001-000000000001"}';
   assert public.brand_kit_entitled('e0000001-0001-0001-0001-000000000001') is false,
          'a kit with no purchase and no grant was entitled';
-  assert public.site_spec_entitlement_error('e0000001-0001-0001-0001-000000000001')->>'code'
+  assert public.site_spec_entitlement_error('e0000001-0001-0001-0001-000000000001')->'error'->>'code'
          = 'payment_required', 'the site editor was open with no grant';
 end
 $$;
@@ -90,7 +90,7 @@ begin
   set local request.jwt.claims = '{"sub":"a0000001-0001-0001-0001-000000000001"}';
   assert public.brand_kit_entitled('e0000001-0001-0001-0001-000000000001') is false,
          'an expired comp grant still entitled';
-  assert public.site_spec_entitlement_error('e0000001-0001-0001-0001-000000000001')->>'code'
+  assert public.site_spec_entitlement_error('e0000001-0001-0001-0001-000000000001')->'error'->>'code'
          = 'payment_required', 'an expired comp grant still opened the site editor';
   assert public.comp_access_active() is false,
          'comp_access_active reported an expired grant as active';
@@ -136,7 +136,7 @@ begin
          'user A''s comp grant reported as active for user B';
 
   -- and B cannot use it to reach A's kit either (ownership is checked first)
-  assert public.site_spec_entitlement_error('e0000001-0001-0001-0001-000000000001')->>'code'
+  assert public.site_spec_entitlement_error('e0000001-0001-0001-0001-000000000001')->'error'->>'code'
          = 'not_found', 'user B reached user A''s kit through the comp grant';
 end
 $$;
