@@ -44,7 +44,11 @@ insert into permissive_validators values
   ('site_spec_cta_target_url_valid'),
   ('site_spec_practice_details_valid'),
   ('brand_kit_directions_rendering_valid'),
-  ('brand_kit_social_templates_rendering_valid');
+  ('brand_kit_social_templates_rendering_valid'),
+  -- project_briefs_data_valid: every key it looks at is optional (`not (p ?
+  -- key) or ...`) — there is no required-key set for part 3's per-key removal
+  -- test to exercise, so it belongs here rather than in validator_registry.
+  ('project_briefs_data_valid');
 
 -- Validators whose argument is an array or which have their own coverage
 -- elsewhere in the suite; still held to never returning NULL.
@@ -55,7 +59,12 @@ insert into array_validators values
   ('brand_kit_social_templates_shape_valid'),
   ('section_type_fields_valid'),
   ('site_spec_pages_valid'),
-  ('site_spec_seed_clamped_valid');
+  ('site_spec_seed_clamped_valid'),
+  -- project_briefs_tone_cards_valid (exactly 6 elements) and
+  -- project_briefs_usp_options_valid (2-3 elements): both take a jsonb ARRAY,
+  -- not an object with required keys.
+  ('project_briefs_tone_cards_valid'),
+  ('project_briefs_usp_options_valid');
 
 do $$
 declare
