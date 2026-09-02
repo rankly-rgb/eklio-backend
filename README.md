@@ -83,6 +83,23 @@ visible, corrigé le jour même.
 > valeur qui échoue. Quand un choix existe entre « refuser bruyamment » et
 > « rendre quelque chose d'incomplet », prendre le refus.
 
+### Un migration renommé après coup : même famille de défaut
+
+`20260901074421_direction_assets.sql` et les dix fichiers qui l'entourent, plus
+vingt-huit fichiers plus anciens, portaient un horodatage différent de celui
+que le projet Supabase actif avait réellement enregistré au moment du `push`.
+Rien n'a levé d'erreur. Le dépôt continuait de sembler cohérent — c'est
+exactement le défaut décrit ci-dessus, sous une autre forme : pas une valeur
+qui disparaît, mais un historique qui cesse silencieusement de décrire ce qui
+est réellement déployé.
+
+> **La règle :** un fichier de migration ne se renumérote, ne se renomme et ne
+> se réordonne jamais après avoir été poussé vers un projet quelconque. Le nom
+> de fichier est l'identité que le distant a enregistrée ; le changer détache
+> silencieusement le dépôt de la base. Si un horodatage est faux, la
+> correction est une nouvelle migration — jamais une modification d'une
+> ancienne.
+
 ## Répartition des responsabilités
 
 Ce repo possède : les tables, colonnes, contraintes, policies RLS, triggers,
