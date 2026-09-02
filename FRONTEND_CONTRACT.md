@@ -1656,7 +1656,7 @@ budget twice), and the returned `claim_token` (`claimed_at`) is what
 `direction_assets_mark_ready`/`_mark_failed` require unchanged — a stale
 invocation's late write is a silent no-op, never a clobber of the winner's
 result. See the migration's header comment
-(`20260830100000_direction_assets.sql`) for the three failure modes this
+(`20260901074421_direction_assets.sql`) for the three failure modes this
 shape is built against.
 
 `brand_kit_direction_palette_hash(palette jsonb)` is the one hash function
@@ -2419,7 +2419,7 @@ with only two elements present, that still leaves one of the three angles
 absent from the batch — expected, not an error). Same null-safe discipline
 as §9.4.
 
-⚠ **Originally exactly 3, relaxed in `20260831102000_...sql`.** The
+⚠ **Originally exactly 3, relaxed in `20260901074731_project_briefs_how_you_work_columns.sql`.** The
 generation pipeline (`lib/generation/usp-options.ts`, eklio-frontend)
 already tried to keep going after a partial batch and already had copy for
 it (`partialMessageFor` — "We only found two that were truly yours…"), but
@@ -2582,7 +2582,7 @@ New order: 1 practice (unchanged) — 2 positioning (unchanged) — 3 ideal
 client (unchanged) — **4 How you work (new)** — 5 voice & tone (was 4) — 6
 Look, palette + typography merged (was 5 and 6) — 7 website (unchanged).
 
-The migration `20260831103000_brief_step_renumber.sql` remapped every
+The migration `20260901074802_brief_step_renumber.sql` remapped every
 existing `project_briefs` row's `progress_step` and `completed_steps`
 (`smallint[]`) exactly once, on application, using:
 
@@ -2748,7 +2748,7 @@ decides whether there is anything to check:
   .selected_usp_id`, if non-null, must match an `id` present in `new
   .usp_options`, or the write is rejected.
 
-⚠ **Originally fired on every write regardless, in `20260831102000_...sql`
+⚠ **Originally fired on every write regardless, in `20260901074731_project_briefs_how_you_work_columns.sql`
 as first authored.** "Write me three more" replaces `usp_options` in place;
 if a practitioner had already confirmed a positioning statement
 (`selected_usp_id` + `usp_statement` both set) and then regenerated, the
@@ -2791,7 +2791,7 @@ more (`selected_tone_card_id`, `usp_regenerate_count`,
 `usp_options_inputs_hash`). Eleven keys deep, with zero database-level
 shape, was a schema pretending not to be one.
 
-`20260831106000_project_briefs_data_shape.sql` adds CHECK
+`20260901074933_project_briefs_data_shape.sql` adds CHECK
 `project_briefs_data_shape_check` (function `project_briefs_data_valid`) —
 **open, not closed.** Unknown keys are tolerated; only the eleven KNOWN
 keys are type-checked, and only when present:
@@ -2853,7 +2853,7 @@ that removing any one required key must fail, which would be actively
 wrong here (`{}` is this validator's legitimate pass case, since every one
 of the eleven keys is optional); `array_validators` accommodates it under
 its documented "or has its own coverage elsewhere in the suite" clause —
-`supabase/tests/20260831106000_project_briefs_data_shape.test.sql` is that
+`supabase/tests/20260901074933_project_briefs_data_shape.test.sql` is that
 coverage.
 
 ### ⚠ Deviation from an earlier draft of this feature's brief

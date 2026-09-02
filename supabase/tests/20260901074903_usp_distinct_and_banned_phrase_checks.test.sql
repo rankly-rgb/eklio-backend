@@ -1,5 +1,5 @@
 -- ============================================================================
--- Tests — 20260831105000_usp_distinct_and_banned_phrase_checks.sql
+-- Tests — 20260901074903_usp_distinct_and_banned_phrase_checks.sql
 -- ============================================================================
 begin;
 
@@ -79,7 +79,7 @@ reset role;
 
 -- Written directly here (not through usp_fingerprint_confirm) since this
 -- file is about usp_check_distinct's own read-side behavior; the write
--- path itself is covered in 20260831104000's test file.
+-- path itself is covered in 20260901074842's test file.
 insert into public.usp_fingerprints (user_id, brief_id, scope_key, statement, normalized) values
   ('aaaaaaaa-0000-0000-0000-000000000401', 'bbbbbbbb-0000-0000-0000-000000000401', 'trauma:or',
    'I work with first responders carrying trauma from the job',
