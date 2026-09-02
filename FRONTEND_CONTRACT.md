@@ -35,7 +35,7 @@ listed per entry below.
 Another user's brand kit returns `not_found`, byte-identical to a kit that does
 not exist. There is no `forbidden`.
 
-### The eleven entries
+### The twelve entries
 
 | Product endpoint | RPC function | Arguments |
 |---|---|---|
@@ -51,6 +51,7 @@ not exist. There is no `forbidden`.
 | — (call before any model call) | `consume_generation_credit` | `p_brand_kit_id uuid` |
 | `GET /brand-kits/:id/entitled` | `brand_kit_entitled` | `p_brand_kit_id uuid` |
 | — (checkout handler, **service_role**) | `grant_plan_allowance` | `p_project_id uuid`, `p_tier text`, `p_grant_key text` |
+| `GET /brand-kits/:id/reveal` | `brand_kit_reveal_get` | `p_brand_kit_id uuid` |
 
 > ⚠ **Do not hand-write these signatures.** `types/supabase.ts` is generated
 > from the database and carries every table, column and RPC parameter name.
@@ -69,7 +70,10 @@ Seven return **the same envelope** (section 2): `site_spec_get`,
 `site_output_mark_copied`, `site_spec_fix_contrast` and
 `brand_kit_select_direction`. `site_output_get` returns the output alone.
 `site_catalog` returns the catalog. `consume_generation_credit` and
-`brand_kit_entitled` return a bare boolean.
+`brand_kit_entitled` return a bare boolean. `brand_kit_reveal_get` returns its
+own envelope — practice details, voice guide, social templates and the three
+directions, each carrying a contrast summary and an ambiance image URL — see
+"`brand_kit_reveal_get`" below section 2.
 
 ---
 
@@ -90,6 +94,7 @@ onward is paid.**
 | `site_catalog` | **works** — it describes the product she is being asked to buy |
 | `brand_kit_entitled` | **works** — it is how you decide what to render |
 | `consume_generation_credit` | **works** — the free allowance is metered, not blocked |
+| `brand_kit_reveal_get` | **works** — the three directions and their contrast/ambiance are the sales pitch |
 | `brand_kit_select_direction` | `payment_required` |
 | `site_spec_get`, `site_output_get` | `payment_required` |
 | `site_spec_patch`, `site_spec_reset`, `site_spec_set_target` | `payment_required` |
@@ -1547,6 +1552,125 @@ were made and paid for by Eklio; a refund does not un-make them.
 
 A re-purchase grants again, with a new key, and that resets the meter. That is
 the only thing that does.
+
+### `brand_kit_reveal_get` — everything the reveal needs, in one call
+
+`brand_kit_reveal_get(p_brand_kit_id uuid)` — **free**, no `brand_kit_entitled`
+gate, `EXECUTE` revoked from `anon` the way every ownership-scoped RPC is. Same
+disclosure order as the gated seven: `unauthenticated` with no caller,
+`not_found` for a kit that is not hers or does not exist, `not_found` again if
+it is hers but generation has not written `directions` yet. It never returns
+`payment_required` — the reveal is the thing that is free.
+
+Returns one envelope:
+
+```json
+{
+  "brand_kit_id": "33333333-...",
+  "practice": {
+    "name": "Elm & Ember Therapy", "city": "Portland", "state": "OR",
+    "specialties": ["Anxiety", "Burnout", "Life transitions"]
+  },
+  "practitioner_line": "Nora Whitfield, LCSW",
+  "voice_guide": { "sounds_like": ["..."], "never_write": ["..."] },
+  "social_templates": [ "... four, same shape as brand_kits.social_templates ..." ],
+  "directions": [
+    {
+      "id": "warm_welcome", "name": "Warm Welcome", "rationale": "...",
+      "about_excerpt": "...", "palette": { "...": "..." }, "hero": { "...": "..." },
+      "typography": { "...": "..." }, "tone_keywords": ["steady", "plainspoken", "warm"],
+      "contrast": {
+        "pairs": [
+          { "pair_id": "dark_neutral_on_paper", "label": "Body text on the page",
+            "fg": "#2B2A27", "bg": "#FAF6EE", "ratio": 13.31, "level": "AAA" }
+        ],
+        "worst_ratio": 4.51,
+        "passes_aa": true
+      },
+      "ambiance_url": "https://.../warm.png"
+    }
+  ]
+}
+```
+
+`practice.name` is `project_briefs.practice_name`, falling back to the
+project's own name — the same seeding rule section 1's `practice_details`
+table gives for `practice_name`, applied here before a site spec exists to
+patch. `practitioner_line`, `voice_guide` and `social_templates` are the
+kit-level values unchanged — `practitioner_line` is `brand_kits.practitioner_line`
+verbatim, the same already-composed string section 1 says exists precisely so
+nothing re-assembles a name and a license itself, and the social templates are
+re-skinned per direction at render time by the `palette_role`/
+`typography_role` each one already carries. There is no per-direction copy
+of any of the three.
+
+`practice.specialties` is up to three `specialties.label` values, resolved
+from `project_briefs.specialty_ids` in the order she picked them — the same
+resolution `brief_preview()` does for the brief's live rail, capped at three
+here instead of two because the reveal's homepage mockup has a three-column
+section to fill. Labels only: there is no per-specialty sentence anywhere in
+the schema before a site spec exists (that copy is generated into the site
+spec's `specialties` section only after a direction is bought), so this is
+never a fabricated one-liner. An empty array when she picked none — never
+`null`, never an error.
+
+`contrast` is `brand_kit_direction_contrast(direction)`: the same rendered
+pairs `site_spec_contrast` reports for a purchased site spec (`pair_id`,
+`label`, `fg`, `bg`, `ratio`, `level`), computed instead from the direction's
+own five-role palette (plus `accent` when the direction carries one — a
+direction without a curated accent reports six pairs, not seven) by reusing
+`site_spec_text_variant`/`site_spec_cta_ink`/`site_spec_contrast_ratio`/
+`site_spec_contrast_level` — never a re-implementation of the WCAG math, and
+never a hardcoded ratio or level on the frontend. There is no
+`suggested_fix`: an unpurchased direction cannot be patched, only chosen.
+
+`ambiance_url` is `null` unless a `direction_assets` row for that exact
+direction index is `status = 'ready'` **and** was generated for that
+direction's *current* palette. A `pending`, `claimed`, or `failed` row, an
+absent row, and a `ready` row whose stored `palette_hash` no longer matches
+the direction (she regenerated) are all, deliberately, the same `null` — the
+frontend renders its existing gradient for every one of them and never
+special-cases which.
+
+#### The ambiance image pipeline
+
+One photoreal image per direction, generated once. Per this repo's own
+division of responsibility, **the OpenAI call itself is not here** —
+eklio-frontend holds `OPENAI_API_KEY` and owns every external API call and all
+scheduled orchestration; this repo only makes the part that has to be correct
+under concurrency and crashes safe: `direction_assets` (one row per
+`(brand_kit_id, direction_index, kind)`), `direction_asset_daily_spend` (one
+row per day), and three **service_role-only** functions —
+`direction_assets_claim`, `direction_assets_mark_ready`,
+`direction_assets_mark_failed`. None of the three is reachable with a user's
+own JWT; the pipeline calls them with the service-role key, never a route a
+browser reaches.
+
+`direction_assets_claim(p_brand_kit_id, p_direction_index, p_palette_hash, p_cost_estimate_cents, p_daily_cap_cents, p_reclaim_after default 10 minutes)`
+is the one atomic decision: claims the slot, or refuses having reserved
+nothing. `p_cost_estimate_cents` and `p_daily_cap_cents` are supplied by the
+caller — this repo enforces a budget, it does not know OpenAI's price or read
+an env var. A claim past `p_reclaim_after` old is retaken **without a second
+reservation** (a dead serverless invocation cannot make one image cost the
+budget twice), and the returned `claim_token` (`claimed_at`) is what
+`direction_assets_mark_ready`/`_mark_failed` require unchanged — a stale
+invocation's late write is a silent no-op, never a clobber of the winner's
+result. See the migration's header comment
+(`20260830100000_direction_assets.sql`) for the three failure modes this
+shape is built against.
+
+`brand_kit_direction_palette_hash(palette jsonb)` is the one hash function
+**both sides must call** — eklio-frontend computes it before ever calling
+`direction_assets_claim`, and this repo recomputes it from the direction's
+current palette every time `brand_kit_reveal_get` decides whether a stored
+image still applies. Never derive the hash independently on either side, or a
+regenerated direction's stale image will read as current on one side and not
+the other.
+
+Cost discipline: exactly three images per brief, generated once. A
+regenerated direction is a new, billable job (a new palette hash the daily cap
+still governs) — the old image is never resurrected, and the old storage
+object is left behind for a later cleanup, not deleted here.
 
 ### Purchase history
 
