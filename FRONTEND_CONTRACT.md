@@ -1656,7 +1656,7 @@ budget twice), and the returned `claim_token` (`claimed_at`) is what
 `direction_assets_mark_ready`/`_mark_failed` require unchanged — a stale
 invocation's late write is a silent no-op, never a clobber of the winner's
 result. See the migration's header comment
-(`20260830100000_direction_assets.sql`) for the three failure modes this
+(`20260901074421_direction_assets.sql`) for the three failure modes this
 shape is built against.
 
 `brand_kit_direction_palette_hash(palette jsonb)` is the one hash function
@@ -2320,3 +2320,551 @@ shows a button preview, render it at or above that floor.
 
 Squarespace, Wix and Webflow have no box to paste a prompt into. Do not offer
 one. Render the sheet.
+
+---
+
+## 9. "How you work" — brief step 4, generated tone cards, USP positioning
+
+This section documents the schema added for the new brief step "How you
+work" (step 4), server-generated tone cards (step 5), and the positioning
+screen (three generated USP options with collision detection). It follows
+the naming and pattern already in this repo, NOT the `eklio_`-prefixed
+names an earlier draft of this feature's brief used — see the note at the
+end of this section.
+
+### 9.1 There is no `briefs` table
+
+Every column below is on **`public.project_briefs`**, primary key
+`project_id` (references `projects.id`). There is no table named `briefs`,
+and this feature does not create one — see the header of
+`20260827101000_brief_autosave_and_preview.sql`.
+
+### 9.2 New `project_briefs` columns — all nullable except noted
+
+| column | type | bound | notes |
+|---|---|---|---|
+| `session_style_ids` | `text[]` | ≤ 4 elements | each id must exist in `session_style_cards`; referentially checked by trigger |
+| `not_a_fit_ids` | `text[]` | ≤ 3 elements | each id must exist in `not_a_fit_cards`; referentially checked by trigger |
+| `not_a_fit_text` | `text` | ≤ 400 chars | |
+| `modality_ids` | `text[]` | ≤ 5 elements | each id must exist in `modality_cards`; referentially checked by trigger |
+| `modality_prominence` | `text` | — | FK to `modality_prominence_options.id`, `on delete restrict` |
+| `referral_quote` | `text` | ≤ 400 chars | the highest-value field in the brief |
+| `prior_career` | `text` | ≤ 200 chars | |
+| `prior_career_public` | `boolean` | — | **`not null default false`** — the one non-nullable addition |
+| `usp_options` | `jsonb` | 2 or 3 elements, never 1, never 0 | shape in §9.5; `null` until generated |
+| `selected_usp_id` | `text` | — | when it CHANGES to a non-null value, must match an `id` present in `usp_options`; enforced by a **trigger**, not a CHECK (`project_briefs_validate_selected_usp_id`) — see §9.12 for what "changes" means across a regeneration |
+| `usp_statement` | `text` | ≤ 200 chars | the selected statement AFTER edits — **this, not `selected_usp_id`, is what generation consumes** |
+| `tone_cards` | `jsonb` | exactly 6 elements | shape in §9.4; `null` until generated |
+| `tone_cards_inputs_hash` | `text` | — | opaque; frontend-owned, lets the client skip regenerating on unrelated saves |
+
+Empty array and `NULL` are distinguishable for the three `*_ids` columns —
+they default to `NULL`, unlike the five pre-existing array columns on this
+table (`client_persona_ids` etc.), which default to `'{}'`.
+
+### 9.3 Referential checks on the three `*_ids` arrays
+
+Unlike `client_persona_ids`, `problem_card_ids`, `gain_card_ids`,
+`specialty_ids`, `site_goal_ids` (deliberately left unchecked — see
+`20260827101000_...`'s header), `session_style_ids`, `not_a_fit_ids` and
+`modality_ids` ARE referentially validated, by a `before insert or update`
+trigger (`project_briefs_validate_how_you_work_refs`) that raises on the
+first unknown id. It only re-checks a given array when that specific column
+changed (or on `insert`), so an unrelated autosave keystroke does not pay a
+catalog lookup.
+
+### 9.4 `project_briefs.tone_cards` shape
+
+Array of exactly 6:
+
+```json
+{ "id": "…", "label": "…", "keywords": ["a", "b", "c"], "sample_hero": "…", "generated": true }
+```
+
+CHECK `project_briefs_tone_cards_check` (function
+`project_briefs_tone_cards_valid`): exactly 6 elements, every element has
+all five keys, `keywords` has exactly 3 string elements, `sample_hero` ≤
+**46 characters**, 6 distinct `id`s. Null-safe: a missing key or wrong-typed
+value is a hard rejection, not a silently-passing `NULL`.
+
+⚠ **46, not 90.** This matches `brand_kit_directions_rendering_valid`'s
+headline bound, because a tone card's `sample_hero` renders in the exact
+slot a direction's headline does (`<BrandPreview />`, see §9.7). It is
+deliberately narrower than `site_specs`' 90-character hero bound — a
+tone-card sample and a site's hero headline are different surfaces with
+different layout budgets, and unifying the two limits would either make
+tone cards overflow their card or let site heroes wrap where they
+shouldn't.
+
+### 9.5 `project_briefs.usp_options` shape
+
+Array of **2 or 3** — never 1, never 0:
+
+```json
+{
+  "id": "u1",
+  "angle": "population",
+  "statement": "…",
+  "rationale": "…",
+  "evidence": ["referral_quote", "modality_ids"]
+}
+```
+
+`angle` is one of `population` | `method` | `lived_experience`. CHECK
+`project_briefs_usp_options_check` (function
+`project_briefs_usp_options_valid`): 2 or 3 elements, every element has all
+five keys, `statement` ≤ 200 chars, `rationale` ≤ 240 chars, `evidence` an
+array of strings, and every element carries a **distinct `angle`** from
+every other element in the array (two elements can never share an angle;
+with only two elements present, that still leaves one of the three angles
+absent from the batch — expected, not an error). Same null-safe discipline
+as §9.4.
+
+⚠ **Originally exactly 3, relaxed in `20260901074731_project_briefs_how_you_work_columns.sql`.** The
+generation pipeline (`lib/generation/usp-options.ts`, eklio-frontend)
+already tried to keep going after a partial batch and already had copy for
+it (`partialMessageFor` — "We only found two that were truly yours…"), but
+the original CHECK made a genuine 2-survivor result **unwritable**: a
+regeneration that only produced 2 valid candidates could never actually be
+saved, silently defeating the partial-batch UX the frontend had already
+built. A 1-element (or empty) array is still refused — a single "choice"
+isn't a positioning screen — only the floor moved from 3 down to 2, not to
+1.
+
+`evidence` names which brief fields the statement drew from — render it as
+the "Built from: …" proof row on the positioning screen, mapped through a
+human-label lookup (§9.9), never as raw column names.
+
+### 9.6 The three RPCs — ALL THREE are `service_role` ONLY
+
+All three are `security definer` with `set search_path = ''` locked, and
+**none of the three are granted to `authenticated`.** Get this wrong and
+each becomes its own kind of attack surface:
+
+| function | grant | call it with |
+|---|---|---|
+| `usp_check_distinct` | `service_role` only | the service-role key, from the route handler |
+| `usp_banned_phrases_check` | `service_role` only | the service-role key, from the route handler |
+| `usp_fingerprint_confirm` | `service_role` only | the service-role key, from the route handler |
+
+⚠ **Do not forward the user's JWT to any of the three.** `usp_check_distinct`
+and `usp_banned_phrases_check` were originally specified as
+`authenticated`-callable "same as every other RPC in this contract," and
+`usp_fingerprint_confirm` briefly held an `authenticated` grant with its
+own internal `auth.uid()` ownership check — all of that was wrong and has
+been corrected. Granting any of the three to `authenticated` makes it
+directly reachable through PostgREST by any signed-in user, no route
+handler involved:
+- `usp_check_distinct` returns another practitioner's confirmed statement
+  text on collision (`conflicting_statement`). Direct access turns it into
+  a **competitor-probing oracle** — try candidate statements against a
+  `scope_key` and read back what's already claimed there.
+- `usp_banned_phrases_check` becomes a **phrase-testing oracle** for the
+  exact list gate 1 of the USP pipeline enforces — probe it directly and
+  iterate until a phrasing returns zero hits, defeating gate 1 before gate
+  2 ever runs.
+- `usp_fingerprint_confirm` is a write path with no rate limit inside the
+  database (the frontend's 20/hour limit lives in the route handler, not
+  here). Direct access lets a caller flood her own bucket with confirms —
+  the one-row-per-brief upsert (below) bounds the damage per brief, but a
+  reachable RPC is still attack surface a caller should never have needed
+  in the first place: nothing in the intended architecture calls it that
+  way, so the grant existed for no reason.
+
+The route handler is what authorizes every one of these three calls
+(checking the caller owns the brief in question via the normal session
+check on the user's own JWT), then calls Supabase with the service-role
+key for all three. This is a deliberate, total exception in this contract
+to "call every RPC with the user's JWT" — everywhere else in this
+document, that instruction still holds; these three are the only ones
+that don't.
+
+⚠ **Carry this into every Phase 2 route handler that touches these three
+RPCs, verbatim:** the route handler calls `usp_check_distinct`,
+`usp_banned_phrases_check` and `usp_fingerprint_confirm` with the
+service-role key, which bypasses RLS entirely. The handler must therefore
+verify from the user's own JWT that she owns the brief BEFORE any
+service-role call, and must never pass a `brief_id` that came from the
+request body without that check. The database no longer protects this
+path; the handler is the only thing that does.
+
+`usp_fingerprint_confirm` in particular no longer performs any ownership
+check of its own — earlier it verified `auth.uid()` internally, but once
+it became `service_role`-only that check could never see a real caller
+identity anyway (a service-role call carries no user JWT unless the
+handler forges one, which it must not do). It now trusts its caller
+completely, resolving the brief's actual owner from the FK chain rather
+than an argument — the same trust model `seed_site_spec`
+(`20260829100000_site_spec.sql`) already uses for a service-role-only
+write in this schema. The route handler's own pre-call ownership check is
+the ENTIRE access control for this function now — there is no second
+layer inside the database to catch a handler that skips it.
+
+#### `usp_check_distinct(p_scope_key text, p_statement text, p_exclude_brief uuid default null) returns jsonb`
+
+```json
+{ "distinct": true, "best_similarity": 0.12, "conflicting_statement": null }
+```
+
+`distinct` is `false` when `best_similarity >= app_settings['usp_similarity_threshold']`
+(seeded `0.55`, tunable without a migration — read on every call, not
+cached or hardcoded). `conflicting_statement` is populated only on
+collision, and is **always another user's text** — see the "never render"
+rule in §9.10. `p_exclude_brief` lets a brief re-check its own
+already-confirmed statement without colliding with itself.
+
+`scope_key` is `lower(primary_specialty_id) || ':' || lower(coalesce(state, 'us'))`.
+Compute it the SAME WAY the database does when calling `usp_check_distinct`
+(the frontend has no other source of truth for a brief's specialty scope):
+**the primary specialty is the one with the LOWEST `sort_order` in the
+`specialties` catalog among those selected on the brief — NOT
+`specialty_ids[0]` / the first array element.** `project_briefs.specialty_ids`
+has no guaranteed order (plain array, written verbatim by autosave); an
+earlier version of this schema derived from array position and that was a
+real bug — reordering her own specialty selections would have silently
+moved her into a different collision-detection bucket. `usp_fingerprint_confirm`
+(below) derives it the same way server-side, so the two can never disagree.
+
+Example call (service-role key, from the route handler):
+
+```sql
+select usp_check_distinct('trauma:or', 'I work with first responders carrying trauma from the job.', '5c2e...-brief-id'::uuid);
+```
+
+#### `usp_banned_phrases_check(p_text text) returns text[]`
+
+Returns the matched phrases (empty array if none). This is the ONLY path
+to a yes/no read of `banned_phrases` — the table itself has no policies
+and has had `anon`/`authenticated` privileges revoked (§9.8). Word-boundary
+matching (Postgres `\y`), case-insensitive, does not false-positive on a
+substring inside another word.
+
+```sql
+select usp_banned_phrases_check('This is a safe space for everyone.');
+-- {"safe space"}
+```
+
+#### `usp_fingerprint_confirm(p_brief_id uuid, p_statement text) returns uuid`
+
+The ONLY sanctioned write path for `usp_fingerprints` — **direct INSERT is
+denied** (RLS policy `with check (false)` plus a revoked table privilege,
+belt-and-suspenders). There is deliberately no `p_scope_key` parameter:
+the function derives it itself (lowest `sort_order` in `specialties` among
+the brief's selections, same rule as §9.6's `usp_check_distinct` note
+above — never `specialty_ids[0]`) from `project_briefs` on the brief
+identified by `p_brief_id` — a caller cannot supply, and therefore cannot
+spoof, the scope a statement gets checked against. Call it with the
+**service-role key**, after the route handler has itself verified from the
+user's own JWT that she owns `p_brief_id`, and after `usp_check_distinct`
+passes (or the user chooses "Keep mine" on a collision warning). The
+function performs no ownership check of its own — see §9.6.
+
+⚠ **AT MOST ONE ROW PER BRIEF — `usp_fingerprints.brief_id` is UNIQUE, and
+this function is an UPSERT on it.** Calling it again for the same brief
+(the user edits her USP and re-confirms) REPLACES the existing row —
+including its `scope_key`, if her specialties changed in between — rather
+than adding a second one. This is deliberate, not an implementation detail
+to work around: reachable-by-anyone-with-the-key write paths degrade
+gracefully into "at most one row" rather than "unbounded rows," bounding
+the damage of a route-handler bug that calls this more than once for the
+same confirm. Do not build a "call it in a loop to log every candidate"
+pattern — it will not do what that implies, and the last call always wins.
+
+```sql
+select usp_fingerprint_confirm('5c2e...-brief-id'::uuid, 'I work with first responders carrying trauma from the job.');
+```
+
+**Only a CONFIRMED USP writes a fingerprint row — never a discarded
+candidate.** Never call this for a candidate the user hasn't chosen.
+
+### 9.7 Step renumbering
+
+New order: 1 practice (unchanged) — 2 positioning (unchanged) — 3 ideal
+client (unchanged) — **4 How you work (new)** — 5 voice & tone (was 4) — 6
+Look, palette + typography merged (was 5 and 6) — 7 website (unchanged).
+
+The migration `20260901074802_brief_step_renumber.sql` remapped every
+existing `project_briefs` row's `progress_step` and `completed_steps`
+(`smallint[]`) exactly once, on application, using:
+
+```
+old 1, 2, 3 → unchanged
+old 4       → 5
+old 5       → 6
+old 6       → 6
+old 7       → 7
+```
+
+`completed_steps` is deduplicated after remap: a brief that had completed
+both old step 5 and old step 6 has a **single** `6` afterward, not two. No
+old value maps to 4, so the new step starts unanswered for every existing
+brief automatically — nothing special had to be done to keep it out of
+`completed_steps`.
+
+`project_briefs.progress_step` (1–7, this brief's own resume pointer) and
+`projects.current_step` (1–8, the project lifecycle pointer) remain
+deliberately unsynced, as documented elsewhere in this contract — this
+migration only touches the former.
+
+### 9.8 Four new catalog tables, plain-table pattern (no wrapping RPC)
+
+There is no single "catalog endpoint" in this schema for brief-building
+catalogs — the existing eleven (`tone_cards`, `palette_families`,
+`client_persona_cards`, etc.) are read directly through PostgREST, gated
+only by RLS (`select to authenticated using (true)`). `site_catalog()` is a
+different, unrelated RPC scoped to the site-spec editor only. The four new
+catalogs below follow the SAME plain-table pattern as the existing eleven
+— read them with a normal `select`, exactly like `tone_cards`:
+
+| table | columns |
+|---|---|
+| `session_style_cards` | `id, sort_order, active, label, description, voice_hints text[]` |
+| `not_a_fit_cards` | `id, sort_order, active, label, referral_note` |
+| `modality_cards` | `id, sort_order, active, label, full_name` |
+| `modality_prominence_options` | `id, sort_order, active, label` — the three ids are `lead_with_it`, `mention_it`, `keep_it_back` |
+
+`banned_phrases` and `usp_stopwords` are **not catalogs** and are **never**
+readable by `authenticated` — RLS enabled, zero policies, and
+`anon`/`authenticated` privileges explicitly revoked, same lockdown as
+`stripe_events`. `app_settings` (the `usp_similarity_threshold` row) is
+locked down the same way. The only path to any of the three is through the
+two security-definer RPCs in §9.6 — see §9.11 for why `banned_phrases`
+specifically must never be folded into `readCatalog()`, even for
+convenience, and how it differs from the pre-existing `ethics_rules`
+catalog (a different table, not part of this lot, which IS read through
+`readCatalog()`).
+
+### 9.9 Evidence field → human label lookup (frontend-owned)
+
+`usp_options[].evidence` values are brief COLUMN NAMES. Map them to the
+overline text shown on the positioning screen — this table is illustrative,
+not exhaustive; extend it if generation cites another field:
+
+| evidence value | human label |
+|---|---|
+| `referral_quote` | what a colleague would say |
+| `not_a_fit_text` / `not_a_fit_ids` | who this isn't for |
+| `modality_ids` | the modality name(s) selected, e.g. "EMDR" |
+| `session_style_ids` | how sessions work |
+| `prior_career` | her background (only if `prior_career_public`) |
+
+### 9.10 What the frontend must never do (extending §8)
+
+**Never render `conflicting_statement` to a user.** It is another
+practitioner's confirmed positioning text. `usp_check_distinct` returns it
+only so the CALLER (the server-side route handler) can decide what to do;
+it must never reach a response body the browser sees, and never appear in
+the UI. The collision-warning screen shows only that a collision exists and
+offers alternatives — never the colliding text itself.
+
+**Never print `prior_career` anywhere `prior_career_public` is not `true`.**
+Not in a preview, not in a mockup, not in a generated deliverable.
+
+**Never call `usp_banned_phrases_check`, `usp_check_distinct`, or
+`usp_fingerprint_confirm` from a client component.** All three are
+service-role-only, server-side RPC calls from a route handler under
+`app/api/`, same rule as every model call in this contract — none of the
+three has an `authenticated` grant to call with the user's session in the
+first place.
+
+**Never write a `usp_fingerprints` row for a discarded candidate.** Only a
+confirmed selection (after `usp-confirm`) writes one — an unused-text-filled
+store starts rejecting legitimate future statements.
+
+### 9.11 `banned_phrases` vs `ethics_rules` — two catalogs, two engines, not merged
+
+Both catalogs exist in this schema and both gate generated copy, but they
+have different natures, different consequences, and must stay on different
+code paths in Phase 2.
+
+`ethics_rules` (six rows: `timeframe`, `proven`, `client_voice`,
+`credential`, `scarcity`, `diagnosis`) stores **principles** — board/ACA/APA
+advertising-compliance rules whose detection is compiled regex in
+`lib/ethics/rules.ts` (`FORBIDDEN_PATTERNS`), fetched today through
+`readCatalog()` with the user's own JWT, same as every other brief-building
+catalog. The table supplies human-readable TEXT only (`short_label`,
+`description`, `example_forbidden`) for the generation prompt and the
+BOARD-SAFE COPY tooltip — never the detection logic itself, which is code
+and requires a deploy to change.
+
+`banned_phrases` stores **literal strings** — directory-cliché marketing
+language, matched verbatim and meant to be edited without a deploy. That
+editability is exactly why it must never be readable directly:
+
+1. **`banned_phrases` is never exposed to the client and never joins
+   `readCatalog()`. Its only access path is the service-role RPC**
+   (`usp_banned_phrases_check`, §9.6, called with the service-role key from
+   the server-side route handler). `readCatalog()` runs through PostgREST
+   with the user's own JWT — batching a service-role-only table into it
+   would either fail outright or force reopening the table to
+   `authenticated`, which is precisely the enumeration/bypass risk the
+   lockdown in §9.8 exists to prevent. Do not add `banned_phrases` to
+   `readCatalog()` under any consolidation. The tone-card and USP
+   generators share this read path by calling the same server-side `lib`
+   module that wraps `usp_banned_phrases_check` — never by fetching the
+   table twice through two ad hoc queries, and never by fetching the table
+   at all.
+
+2. **The ethics guard rewrites the offending field in place; the USP
+   pipeline discards the candidate and regenerates. This divergence is
+   deliberate: rewriting a candidate that failed the specificity gate
+   produces exactly the generic output the gate exists to prevent.**
+   `enforceEthics` (`lib/ethics/guard.ts`) targeted-rewrites a flagged
+   direction field because the field's specificity was never in question —
+   only its compliance wording was. A USP candidate that hits gate 2
+   (specificity) failed on the one property the whole USP pipeline exists
+   to guarantee; rewriting it in place would launder a generic statement
+   into passing shape without making it any less generic. Anyone who later
+   "harmonizes" these two strategies — makes the USP pipeline rewrite
+   instead of discard, or makes the ethics guard discard instead of
+   rewrite — breaks either the differentiation guarantee or the
+   two-model-call cap, respectively. Keep them different on purpose.
+
+**One overlap in intent, not in content, today:** `ethics_rules`' `scarcity`
+rule ("no scarcity or ranking language") and `banned_phrases`' `hype`
+category (`amazing`, `life-changing`, `transformational`, `revolutionary`,
+`game-changer`) both push against inflated, pressure-selling language — but
+no phrase appears in both tables today, and they must not be treated as one
+signal. A `hype`-category hit is a **voice-quality signal only** — it means
+the copy reads like a directory, not that it puts a license at risk — and
+must **never** be surfaced with the BOARD-SAFE COPY badge. That badge
+belongs to `ethics_rules` hits alone. If a future phrase genuinely
+duplicates board-compliance intent, that is a signal to review `scarcity`'s
+patterns in `lib/ethics/rules.ts`, not to route `hype` hits through the
+compliance badge.
+
+### 9.12 `selected_usp_id` survives a regeneration — the trigger only re-validates a real change
+
+`project_briefs_validate_selected_usp_id` fires `before insert or update …
+for each row`, like every trigger on this table — it runs on **every** row
+write, not only ones that touch `selected_usp_id`. The function body itself
+decides whether there is anything to check:
+
+- **`UPDATE` where `new.selected_usp_id is not distinct from
+  old.selected_usp_id`** (the column is unchanged by this write, including
+  a write that only touched `usp_options` — a regeneration) → the trigger
+  returns immediately, no lookup against `usp_options` at all.
+- **Every other case** — an `INSERT` with `selected_usp_id` set, or an
+  `UPDATE` that actually assigns it a new value — validates as before: `new
+  .selected_usp_id`, if non-null, must match an `id` present in `new
+  .usp_options`, or the write is rejected.
+
+⚠ **Originally fired on every write regardless, in `20260901074731_project_briefs_how_you_work_columns.sql`
+as first authored.** "Write me three more" replaces `usp_options` in place;
+if a practitioner had already confirmed a positioning statement
+(`selected_usp_id` + `usp_statement` both set) and then regenerated, the
+stale `selected_usp_id` no longer matched anything in the freshly-written
+`usp_options` — the trigger, re-validating on every row write, refused the
+regeneration outright. That would have broken "Write me three more" for
+anyone who had already confirmed, in production. The fix does not lower the
+bar for a **genuine** reassignment: setting `selected_usp_id` to an id that
+is not present in the current `usp_options` still fails, on `INSERT` and on
+`UPDATE` alike — only a write that leaves `selected_usp_id` untouched skips
+the check.
+
+**A confirmed choice is never cleared by a regeneration — `selected_usp_id`
+and `usp_statement` are the practitioner's decision, not candidates.**
+`usp_options` is the only thing "Write me three more" replaces. If her
+confirmed id is no longer among the freshly-generated options, the
+positioning screen must show her current statement in its own block, above
+the new options, labeled "This is the positioning you're using now.", with
+a "Keep it" action that dismisses the new batch without writing anything —
+see `PositioningScreen` (eklio-frontend, `components/brief/positioning-screen.tsx`).
+Choosing one of the new candidates replaces the confirmed selection only on
+an explicit action, never as a side effect of the batch going stale.
+
+One more thing this fix does **not** do, by design: re-submitting
+`selected_usp_id` with the SAME value it already has (a no-op re-save, not
+a real reselection) is indistinguishable at the SQL level from "column not
+touched" — `NEW` and `OLD` compare equal either way — so it, too, skips
+re-validation. This is not a new hole: the value was already validated once,
+when it was first set; staleness after a later regeneration is accepted by
+design (previous paragraph), and re-affirming the same already-accepted
+value needs no second check.
+
+### 9.13 `project_briefs.data` — a typed shape for the open jsonb bucket
+
+`project_briefs.data jsonb not null default '{}'` predates this feature
+(`20260823000000`) and has never had a shape of its own — the frontend's
+own Zod layer was the only thing that ever enforced what went into it.
+Eight keys were already living there from earlier lots; this lot adds three
+more (`selected_tone_card_id`, `usp_regenerate_count`,
+`usp_options_inputs_hash`). Eleven keys deep, with zero database-level
+shape, was a schema pretending not to be one.
+
+`20260901074933_project_briefs_data_shape.sql` adds CHECK
+`project_briefs_data_shape_check` (function `project_briefs_data_valid`) —
+**open, not closed.** Unknown keys are tolerated; only the eleven KNOWN
+keys are type-checked, and only when present:
+
+| key | `jsonb_typeof` when present |
+|---|---|
+| `stage` | `string` |
+| `problem_text` | `string` |
+| `gain_text` | `string` |
+| `builder_target` | `string` |
+| `existing_url` | `string` |
+| `practitioner_name` | `string` |
+| `practitioner_line` | `string` |
+| `suggestion_notice_seen` | `boolean` |
+| `selected_tone_card_id` | `string` |
+| `usp_regenerate_count` | `number` |
+| `usp_options_inputs_hash` | `string` |
+
+Every key is **optional** — `{}` (the column default) passes, and so does
+an object carrying only some of the eleven. An unrecognized key is
+tolerated whatever shape its own value takes — this is deliberate, not an
+oversight: closing the shape would put a migration in the way of the next
+gap-fill key, exactly the friction this jsonb bucket exists to avoid. What
+the CHECK buys instead is a backstop against whatever bypasses the
+frontend's Zod layer — a future bug, a different service, a manual `psql`
+edit — writing a wrong-typed value for a key the frontend already depends
+on: `parseBriefData` (eklio-frontend) would otherwise quietly discard a
+malformed value on next read, falling back to `{}`, rather than the write
+ever surfacing as an error.
+
+⚠ **A non-object `data` value is refused too, and is the reason for the
+constraint's leading `jsonb_typeof(p) = 'object'` gate.** A naive version
+built from just the eleven `(not (p ? 'key') or jsonb_typeof(p->'key') =
+'type')` clauses AND'd together, with no top-level object-type gate,
+returns `true` for a bare JSON array, string, number or boolean — `?`
+(key/element existence) tests ARRAY MEMBERSHIP too, not just object-key
+presence, so every "not present OR correctly typed" clause is vacuously
+satisfied at once by a non-object value, with none of them ever going
+`NULL`. A present key with the WRONG type was never actually the hole in
+that naive version — `jsonb_typeof(p->'key')` on a present key is always a
+real, non-null type name, so comparing it to the expected type is an
+ordinary two-non-null-operand `=`, and a single `false` from that
+comparison dominates the whole `AND` regardless of how many other
+(optional, absent) keys evaluate to `NULL`. Same null-safe discipline as
+§9.4/§9.5 either way: `project_briefs_data_valid` is wrapped in
+`coalesce(…, false)` and never returns `NULL`.
+
+No explicit grant/revoke on `project_briefs_data_valid` — same as
+`project_briefs_tone_cards_valid` and `project_briefs_usp_options_valid`:
+a CHECK-backing shape validator must stay executable by whoever performs a
+normal write (Postgres's default `EXECUTE … TO PUBLIC` on function
+creation), and reveals nothing, unlike the locked-down trigger functions or
+a secret-bearing RPC like `usp_banned_phrases_check`.
+
+Registered in `array_validators` (not `validator_registry`) in
+`supabase/tests/20260829112000_null_safe_jsonb_validators.test.sql`'s
+shared NULL-safety suite — `validator_registry`'s own generic test asserts
+that removing any one required key must fail, which would be actively
+wrong here (`{}` is this validator's legitimate pass case, since every one
+of the eleven keys is optional); `array_validators` accommodates it under
+its documented "or has its own coverage elsewhere in the suite" clause —
+`supabase/tests/20260901074933_project_briefs_data_shape.test.sql` is that
+coverage.
+
+### ⚠ Deviation from an earlier draft of this feature's brief
+
+An earlier draft specified `eklio_`-prefixed names throughout
+(`eklio_normalize_usp`, `eklio_check_usp_distinct`, `eklio_settings`,
+`eklio_stopwords`) and a `briefs` table. Neither matches this repo:
+`eklio_` is not a prefix used anywhere else in ~150 existing functions
+(the convention is plain descriptive names — `brief_preview`,
+`truncate_on_word_boundary`, `site_catalog`), and the brief table has
+always been `project_briefs`. This section documents the ACTUAL names
+shipped (`usp_normalize`, `usp_check_distinct`, `usp_banned_phrases_check`,
+`app_settings`, `usp_stopwords`, `project_briefs`) — build against these,
+not the earlier draft's names.
