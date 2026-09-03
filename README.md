@@ -1279,6 +1279,50 @@ indexé par uuid. `site_spec_seed_values`, qui lit un brief par id de kit sans
 contrôle de propriété, est pour la même raison **retirée à `authenticated`** et
 un garde-fou le vérifie.
 
+### `20260831090000_revoke_internal_function_surface.sql`
+
+Le quatrième défaut permissif du tableau en tête de ce README, mesuré cette
+fois plutôt que supposé : **103 des 104 fonctions de `public` sont exécutables
+par `anon`**, donc publiées dans l'OpenAPI anonyme de PostgREST. Le lot 8 avait
+révoqué les RPC d'entitlement ; c'était le seul endroit où on l'avait fait.
+
+Cette migration en ferme dix-huit — celles pour lesquelles l'exposition est un
+défaut exploitable et pas seulement une surface inutile.
+
+| ce qui est fermé | pourquoi |
+|---|---|
+| les 13 fonctions de trigger et d'event trigger | `rls_auto_enable` est un event trigger `SECURITY DEFINER` publié anonymement |
+| `seed_site_spec(uuid)`, `seed_launch_checklist(uuid)` | écritures `SECURITY DEFINER`, indexées par uuid, au-dessus de la RLS |
+| `complete_choose_direction(uuid)` | coche un item de checklist sur le kit de n'importe qui |
+| `site_spec_default_target(uuid)` | lit un kit sans contrôle de propriété |
+| `purchase_status_before(uuid, text)` | oracle de lecture sur l'historique de facturation |
+
+Aucun des quatre premiers n'a d'appelant client : ils sont appelés par des
+triggers, qui ne revérifient pas le privilège. Le cinquième est appelé par le
+webhook Stripe, en `service_role`, à qui il est réaccordé explicitement —
+`revoke ... from public` le lui retirerait sinon, `service_role` n'étant pas
+propriétaire.
+
+> ⚠ **Ce qui n'est PAS fermé, et c'est la partie qui demandait de la mesure.**
+> Dix-sept fonctions sont câblées dans des contraintes CHECK. Une contrainte
+> CHECK s'évalue avec les droits du rôle qui écrit : révoquer `EXECUTE` sur
+> l'une d'elles ferait échouer **tout INSERT** de ce rôle, avec un
+> « permission denied for function » qui ne nomme pas la contrainte. La requête
+> qui établit la liste est dans le test, et le test échoue si une révocation
+> future en touche une.
+>
+> Le reste — fonctions pures de couleur, de rendu, de catalogue — reste ouvert.
+> Le fermer est juste, mais demande de prouver une par une qu'aucune n'est
+> atteinte depuis un CHECK, un index ou une policy. **C'est un lot à part.**
+
+La migration porte son propre garde-fou : elle échoue si une fonction de
+trigger ou l'un des cinq helpers est encore exécutable par `anon`. Sans lui, le
+prochain `create or replace function` sur l'une d'elles lui rendrait son
+`EXECUTE` à `PUBLIC` — le défaut reviendrait exactement comme il est arrivé la
+première fois, et sans rien lever.
+
+---
+
 ---
 
 ## Chemins de retour arrière
