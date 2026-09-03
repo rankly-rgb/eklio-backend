@@ -1323,6 +1323,39 @@ première fois, et sans rien lever.
 
 ---
 
+## Lot 7 — la couche tenancy
+
+Le socle du forfait Practice, invisible pour un utilisateur solo. Une
+organisation possède des projets ; un utilisateur est membre d'une
+organisation avec un rôle (`owner` ou `clinician`). Chaque utilisateur — déjà
+inscrit ou nouveau — reçoit une organisation d'un seul membre, elle-même, à
+l'inscription (`create_default_organization_for_user`, appelée depuis
+`handle_new_user`). `organizations` et `organization_members` portent la
+structure ; `can_access_project` / `can_access_brand_kit` portent la lecture.
+Une invitation (`create_org_invite` / `preview_org_invite` /
+`accept_org_invite`) fait passer un membre de `invited` à `active` sans
+jamais stocker le jeton en clair — seul son sha256 est en base.
+
+**La règle : lecture = propriétaire ou owner de son organisation, écriture =
+propriétaire uniquement, la facturation reste scopée utilisateur.** Une
+`owner` active lit les projets, briefs, directions, kits, specs, checklists,
+calendriers et assets d'une `clinician` active de son organisation ; elle ne
+les écrit pas. `purchases`, `subscriptions`, `plan_grants`, `plans`,
+`stripe_events`, `purchase_status_events` ne sont pas réécrites par ce lot.
+
+`site_specs.field_sources` porte la provenance champ par champ : `generated`
+(généré par Eklio), `imported` (repris tel quel d'une identité existante),
+`derived` (calculé à partir d'un autre champ), `inherited` (hérité de la
+charte de marque de l'organisation, verrouillé — mais le verrou n'est **pas**
+encore appliqué : une clinicienne peut toujours écrire un champ marqué
+`inherited`, refuser cette écriture est un lot ultérieur).
+
+`assert_tenancy_invariants()` tourne à chaque push, en dernière ligne de
+`20260903103000_tenancy_invariants.sql` — un push qui casse une des cinq
+garanties (policy manquante sur une table RLS, `anon` hors de la liste
+explicite sur une table ou une fonction, projet sans organisation,
+organisation sans owner actif unique) échoue avant d'atteindre la base.
+
 ---
 
 ## Chemins de retour arrière

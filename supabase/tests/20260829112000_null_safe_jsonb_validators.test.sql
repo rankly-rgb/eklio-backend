@@ -74,7 +74,12 @@ insert into array_validators values
   -- coverage elsewhere in the suite": its own missing-key-is-fine,
   -- wrong-type-is-refused and open-unknown-key coverage lives in
   -- 20260901074933_project_briefs_data_shape.test.sql.
-  ('project_briefs_data_valid');
+  ('project_briefs_data_valid'),
+  -- 20260903102000_brand_field_sources.sql: site_specs.field_sources — every
+  -- one of its nine keys is OPTIONAL (an empty object is the passing default,
+  -- same shape as project_briefs_data_valid immediately above), so it
+  -- belongs here rather than in validator_registry's required-key test.
+  ('validate_field_sources');
 
 do $$
 declare
@@ -123,7 +128,12 @@ begin
              -- these three document NULL-in/NULL-out for a nullable column, and
              -- a NULL column value never reaches a CHECK as a row rejection
              'brand_kit_directions_shape_valid','brand_kit_directions_contrasted',
-             'brand_kit_social_templates_shape_valid']),
+             'brand_kit_social_templates_shape_valid',
+             -- validate_field_sources is STRICT (NULL in, NULL out) — safe
+             -- for the opposite reason: its column, site_specs.field_sources,
+             -- is NOT NULL, so this function is never actually called with a
+             -- SQL NULL argument in production.
+             'validate_field_sources']),
       format('%s(NULL) returned NULL unexpectedly', v_fn);
   end loop;
 end
