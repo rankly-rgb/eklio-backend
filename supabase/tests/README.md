@@ -20,6 +20,8 @@ done
 echo "OK"
 ```
 
+No Supabase CLI or local stack available? `verify/local_stack/run.sh` applies every migration and runs this whole suite against a throwaway plain Postgres with stubbed `auth`/`storage` — see `verify/local_stack/README.md`.
+
 Un fichier qui passe n'affiche rien d'autre que ses `NOTICE`. Un `assert` qui
 échoue lève, `ON_ERROR_STOP=1` interrompt la boucle, et le message dit quelle
 règle est tombée.
