@@ -2868,3 +2868,102 @@ always been `project_briefs`. This section documents the ACTUAL names
 shipped (`usp_normalize`, `usp_check_distinct`, `usp_banned_phrases_check`,
 `app_settings`, `usp_stopwords`, `project_briefs`) — build against these,
 not the earlier draft's names.
+
+## 10. Brand asset storage — the security boundary is RLS, not an RPC
+
+Backs the post-purchase asset renderer (Lot 4 of the post-purchase
+chantier), `20260903090000_brand_asset_storage.sql`. This section exists
+because an earlier draft of that chantier's brief specified a mechanism
+that does not exist, and the correction matters enough to build against
+that it is documented here, not only in the migration.
+
+### 10.1 Postgres cannot mint a Storage signed URL
+
+`supabase-js`'s `createSignedUploadUrl()` and `createSignedUrl()` are calls
+against Supabase's separate Storage HTTP service — they produce a
+time-limited signature over an object path, using a key the Storage
+service holds. Nothing in the `storage` schema, and no extension installed
+in this project, can produce that signature from inside Postgres. An RPC
+that claims to "return a signed upload URL" is therefore not implementable
+as a plain `SECURITY DEFINER` function — the earlier draft's
+`request_brand_asset_upload` was specified exactly that way and could not
+have shipped as written.
+
+### 10.2 What actually gates a read or a write: RLS on `storage.objects`
+
+The real security boundary is the three policies
+`brand_assets_storage_select_own_paid` /
+`_insert_own_paid` / `_update_own_paid` on `storage.objects`, scoped to
+`bucket_id = 'brand-assets'` and a helper,
+`public.brand_kit_asset_path_owner(name)`, that parses the object path's
+first segment as the `brand_kit_id` and calls the existing
+`brand_kit_entitled()` — the one place ownership-and-payment is decided,
+reused whole. These policies hold for **any** caller that reaches
+`storage.objects` under RLS — including `createSignedUploadUrl()` and
+`createSignedUrl()` themselves, which are ultimately authorized by these
+same policies, and including a caller who never touches an RPC in §10.3 at
+all. This is the boundary the migration's test proves directly: a session
+that skips every RPC and drives `storage.objects` under the caller's own
+JWT is refused for a path under another kit's `brand_kit_id`, refused for
+her own kit if she has not paid, and allowed only for her own paid kit's
+path.
+
+### 10.3 The three RPCs are correctness, not authorization
+
+`get_brand_asset_manifest`, `request_brand_asset_upload`, and
+`record_brand_asset` all check `brand_kit_entitled()` and refuse an
+unpaid kit with the contract's `payment_required` shape — but that check
+is a courtesy (a clear, early refusal), not the boundary. Removing it
+would not open anything §10.2's policies don't already close. Their actual
+job:
+
+- `get_brand_asset_manifest(brand_kit_id, current_fingerprint)` — the
+  catalog, joined against what already exists at the caller-supplied
+  "current" fingerprint. It does not recompute or verify that fingerprint
+  against a hash of its own — see §10.4.
+- `request_brand_asset_upload(brand_kit_id, key, fingerprint)` — validates
+  `key` against `asset_catalog` and `fingerprint`'s shape, and returns the
+  **path** (`{bucket, storage_path}`) eklio-frontend must pass to
+  `createSignedUploadUrl` — never a URL, never a signature. It is
+  correctness (a caller never hand-builds a path) glued in front of a
+  boundary the RPC itself doesn't enforce.
+- `record_brand_asset(...)` — the only writer of `brand_assets` rows
+  (`SECURITY DEFINER`, since that table has no client `INSERT` policy).
+  Recomputes the expected `storage_path` and rejects a caller-supplied one
+  that doesn't match, rather than trusting it.
+
+### 10.4 Fingerprinting is not duplicated in Postgres
+
+The asset fingerprint (one hash per kit, covering everything that could
+change a rendered asset's pixels — colors, fonts, copy, and a
+`RENDERER_VERSION` constant) is computed once, in eklio-frontend, because
+the renderer whose output it describes lives there. The three RPCs accept
+it as an opaque, caller-supplied value and validate only its **shape**
+(a bounded lowercase hex string, safe as a path segment) — they do not
+recompute a second hash implementation in SQL to "verify" it is the true
+current one. Reusing `brand_kit_entitled()` wherever ownership matters and
+never re-deriving a value the frontend already computed follow the same
+principle already in this file (§3–4): one implementation, not two that
+can drift.
+
+### 10.5 Four implementation details worth knowing before touching this code
+
+1. **Defensive path parsing.** `(storage.foldername(name))[1]` is
+   caller-controlled text, not a UUID. `brand_kit_asset_path_owner`
+   regex-checks it before casting — a bad cast inside an RLS policy raises
+   an exception (surfaces as an error), where a regex mismatch returns
+   `false` (a plain, fail-closed denial).
+2. **Overwrites are UPDATE, not a second INSERT.** A re-render of an
+   unchanged fingerprint targets the same object path
+   (`{kit}/{fingerprint}/{key}.{ext}`); the `_update_own_paid` policy
+   grants that, and the frontend's upload call is expected to pass
+   `upsert: true`. `record_brand_asset`'s `ON CONFLICT` keeps the metadata
+   row idempotent the same way.
+3. **No client `DELETE`, anywhere.** Nothing a client session does may
+   remove a rendered asset; cleaning up superseded fingerprints is
+   `service_role` housekeeping (bypasses RLS already), not built here.
+4. **The path is the authority, not `storage.objects.owner`.** A kit
+   outlives the session that rendered its first asset; `owner` reflects
+   whichever session happened to be live at upload time and would make a
+   kit's own assets unreadable to a later session. Every policy and the
+   helper function key off the path's `brand_kit_id` segment instead.
