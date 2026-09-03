@@ -41,6 +41,13 @@ begin
     from public.organizations
    where owner_user_id = 'fc111111-1111-4111-8111-111111111111';
 
+  -- lot H's chokepoint means this org needs real seat allowance to call
+  -- create_org_invite at all.
+  insert into public.purchases
+    (user_id, organization_id, tier, stripe_checkout_session_id, amount_cents, status, paid_at)
+  values
+    ('fc111111-1111-4111-8111-111111111111', org_owner, 'practice_seats', 'cs_test_pgcrypto_fixture', 14700, 'paid', now());
+
   set local role authenticated;
   set local request.jwt.claims = '{"sub":"fc111111-1111-4111-8111-111111111111"}';
   raw_token := public.create_org_invite(org_owner, 'candidate@example.com');

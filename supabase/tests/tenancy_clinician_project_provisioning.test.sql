@@ -14,6 +14,14 @@ declare
 begin
   select id into org_owner from public.organizations where owner_user_id = 'ee111111-1111-4111-8111-111111111111';
 
+  -- lot H's chokepoint means this org needs real seat allowance to run
+  -- these fixtures at all — a paid practice_seats purchase, exactly the
+  -- entitlement path a real practice would have gone through.
+  insert into public.purchases
+    (user_id, organization_id, tier, stripe_checkout_session_id, amount_cents, status, paid_at)
+  values
+    ('ee111111-1111-4111-8111-111111111111', org_owner, 'practice_seats', 'cs_test_e1_fixture', 14700, 'paid', now());
+
   insert into public.organization_members (organization_id, user_id, role, status, activated_at)
   values (org_owner, 'ee222222-2222-4222-8222-222222222222', 'clinician', 'active', now());
 end

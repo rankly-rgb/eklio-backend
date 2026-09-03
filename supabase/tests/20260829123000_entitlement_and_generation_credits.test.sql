@@ -482,7 +482,9 @@ declare ok boolean := false; n int;
 begin
   set local role authenticated;
   set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111"}';
-  assert (select count(*) from public.plans) = 4, 'she cannot read the plans';
+  -- 5, not 4, since lot H added the practice_seats row
+  -- (20260903170000_organization_entitlement.sql).
+  assert (select count(*) from public.plans) = 5, 'she cannot read the plans';
   begin
     update public.plans set regenerations_limit = 999;
     get diagnostics n = row_count; ok := (n = 0);

@@ -6,6 +6,19 @@ begin;
 insert into auth.users (id, email) values
   ('fb111111-1111-1111-1111-111111111111', 'invite-owner@example.com');
 
+-- lot H's chokepoint means this org needs real seat allowance to run
+-- these fixtures at all — a paid practice_seats purchase.
+do $$
+declare org_owner uuid;
+begin
+  select id into org_owner from public.organizations where owner_user_id = 'fb111111-1111-1111-1111-111111111111';
+  insert into public.purchases
+    (user_id, organization_id, tier, stripe_checkout_session_id, amount_cents, status, paid_at)
+  values
+    ('fb111111-1111-1111-1111-111111111111', org_owner, 'practice_seats', 'cs_test_invites_fixture', 14700, 'paid', now());
+end
+$$;
+
 -- ---------------------------------------------------------------------------
 -- create_org_invite — owner only, and returns a usable token
 -- ---------------------------------------------------------------------------
