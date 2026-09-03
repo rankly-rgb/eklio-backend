@@ -10,20 +10,24 @@ insert into public.projects (id, user_id, name) values
   ('bbbbbbbb-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000001','Elm & Ember');
 
 -- ---------------------------------------------------------------------------
--- The trigger seeds exactly six items at kit creation
+-- The trigger seeds exactly eight items at kit creation
 -- ---------------------------------------------------------------------------
+-- Updated by 20260903260000_launch_checklist_first_week.sql: the checklist
+-- grew from six items to eight (choose_direction plus the seven "Your first
+-- week" steps) and four labels were reworded. See that migration's header
+-- for why this is an in-place evolution, not a parallel table.
 insert into public.brand_kits (id, project_id) values
   ('cccccccc-0000-0000-0000-000000000001','bbbbbbbb-0000-0000-0000-000000000001');
 
 do $$
 begin
   assert (select count(*) from public.launch_checklist_items
-           where brand_kit_id='cccccccc-0000-0000-0000-000000000001') = 6,
-         'kit creation must seed exactly six checklist items';
+           where brand_kit_id='cccccccc-0000-0000-0000-000000000001') = 8,
+         'kit creation must seed exactly eight checklist items';
 
   assert (select count(*) from public.launch_checklist_items
            where brand_kit_id='cccccccc-0000-0000-0000-000000000001'
-             and user_id = 'aaaaaaaa-0000-0000-0000-000000000001') = 6,
+             and user_id = 'aaaaaaaa-0000-0000-0000-000000000001') = 8,
          'the trigger must resolve the owner through the project';
 
   assert (select count(*) from public.launch_checklist_items
@@ -34,17 +38,19 @@ end
 $$;
 
 -- ---------------------------------------------------------------------------
--- The six labels, verbatim. Screen 7 renders them as written.
+-- The eight labels, verbatim. Screen 7 renders them as written.
 -- ---------------------------------------------------------------------------
 do $$
 declare
   expected text[][] := array[
-    ['1','choose_direction',  'Choose your creative direction'],
-    ['2','paste_site_prompt', 'Paste your site prompt into your website builder'],
-    ['3','update_directory',  'Update your Psychology Today profile'],
-    ['4','first_post',        'Post your introduction on Instagram'],
-    ['5','email_signature',   'Update your email signature'],
-    ['6','google_profile',    'Refresh your Google Business Profile']
+    ['0','choose_direction',  'Choose your creative direction'],
+    ['1','site_setup',        'Put your brand on your site'],
+    ['2','update_directory',  'Update your Psychology Today profile'],
+    ['3','google_profile',    'Claim or update your Google Business Profile'],
+    ['4','social_setup',      'Set up Instagram and Facebook'],
+    ['5','email_signature',   'Install your email signature'],
+    ['6','booking_link',      'Put your booking link everywhere'],
+    ['7','first_post',        'Publish your first post']
   ];
   i int;
   r record;
@@ -77,7 +83,7 @@ begin
   assert public.seed_launch_checklist('cccccccc-0000-0000-0000-000000000001') = 0,
          're-seeding twice must still insert nothing';
   assert (select count(*) from public.launch_checklist_items
-           where brand_kit_id='cccccccc-0000-0000-0000-000000000001') = 6,
+           where brand_kit_id='cccccccc-0000-0000-0000-000000000001') = 8,
          're-seeding produced duplicates';
   assert (select done_at from public.launch_checklist_items
            where brand_kit_id='cccccccc-0000-0000-0000-000000000001' and key='first_post') = first_done,
@@ -85,7 +91,7 @@ begin
 end
 $$;
 
--- A second kit gets its own six, and the unique key is per kit, not global.
+-- A second kit gets its own eight, and the unique key is per kit, not global.
 do $$
 begin
   insert into public.projects (id, user_id, name) values
@@ -94,8 +100,8 @@ begin
     ('cccccccc-0000-0000-0000-000000000002','bbbbbbbb-0000-0000-0000-000000000002');
   assert (select count(*) from public.launch_checklist_items
            where brand_kit_id in ('cccccccc-0000-0000-0000-000000000001',
-                                  'cccccccc-0000-0000-0000-000000000002')) = 12,
-         'a second kit must get its own six items';
+                                  'cccccccc-0000-0000-0000-000000000002')) = 16,
+         'a second kit must get its own eight items';
 end
 $$;
 
@@ -171,7 +177,7 @@ begin
 
   set local request.jwt.claims = '{"sub":"aaaaaaaa-0000-0000-0000-000000000001"}';
   assert (select count(*) from public.launch_checklist_items
-           where user_id = 'aaaaaaaa-0000-0000-0000-000000000001') = 12,
+           where user_id = 'aaaaaaaa-0000-0000-0000-000000000001') = 16,
          'the owner must see their own checklist items';
 
   -- ticking an item is allowed
