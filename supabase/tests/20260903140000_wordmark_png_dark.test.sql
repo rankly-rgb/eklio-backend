@@ -14,8 +14,15 @@ begin
     from public.asset_catalog where key = 'wordmark_png_dark';
 
   assert v_kind = 'png', format('expected kind png, got %s', v_kind);
-  assert v_width = 960, format('expected width 960, got %s', v_width);
-  assert v_height = 240, format('expected height 240, got %s', v_height);
+  -- NOT 960x240: this migration seeded the untrimmed satori canvas size,
+  -- but 20260903160000_asset_catalog_trimmed_dims_null.sql supersedes it —
+  -- trim-to-ink-bounds means the real output size varies per kit, so the
+  -- catalog-level value is null from that migration onward. The full test
+  -- suite runs against the CUMULATIVE state after every migration, this
+  -- one included, so this assertion has to match what's true NOW, not what
+  -- was true for the few minutes between these two migrations.
+  assert v_width is null, format('expected width null (superseded by 20260903160000), got %s', v_width);
+  assert v_height is null, format('expected height null (superseded by 20260903160000), got %s', v_height);
   assert v_min_tier = 'starter', format('expected min_tier starter, got %s', v_min_tier);
 end
 $$;

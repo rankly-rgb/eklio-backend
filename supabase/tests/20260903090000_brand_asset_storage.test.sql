@@ -116,6 +116,7 @@ declare
   v_record jsonb;
   v_record2 jsonb;
   v_manifest jsonb;
+  v_entry jsonb;
   v_row_count int;
 begin
   set local role authenticated;
@@ -146,16 +147,31 @@ begin
   assert v_row_count = 1, format('expected exactly one brand_assets row after a re-render, got %s', v_row_count);
 
   v_manifest := public.get_brand_asset_manifest(v_kit, v_fp);
-  assert jsonb_array_length(v_manifest) = 1, 'manifest should list exactly the one seeded catalog entry';
-  assert (v_manifest -> 0 ->> 'key') = 'wordmark_svg_dark', 'manifest entry has the wrong key';
-  assert (v_manifest -> 0 ->> 'current')::boolean is true,
+
+  /*
+   * Looked up by key, not by array index or overall length: asset_catalog
+   * grows as later migrations seed more assets (wordmark_png_dark and
+   * beyond), and this test's own job is only to prove wordmark_svg_dark's
+   * entry behaves correctly, not to assert the catalog's total size at this
+   * point in its history — the whole suite runs against the CUMULATIVE
+   * state after every migration, this one included, not a snapshot frozen
+   * at this migration alone.
+   */
+  select e into v_entry
+    from jsonb_array_elements(v_manifest) e
+   where e ->> 'key' = 'wordmark_svg_dark';
+  assert v_entry is not null, 'manifest is missing the wordmark_svg_dark entry';
+  assert (v_entry ->> 'current')::boolean is true,
     'manifest should mark wordmark_svg_dark current once a matching-fingerprint row exists';
-  assert (v_manifest -> 0 -> 'asset' ->> 'byte_size')::int = 250,
+  assert (v_entry -> 'asset' ->> 'byte_size')::int = 250,
     'manifest should reflect the re-rendered byte_size';
 
   -- A DIFFERENT fingerprint is not current, even though a row exists at all.
   v_manifest := public.get_brand_asset_manifest(v_kit, 'ffffffffffffffff');
-  assert (v_manifest -> 0 ->> 'current')::boolean is false,
+  select e into v_entry
+    from jsonb_array_elements(v_manifest) e
+   where e ->> 'key' = 'wordmark_svg_dark';
+  assert (v_entry ->> 'current')::boolean is false,
     'manifest should not mark an asset current under a fingerprint it was not rendered for';
 
   -- She can read her own recorded row directly; the stranger below cannot.
