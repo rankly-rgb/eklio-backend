@@ -42,8 +42,9 @@ end
 $$;
 
 -- ---------------------------------------------------------------------------
--- Second sync: a new asset and newly-ready content since the marker are both
--- turned into notification rows; older, already-seen activity is not.
+-- Second sync: a new asset since the marker is turned into a notification row;
+-- older, already-seen activity is not. (The content_ready kind was retired
+-- with the dead table in 20260910082539.)
 -- ---------------------------------------------------------------------------
 do $$
 declare
@@ -73,19 +74,13 @@ begin
      'cccccccc-0000-0000-0000-000000000051/new/monogram_svg.svg','new',
      now() + interval '1 second');
 
-  insert into public.monthly_presence_content
-    (brand_kit_id, user_id, month, day_of_month, type, status, title, caption, updated_at)
-  values
-    ('cccccccc-0000-0000-0000-000000000051','aaaaaaaa-0000-0000-0000-000000000051',
-     '2026-09-01', 3, 'post', 'ready', 'A question worth sitting with', 'Caption text.', now() + interval '1 second');
-
   set local role authenticated;
   set local request.jwt.claims = '{"sub":"aaaaaaaa-0000-0000-0000-000000000051"}';
 
   result := public.sync_notifications('cccccccc-0000-0000-0000-000000000051');
 
-  assert jsonb_array_length(result) = 2,
-         format('expected one asset_rendered and one content_ready notification, got: %s', result);
+  assert jsonb_array_length(result) = 1,
+         format('expected exactly one asset_rendered notification, got: %s', result);
 
   assert (select count(*) from public.notifications
            where brand_kit_id = 'cccccccc-0000-0000-0000-000000000051'
@@ -99,10 +94,16 @@ begin
              and payload ->> 'key' = 'wordmark_svg_dark') = 0,
          'the already-seen (pre-marker) asset must not produce a notification';
 
+  /*
+   * ⚠ L'INVERSE DE CE QU'ELLE AFFIRMAIT. Cette assertion exigeait UNE
+   * notification `content_ready`. 20260910082539 a retiré le genre avec la
+   * table morte : la contrainte CHECK ne l'admet plus, et `sync_notifications`
+   * ne l'écrit plus. On vérifie donc qu'il n'en apparaît aucune.
+   */
   assert (select count(*) from public.notifications
            where brand_kit_id = 'cccccccc-0000-0000-0000-000000000051'
-             and kind = 'content_ready') = 1,
-         'the newly-ready content item must produce exactly one content_ready notification';
+             and kind = 'content_ready') = 0,
+         'the retired content_ready notification kind came back';
 
   -- Running sync again immediately must not duplicate: the same two events
   -- come back (they're still unread), but no new rows are created for them
@@ -111,8 +112,8 @@ begin
   -- the whole test transaction, so a rerun here would otherwise re-match the
   -- same "after the marker" window and duplicate).
   result := public.sync_notifications('cccccccc-0000-0000-0000-000000000051');
-  assert jsonb_array_length(result) = 2,
-         format('a sync with nothing new must still report the still-unread notifications, got: %s', result);
+  assert jsonb_array_length(result) = 1,
+         format('a sync with nothing new must still report the still-unread notification, got: %s', result);
 
   assert (select count(*) from public.notifications
            where brand_kit_id = 'cccccccc-0000-0000-0000-000000000051') = 2,

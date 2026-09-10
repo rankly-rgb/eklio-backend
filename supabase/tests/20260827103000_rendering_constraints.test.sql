@@ -182,24 +182,13 @@ end
 $$;
 
 -- ---------------------------------------------------------------------------
--- The calendar title limit from §4 lives on its own column
+-- The calendar title limit — moved, not lost
 -- ---------------------------------------------------------------------------
-do $$
-declare
-  rejected boolean;
-begin
-  insert into public.monthly_presence_content
-    (user_id, brand_kit_id, month, day_of_month, type, status, title)
-  values ('aaaaaaaa-0000-0000-0000-000000000001','cccccccc-0000-0000-0000-000000000001',
-          '2026-09-01', 1, 'post', 'locked', repeat('x',34));
-
-  begin
-    update public.monthly_presence_content set title = repeat('x',35)
-     where brand_kit_id='cccccccc-0000-0000-0000-000000000001';
-    rejected := false;
-  exception when check_violation then rejected := true; end;
-  assert rejected, 'a 35-character calendar title was accepted';
-end
-$$;
+-- This block used to prove the 34-character title limit against the dead
+-- monthly-content table, retired in 20260910082539. The limit itself is not
+-- gone: `content_items_title_check` carries the same 34 characters, and
+-- 20260906155600_content_items.test.sql proves it there, on the table that
+-- actually holds titles. Removing the assertion here removes a duplicate, not
+-- a guarantee.
 
 rollback;

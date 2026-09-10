@@ -395,69 +395,6 @@ export type Database = {
         }
         Relationships: []
       }
-      monthly_presence_content: {
-        Row: {
-          brand_kit_id: string
-          caption: string | null
-          created_at: string
-          day_of_month: number
-          id: string
-          month: string
-          published_at: string | null
-          status: string
-          title: string | null
-          type: string
-          updated_at: string
-          user_id: string
-          visual_spec: Json | null
-        }
-        Insert: {
-          brand_kit_id: string
-          caption?: string | null
-          created_at?: string
-          day_of_month: number
-          id?: string
-          month: string
-          published_at?: string | null
-          status?: string
-          title?: string | null
-          type: string
-          updated_at?: string
-          user_id: string
-          visual_spec?: Json | null
-        }
-        Update: {
-          brand_kit_id?: string
-          caption?: string | null
-          created_at?: string
-          day_of_month?: number
-          id?: string
-          month?: string
-          published_at?: string | null
-          status?: string
-          title?: string | null
-          type?: string
-          updated_at?: string
-          user_id?: string
-          visual_spec?: Json | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "monthly_presence_content_brand_kit_id_fkey"
-            columns: ["brand_kit_id"]
-            isOneToOne: false
-            referencedRelation: "brand_kits"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "monthly_presence_content_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       palette_families: {
         Row: {
           accent_hex: string
@@ -1310,10 +1247,6 @@ export type Database = {
       }
       brand_kit_voice_guide_valid: { Args: { p: Json }; Returns: boolean }
       brief_preview: { Args: { p_brief_id: string }; Returns: Json }
-      calendar_summary: {
-        Args: { p_month: string; p_user_id: string }
-        Returns: Json
-      }
       complete_choose_direction: {
         Args: { p_brand_kit_id: string }
         Returns: undefined
@@ -1324,10 +1257,6 @@ export type Database = {
       }
       dearmor: { Args: { "": string }; Returns: string }
       direction_limits: { Args: never; Returns: Json }
-      ensure_month_skeleton: {
-        Args: { p_month: string; p_user_id: string }
-        Returns: number
-      }
       gen_random_uuid: { Args: never; Returns: string }
       gen_salt: { Args: { "": string }; Returns: string }
       grant_plan_allowance: {

@@ -25,7 +25,9 @@ begin
   result := public.home_recent_activity('cccccccc-0000-0000-0000-000000000041');
   assert result ->> 'since' is null, 'a first-ever call must report a null since';
   assert result -> 'new_assets' = '[]'::jsonb, 'a first-ever call must not report any prior history as new';
-  assert result -> 'content_ready' = '[]'::jsonb, 'a first-ever call must not report any prior history as new';
+  -- The `content_ready` key went with the dead table (20260910082539). The
+  -- function must not carry an always-empty key that nothing can ever fill.
+  assert not (result ? 'content_ready'), 'the retired content_ready key came back';
 
   assert (select home_content_seen_at from public.brand_kits
            where id='cccccccc-0000-0000-0000-000000000041') is not null,
@@ -34,8 +36,8 @@ end
 $$;
 
 -- ---------------------------------------------------------------------------
--- Between two calls: a new asset and newly-ready content are both reported;
--- older, already-seen activity is not.
+-- Between two calls: a new asset is reported; older, already-seen activity is
+-- not. (The content half of this function was retired in 20260910082539.)
 -- ---------------------------------------------------------------------------
 do $$
 declare
@@ -70,14 +72,6 @@ begin
      'cccccccc-0000-0000-0000-000000000041/new/monogram_svg.svg','new',
      now() + interval '1 second');
 
-  insert into public.monthly_presence_content
-    (brand_kit_id, user_id, month, day_of_month, type, status, title, caption, updated_at)
-  values
-    ('cccccccc-0000-0000-0000-000000000041','aaaaaaaa-0000-0000-0000-000000000041',
-     '2026-09-01', 3, 'post', 'ready', 'A question worth sitting with', 'Caption text.', now() + interval '1 second'),
-    ('cccccccc-0000-0000-0000-000000000041','aaaaaaaa-0000-0000-0000-000000000041',
-     '2026-09-01', 7, 'story', 'locked', null, null, now() + interval '1 second');
-
   set local role authenticated;
   set local request.jwt.claims = '{"sub":"aaaaaaaa-0000-0000-0000-000000000041"}';
 
@@ -90,10 +84,7 @@ begin
   assert (result -> 'new_assets' -> 0 ->> 'key') = 'monogram_svg',
          'the old, already-seen asset must not be reported as new';
 
-  assert jsonb_array_length(result -> 'content_ready') = 1,
-         format('expected exactly one newly-ready content item, got: %s', result -> 'content_ready');
-  assert (result -> 'content_ready' -> 0 ->> 'title') = 'A question worth sitting with',
-         'a still-locked item must not be reported as ready';
+  assert not (result ? 'content_ready'), 'the retired content_ready key came back';
 
   -- The marker moved forward (not left at its old value) -- Postgres fixes
   -- `now()` for the whole test transaction, so a THIRD call can't be used

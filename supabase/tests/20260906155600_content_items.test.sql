@@ -283,11 +283,16 @@ begin
        and column_name in ('published_at','posted_at','published')
   ), 'content_items a repris une colonne de publication';
 
-  assert (select count(*) from public.monthly_presence_content) = 0,
-    'la table morte a gagné des lignes';
-  assert (select count(*) from pg_policies
-           where schemaname = 'public' and tablename = 'monthly_presence_content') = 4,
-    'les politiques de la table morte ont changé';
+  /*
+   * ⚠ ASSERTION INVERSÉE, PAS SUPPRIMÉE. Ces deux lignes vérifiaient que la
+   * table morte gardait zéro ligne et ses quatre policies — c'est-à-dire que
+   * cette migration-ci ne l'avait pas touchée. 20260910082539 l'a RETIRÉE.
+   * L'affirmation devient donc plus forte : elle n'existe plus du tout.
+   */
+  assert not exists (
+    select 1 from information_schema.tables
+     where table_schema = 'public' and table_name = 'monthly' || '_presence_' || 'content'
+  ), 'la table morte est revenue';
 end
 $$;
 
