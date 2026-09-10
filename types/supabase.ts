@@ -43,6 +43,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      anon_generation_counters: {
+        Row: {
+          bucket: string
+          day: string
+          used: number
+        }
+        Insert: {
+          bucket: string
+          day?: string
+          used?: number
+        }
+        Update: {
+          bucket?: string
+          day?: string
+          used?: number
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           key: string
@@ -1664,6 +1682,8 @@ export type Database = {
       }
       projects: {
         Row: {
+          anon_expires_at: string | null
+          anon_token_hash: string | null
           created_at: string
           current_step: number
           id: string
@@ -1671,9 +1691,11 @@ export type Database = {
           profession: string | null
           status: string
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
+          anon_expires_at?: string | null
+          anon_token_hash?: string | null
           created_at?: string
           current_step?: number
           id?: string
@@ -1681,9 +1703,11 @@ export type Database = {
           profession?: string | null
           status?: string
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
+          anon_expires_at?: string | null
+          anon_token_hash?: string | null
           created_at?: string
           current_step?: number
           id?: string
@@ -1691,7 +1715,7 @@ export type Database = {
           profession?: string | null
           status?: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -2340,6 +2364,19 @@ export type Database = {
       }
     }
     Functions: {
+      anon_token_hash: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      consume_anon_generation: {
+        Args: { p_ip_hash: string }
+        Returns: Json
+      }
+      owns_project: {
+        Args: { p_project_id: string }
+        Returns: boolean
+      }
+
       app_search: {
         Args: { p_brand_kit_id: string; p_query: string }
         Returns: Json
