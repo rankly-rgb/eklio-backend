@@ -737,6 +737,8 @@ export type Database = {
           id: string
           month: string
           status: string
+          theme_source: string | null
+          theme_source_text: string | null
           themes: string[]
           updated_at: string
         }
@@ -746,6 +748,8 @@ export type Database = {
           id?: string
           month: string
           status?: string
+          theme_source?: string | null
+          theme_source_text?: string | null
           themes?: string[]
           updated_at?: string
         }
@@ -755,6 +759,8 @@ export type Database = {
           id?: string
           month?: string
           status?: string
+          theme_source?: string | null
+          theme_source_text?: string | null
           themes?: string[]
           updated_at?: string
         }
