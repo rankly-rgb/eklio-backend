@@ -664,6 +664,7 @@ export type Database = {
           scheduled_for: string | null
           status: string
           tags: string[]
+          theme: string | null
           title: string | null
           updated_at: string
         }
@@ -682,6 +683,7 @@ export type Database = {
           scheduled_for?: string | null
           status?: string
           tags?: string[]
+          theme?: string | null
           title?: string | null
           updated_at?: string
         }
@@ -700,6 +702,7 @@ export type Database = {
           scheduled_for?: string | null
           status?: string
           tags?: string[]
+          theme?: string | null
           title?: string | null
           updated_at?: string
         }
