@@ -25,7 +25,9 @@
 // live database arrived as a migration in this repository. Re-run the
 // documented command whenever a clean replay is available, and treat any diff
 // as drift worth explaining rather than as noise.
-// ─────────────────────────────────────────────────────────────────────────────export type Json =
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type Json =
   | string
   | number
   | boolean
