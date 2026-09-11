@@ -182,7 +182,11 @@ begin
   set local request.jwt.claims = '{"sub":"aaaaaaaa-0000-0000-0000-000000000051"}';
   select count(*) into owned_count from public.notifications
    where brand_kit_id = 'cccccccc-0000-0000-0000-000000000051';
-  assert owned_count = 2, format('the owner should read their own two notifications, got %s', owned_count);
+  -- UN, pas deux : troisième et dernière occurrence du même total laissé par
+  -- la retraite de `content_ready` (20260910082539). J'ai corrigé les deux
+  -- premières une à une au lieu de les énumérer d'un coup — la leçon de la
+  -- journée, apprise trois fois.
+  assert owned_count = 1, format('the owner should read their own notification, got %s', owned_count);
 
   set local request.jwt.claims = '{"sub":"aaaaaaaa-0000-0000-0000-000000000052"}';
   select count(*) into stranger_count from public.notifications

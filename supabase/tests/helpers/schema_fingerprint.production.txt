@@ -1,4 +1,4 @@
-# Fingerprint of PRODUCTION (project fobgdsupyfslxbswfuay), recorded 2026-09-11, refreshed after 20260911191432.
+# Fingerprint of PRODUCTION (project fobgdsupyfslxbswfuay), recorded 2026-09-11, refreshed after 20260911193259.
 #
 # Produced by supabase/tests/helpers/schema_fingerprint.sql. Verified on the way
 # in: all nine per-kind hashes were recomputed from these lines and matched the
@@ -13,7 +13,7 @@
 #     | sort > supabase/tests/helpers/schema_fingerprint.production.txt
 #
 # 1910 objects. Canonical hash (order-independent, collation-immune):
-#   md5(concat of sorted md5-per-line) = 8df3e121cfcad345a33a0e0808aa7dd0
+#   md5(concat of sorted md5-per-line) = bf44a6d350ebfe301d4f8b7dea56ed74
 # The database reported that same value for the query in schema_fingerprint.sql,
 # which is how this file is known to be a copy and not a retyping.
 column|anon_generation_counters.bucket|bfd7a34b0a0954d9eb54990fcc6ca449
@@ -186,7 +186,7 @@ column|content_publications.action|bfd7a34b0a0954d9eb54990fcc6ca449
 column|content_publications.channel|44735fcd1e7f687a9ac2130e871687ab
 column|content_publications.content_item_id|44a3ae17bd44ec9ab36d03e5d8b14002
 column|content_publications.id|941fb71b7f14da4ef6249ea7f0ef7c41
-column|content_publications.occurred_at|1f4d4e4ad4c5de3894870bee567ea8a7
+column|content_publications.occurred_at|9ebe5bd1398ddf2d4bb652aa84cd604f
 column|content_registers.id|bfd7a34b0a0954d9eb54990fcc6ca449
 column|content_registers.label|bfd7a34b0a0954d9eb54990fcc6ca449
 column|content_registers.safety_rule|bfd7a34b0a0954d9eb54990fcc6ca449
