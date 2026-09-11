@@ -26,7 +26,6 @@
 // documented command whenever a clean replay is available, and treat any diff
 // as drift worth explaining rather than as noise.
 // ─────────────────────────────────────────────────────────────────────────────
-
 export type Json =
   | string
   | number
@@ -1031,6 +1030,72 @@ export type Database = {
         }
         Relationships: []
       }
+      funnel_events: {
+        Row: {
+          anonymous: boolean
+          brand_kit_id: string | null
+          event: string
+          id: number
+          occurred_at: string
+          project_id: string | null
+          props: Json
+          user_id: string | null
+          visitor_day: string | null
+        }
+        Insert: {
+          anonymous?: boolean
+          brand_kit_id?: string | null
+          event: string
+          id?: never
+          occurred_at?: string
+          project_id?: string | null
+          props?: Json
+          user_id?: string | null
+          visitor_day?: string | null
+        }
+        Update: {
+          anonymous?: boolean
+          brand_kit_id?: string | null
+          event?: string
+          id?: never
+          occurred_at?: string
+          project_id?: string | null
+          props?: Json
+          user_id?: string | null
+          visitor_day?: string | null
+        }
+        Relationships: []
+      }
+      funnel_steps: {
+        Row: {
+          event: string
+          label: string
+          match_prop: string | null
+          match_value: string | null
+          phase: string
+          step_key: string
+          step_no: number
+        }
+        Insert: {
+          event: string
+          label: string
+          match_prop?: string | null
+          match_value?: string | null
+          phase: string
+          step_key: string
+          step_no: number
+        }
+        Update: {
+          event?: string
+          label?: string
+          match_prop?: string | null
+          match_value?: string | null
+          phase?: string
+          step_key?: string
+          step_no?: number
+        }
+        Relationships: []
+      }
       gain_cards: {
         Row: {
           active: boolean
@@ -1317,6 +1382,70 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      organization_members: {
+        Row: {
+          created_at: string
+          organization_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          organization_id: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          organization_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          created_at: string
+          id: string
+          name: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       palette_families: {
         Row: {
@@ -1688,6 +1817,7 @@ export type Database = {
           current_step: number
           id: string
           name: string
+          organization_id: string | null
           profession: string | null
           status: string
           updated_at: string
@@ -1700,6 +1830,7 @@ export type Database = {
           current_step?: number
           id?: string
           name?: string
+          organization_id?: string | null
           profession?: string | null
           status?: string
           updated_at?: string
@@ -1712,12 +1843,20 @@ export type Database = {
           current_step?: number
           id?: string
           name?: string
+          organization_id?: string | null
           profession?: string | null
           status?: string
           updated_at?: string
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "projects_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "projects_user_id_fkey"
             columns: ["user_id"]
@@ -2364,23 +2503,13 @@ export type Database = {
       }
     }
     Functions: {
-      anon_token_hash: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      consume_anon_generation: {
-        Args: { p_ip_hash: string }
-        Returns: Json
-      }
-      owns_project: {
-        Args: { p_project_id: string }
-        Returns: boolean
-      }
-
+      anon_spend_today: { Args: never; Returns: Json }
+      anon_token_hash: { Args: never; Returns: string }
       app_search: {
         Args: { p_brand_kit_id: string; p_query: string }
         Returns: Json
       }
+      approve_content_month: { Args: { p_month_id: string }; Returns: Json }
       asset_variant_path: {
         Args: {
           p_brand_kit_id: string
@@ -2498,6 +2627,10 @@ export type Database = {
         Args: { p_brand_kit_id: string }
         Returns: undefined
       }
+      consume_anon_generation: {
+        Args: { p_ip_hash: string; p_kind?: string }
+        Returns: Json
+      }
       consume_check_rewrite: { Args: never; Returns: Json }
       consume_generation_credit: {
         Args: { p_brand_kit_id: string }
@@ -2544,6 +2677,21 @@ export type Database = {
         Returns: Json
       }
       direction_limits: { Args: never; Returns: Json }
+      funnel_props_are_safe: { Args: { p_props: Json }; Returns: boolean }
+      funnel_report: {
+        Args: { p_from: string; p_to?: string }
+        Returns: {
+          events: number
+          label: string
+          pct_of_first: number
+          pct_of_previous: number
+          phase: string
+          projects: number
+          step_key: string
+          step_no: number
+          visitors: number
+        }[]
+      }
       get_brand_asset_manifest: {
         Args: { p_brand_kit_id: string; p_current_fingerprint: string }
         Returns: Json
@@ -2588,6 +2736,7 @@ export type Database = {
       }
       hex_rgb: { Args: { p_hex: string }; Returns: number[] }
       home_recent_activity: { Args: { p_brand_kit_id: string }; Returns: Json }
+      is_org_member: { Args: { p_org_id: string }; Returns: boolean }
       kit_paid_access: { Args: { p_brand_kit_id: string }; Returns: string }
       list_deleted_brand_kits: { Args: never; Returns: Json }
       list_user_uploads: { Args: { p_brand_kit_id: string }; Returns: Json }
@@ -2604,6 +2753,8 @@ export type Database = {
         Returns: boolean
       }
       nearest_color_name: { Args: { p_hex: string }; Returns: string }
+      orphaned_purchases: { Args: never; Returns: Json }
+      owns_project: { Args: { p_project_id: string }; Returns: boolean }
       project_briefs_data_valid: { Args: { p: Json }; Returns: boolean }
       project_briefs_tone_cards_valid: { Args: { p: Json }; Returns: boolean }
       project_briefs_usp_options_valid: { Args: { p: Json }; Returns: boolean }
@@ -2611,6 +2762,7 @@ export type Database = {
         Args: { p_purchase_id: string; p_status: string }
         Returns: string
       }
+      purge_funnel_events: { Args: never; Returns: number }
       record_asset_download: {
         Args: {
           p_brand_kit_id: string
@@ -2637,6 +2789,7 @@ export type Database = {
         }
         Returns: Json
       }
+      record_funnel_events: { Args: { p_events: Json }; Returns: number }
       record_purchase_status_event: {
         Args: {
           p_amount_cents?: number
@@ -3101,4 +3254,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-
