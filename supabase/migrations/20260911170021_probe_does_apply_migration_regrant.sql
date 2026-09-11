@@ -1,0 +1,32 @@
+-- ============================================================================
+-- Eklio — a diagnostic, kept because its effect is wanted anyway
+-- ============================================================================
+-- ⚠ THIS MIGRATION IS AN EXPERIMENT THAT RAN AGAINST PRODUCTION, and the name
+-- in the ledger says so rather than hiding it.
+--
+-- The question it answered: does applying a migration itself restore EXECUTE?
+-- Seventeen functions revoked on 2 September have their grants back, and one
+-- candidate explanation was the migration tooling re-granting after each
+-- apply. If that were true, the revoke below would be undone within seconds of
+-- this file being applied.
+--
+-- It was not. Reading `pg_proc.proacl` back on a later connection shows
+-- `postgres=X | service_role=X` and nothing else. The tooling is not the
+-- source, which is recorded in the header of
+-- 20260911170458_authority_moves_inside_the_function_body.sql along with the
+-- other hypothesis it disproves.
+--
+-- The statement is kept rather than reverted because closing `seed_site_spec`
+-- to the browser is the correct end state on its own merits: it WRITES
+-- site-spec rows for any kit id given, and it had no authority check of any
+-- kind. The next migration re-states it, so a replay from zero reaches the
+-- same place with or without this file.
+-- ============================================================================
+
+revoke execute on function public.seed_site_spec(uuid) from public, anon, authenticated;
+
+-- ============================================================================
+-- DOWN
+-- ============================================================================
+--   grant execute on function public.seed_site_spec(uuid) to anon, authenticated;
+--   -- though see the next migration: you would be re-opening a gateless write.
