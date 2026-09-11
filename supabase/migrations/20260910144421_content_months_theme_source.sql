@@ -71,22 +71,55 @@ comment on column public.content_months.theme_source_text is
 -- ============================================================================
 -- Guard rails
 -- ============================================================================
+-- ⚠ CORRECTED 2026-09-11. THIS GUARD FAILED EVERY CI REPLAY, AND THE BODY OF
+-- THE MIGRATION ABOVE IS UNCHANGED — only these assertions are rewritten.
+--
+-- Editing an applied migration is not the habit here; corrections are new
+-- migrations. This one cannot be: a later migration cannot stop an earlier
+-- one's DO block from raising during `supabase db reset`, so the replay
+-- stopped here and every test file after it — including the function-surface
+-- enumeration and the tenancy enumeration — never ran at all. No DDL changed;
+-- the live database is untouched by this edit.
+--
+-- WHAT WAS WRONG, and it is this codebase's signature exactly. The probe was
+--
+--     insert into public.content_months (...) select bk.id, ... from public.brand_kits bk limit 1;
+--     exception when others then v_ok := true;  -- "no kit to test against"
+--
+-- The author saw the empty-database case and reached for the wrong mechanism.
+-- On a fresh replay there are no `brand_kits`, so the SELECT returns no rows,
+-- the INSERT writes nothing, and NOTHING RAISES. `v_ok` stays false and the
+-- migration aborts — measured: rows=0, exception_seen=false. A guard that
+-- depends on seed data is a guard that asserts the seed, not the constraint.
+--
+-- WHAT IT ASSERTS NOW. The constraint exists in the catalogue — true on an
+-- empty database and a full one — and it actually refuses the row. The probe
+-- uses a `gen_random_uuid()` brand_kit_id on purpose: a CHECK is a row
+-- constraint verified during the insert, while a foreign key is an AFTER
+-- trigger fired at end of statement, so the CHECK raises first and the probe
+-- needs no kit to exist. Verified against production in a rolled-back
+-- transaction, together with the canary below the fold: drop the CHECK and
+-- this guard raises.
 do $$
-declare v_ok boolean;
 begin
   -- Themes with no source must be refused. This is the whole column.
-  v_ok := false;
+  if not exists (
+    select 1 from pg_constraint
+     where conrelid = 'public.content_months'::regclass
+       and conname = 'content_months_themes_have_source_check'
+  ) then
+    raise exception 'theme_source: the themes-need-a-source CHECK is missing';
+  end if;
+
   begin
     insert into public.content_months (brand_kit_id, month, themes, status)
-    select bk.id, date '2099-01-01', array['a','b','c'], 'proposed'
-      from public.brand_kits bk limit 1;
-  exception
-    when check_violation then v_ok := true;
-    when others then v_ok := true;  -- no kit to test against; the CHECK still stands
-  end;
-  if not v_ok then
+    values (gen_random_uuid(), date '2099-01-01', array['a','b','c'], 'proposed');
     raise exception 'theme_source: a month with themes and no source was accepted';
-  end if;
+  exception
+    when check_violation then null;  -- what must happen
+    when foreign_key_violation then
+      raise exception 'theme_source: the CHECK did not fire; the row reached the foreign key';
+  end;
 
   if not exists (
     select 1 from information_schema.columns
