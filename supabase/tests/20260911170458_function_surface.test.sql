@@ -116,7 +116,9 @@ begin
                    where a.grantee = 0 and a.privilege_type = 'EXECUTE'))
      and f.oid not in (select oid from gated)
      /*
-      * ⚠ THE ONE EXEMPTION, AND IT IS NAMED RATHER THAN INFERRED.
+      * ⚠ TWO EXEMPTIONS, EACH NAMED RATHER THAN INFERRED, EACH WITH ITS
+      * REASON. This is a register, not a list: a name without a reason is the
+      * thing this file exists to prevent.
       *
       * `anon_token_hash()` MUST be callable by `anon`: the RLS policies on
       * `projects` call it, and a policy executes as the CALLER's role.
@@ -124,10 +126,27 @@ begin
       * It reads one request header and returns a sha256 of it — it grants
       * nothing, reveals nothing, and takes no argument to be indexed by.
       *
+      * `organization_invitation_preview(text)` is the invitation's whole
+      * point. The 2 September decision requires that a clinician sees her
+      * page BEFORE she has an account, and a token does not pass through
+      * `auth.uid()` — so the token IS the authority and the function cannot
+      * ask who is calling, because the answer is "nobody yet". What makes it
+      * safe is not a session check but the shape of the secret: 32 random
+      * bytes, stored only as a sha256, matched by equality against that hash,
+      * expiring in fourteen days, and spent to NULL on acceptance. It returns
+      * the practice name and who invited her — nothing that is not already in
+      * the email she was sent — and returns NULL for a wrong, expired or
+      * spent token alike, so it cannot be used to discover which tokens exist.
+      *
+      * ⚠ THE SIBLING FUNCTIONS ARE NOT EXEMPT AND MUST NOT BECOME SO.
+      * `invite_clinician` and `accept_organization_invitation` both ask who is
+      * calling, and both are revoked from `anon`. A token buys you a look at
+      * one page; it never buys you a write.
+      *
       * Anything else appearing here is a function the browser can call that
       * never asks who is calling. Add an in-body check, or revoke it.
       */
-     and f.proname <> 'anon_token_hash';
+     and f.proname not in ('anon_token_hash', 'organization_invitation_preview');
 
   assert offenders is null, coalesce(
     'SECURITY DEFINER functions callable by anon/PUBLIC with no in-body ' ||

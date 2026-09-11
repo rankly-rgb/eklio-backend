@@ -251,10 +251,21 @@ $$;
 do $$
 declare v_n integer; v_roles text;
 begin
-  -- Two roles, and the list is closed.
+  /*
+   * Two roles, and the list is closed.
+   *
+   * ⚠ NAMED, NOT "THE CHECK CONSTRAINT". This read was
+   * `where conrelid = ... and contype = 'c'` with no name, which was true
+   * while the table had exactly one check and silently picked an arbitrary
+   * one the moment 20260911195907 added two more — reporting the status shape
+   * as though it were the role list. Written in the same session as the
+   * standing rule about hand-written singulars, and caught by CI within the
+   * hour.
+   */
   select pg_get_constraintdef(oid) into v_roles
     from pg_constraint
-   where conrelid = 'public.organization_members'::regclass and contype = 'c';
+   where conrelid = 'public.organization_members'::regclass
+     and conname = 'organization_members_role_check';
   assert v_roles like '%owner%' and v_roles like '%clinician%',
     format('the role check is not the two agreed roles: %s', v_roles);
   assert v_roles not like '%admin%' and v_roles not like '%member%',
