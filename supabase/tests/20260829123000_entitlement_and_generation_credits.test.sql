@@ -531,6 +531,23 @@ declare
   applied boolean;
 begin
   reset role;
+  /*
+   * ⚠ CE BLOC DOIT DIRE QUI IL EST, ET IL NE LE DISAIT PAS.
+   *
+   * `set local request.jwt.claims` survit à `reset role` et dure toute la
+   * transaction. Le dernier bloc à en poser laissait `'{}'` — un contexte de
+   * requête SANS identité — et celui-ci en héritait. Tant que
+   * `purchase_status_before` n'avait aucune garde, ça ne se voyait pas.
+   * Depuis 20260911170458 elle en a une, et elle a raison de refuser un
+   * appelant HTTP sans identité. Mesuré contre la production : `'{}'` donne
+   * NULL, le rôle de service donne `partially_refunded`, un inconnu donne NULL.
+   *
+   * Ce bloc exerce le chemin du webhook Stripe — `record_purchase_status_event`
+   * en est l'écrivain — donc l'identité qu'il veut est LE SERVEUR. On la pose
+   * explicitement plutôt que d'hériter de celle qui traînait. La garde n'est
+   * pas desserrée : un inconnu reçoit toujours NULL.
+   */
+  set local request.jwt.claims = '{"role":"service_role"}';
   select id into pid from public.purchases where stripe_checkout_session_id = 'cs_nora';
   update public.purchases set status = 'paid', paid_at = now() where id = pid;
 
