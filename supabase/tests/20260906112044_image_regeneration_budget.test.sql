@@ -27,22 +27,37 @@ select public.grant_plan_allowance('bbbbbbbb-0000-0000-0000-0000000000b1','start
 -- ---------------------------------------------------------------------------
 -- Réserver avant, libérer sur échec, régler sur succès. Et le plafond tient.
 -- ---------------------------------------------------------------------------
+/*
+ * ⚠ 200, PAS 100 — LE PLAFOND A ÉTÉ RELEVÉ EXPRÈS. `plans.image_budget_cents`
+ * pour `starter` est passé de 100 à 200 le 9 septembre
+ * (20260909100346_raise_image_budgets_and_rewrite_ceiling), qui porte sa
+ * propre garde épinglant 200/400/600. Ce fichier disait encore 100 et toute
+ * son arithmétique en découlait ; il n'a jamais été rejoué, parce que la
+ * rediffusion CI était bloquée depuis le 10 septembre.
+ *
+ * Le nombre reste ÉPINGLÉ ici — une baisse silencieuse à 150 doit échouer —
+ * mais une seule fois : le reste du bloc se calcule à partir de `v_budget`,
+ * de sorte que ce qui est affirmé est le COMPORTEMENT (réserver compte,
+ * refuser ne réserve rien, exactement le reste passe, un centime de plus est
+ * refusé) et non une seconde copie du chiffre.
+ */
 do $$
-declare v jsonb; b jsonb;
+declare v jsonb; b jsonb; v_budget int;
 begin
   set local role authenticated;
   set local request.jwt.claims = '{"sub":"aaaaaaaa-0000-0000-0000-0000000000b1"}';
 
   b := public.get_image_regeneration_budget('cccccccc-0000-0000-0000-0000000000b1');
-  assert (b->>'budget_cents')::int = 100,
-    format('le budget starter devrait être de 100 centimes, reçu %s', b);
-  assert (b->>'remaining_cents')::int = 100, format('restant initial : %s', b);
+  v_budget := (b->>'budget_cents')::int;
+  assert v_budget = 200,
+    format('le budget starter devrait être de 200 centimes depuis le 9 septembre, reçu %s', b);
+  assert (b->>'remaining_cents')::int = v_budget, format('restant initial : %s', b);
 
   -- La dépense en vol compte dès qu'elle commence.
   v := public.reserve_image_regeneration('cccccccc-0000-0000-0000-0000000000b1', 25);
   assert (v->>'ok')::boolean, format('la réservation aurait dû passer, reçu %s', v);
   b := public.get_image_regeneration_budget('cccccccc-0000-0000-0000-0000000000b1');
-  assert (b->>'reserved_cents')::int = 25 and (b->>'remaining_cents')::int = 75,
+  assert (b->>'reserved_cents')::int = 25 and (b->>'remaining_cents')::int = v_budget - 25,
     format('la réservation n''est pas comptée : %s', b);
 
   -- ÉCHEC : tout revient, rien n'est facturé.
@@ -50,7 +65,7 @@ begin
   assert v->>'reason' = 'released', format('un échec doit libérer, reçu %s', v);
   b := public.get_image_regeneration_budget('cccccccc-0000-0000-0000-0000000000b1');
   assert (b->>'reserved_cents')::int = 0 and (b->>'used_cents')::int = 0
-     and (b->>'remaining_cents')::int = 100,
+     and (b->>'remaining_cents')::int = v_budget,
     format('elle a été facturée pour une photographie qu''elle n''a pas reçue : %s', b);
 
   -- SUCCÈS : la réservation devient dépense réelle.
@@ -58,16 +73,18 @@ begin
   v := public.settle_image_regeneration('cccccccc-0000-0000-0000-0000000000b1', 25, true);
   assert v->>'reason' = 'settled', format('un succès doit régler, reçu %s', v);
   b := public.get_image_regeneration_budget('cccccccc-0000-0000-0000-0000000000b1');
-  assert (b->>'used_cents')::int = 25 and (b->>'remaining_cents')::int = 75, format('après succès : %s', b);
+  assert (b->>'used_cents')::int = 25 and (b->>'remaining_cents')::int = v_budget - 25,
+    format('après succès : %s', b);
 
   -- Le plafond refuse, et ne réserve rien en refusant.
-  v := public.reserve_image_regeneration('cccccccc-0000-0000-0000-0000000000b1', 80);
-  assert v->>'reason' = 'budget_exhausted', format('80 sur 75 restants doit être refusé, reçu %s', v);
+  v := public.reserve_image_regeneration('cccccccc-0000-0000-0000-0000000000b1', v_budget - 24);
+  assert v->>'reason' = 'budget_exhausted',
+    format('un centime de plus que le reste doit être refusé, reçu %s', v);
   b := public.get_image_regeneration_budget('cccccccc-0000-0000-0000-0000000000b1');
-  assert (b->>'remaining_cents')::int = 75, format('un refus a quand même réservé : %s', b);
+  assert (b->>'remaining_cents')::int = v_budget - 25, format('un refus a quand même réservé : %s', b);
 
   -- Exactement ce qui reste passe, et rien après.
-  v := public.reserve_image_regeneration('cccccccc-0000-0000-0000-0000000000b1', 75);
+  v := public.reserve_image_regeneration('cccccccc-0000-0000-0000-0000000000b1', v_budget - 25);
   assert (v->>'ok')::boolean, format('le reste exact doit passer, reçu %s', v);
   v := public.reserve_image_regeneration('cccccccc-0000-0000-0000-0000000000b1', 1);
   assert v->>'reason' = 'budget_exhausted', format('un centime de trop doit être refusé, reçu %s', v);

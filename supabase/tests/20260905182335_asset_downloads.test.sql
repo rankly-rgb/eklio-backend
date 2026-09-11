@@ -105,7 +105,19 @@ $$;
 -- ---------------------------------------------------------------------------
 do $$
 begin
-  assert not has_function_privilege('anon', 'public.record_asset_download(uuid, text, text)', 'execute'),
+  /*
+   * ⚠ LA SIGNATURE, PAS LA RÈGLE. 20260905185500 a explicitement supprimé la
+   * version à trois arguments et l'a remplacée par une version à cinq, dont
+   * les deux derniers ont des valeurs par défaut. Les APPELS ci-dessus
+   * continuent donc de fonctionner à trois arguments — mais
+   * `has_function_privilege` résout une signature TEXTUELLE et n'applique pas
+   * les valeurs par défaut, donc celle-ci cherchait une fonction qui n'existe
+   * plus et levait 42883 au lieu d'échouer sur la permission.
+   *
+   * Ce qui est affirmé est inchangé : anon ne peut pas l'appeler.
+   */
+  assert not has_function_privilege(
+           'anon', 'public.record_asset_download(uuid, text, text, integer, text)', 'execute'),
          'record_asset_download must not be executable by anon';
 end
 $$;

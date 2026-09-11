@@ -154,9 +154,18 @@ end $$;
 -- ---------------------------------------------------------------------------
 do $$
 begin
-  assert not has_function_privilege('anon','public.consume_anon_generation(text)','execute'),
+  /*
+   * ⚠ LA SIGNATURE, PAS LA RÈGLE — identique au cas record_asset_download.
+   * 20260910210435 a supprimé la version à un argument et l'a remplacée par
+   * (p_ip_hash text, p_kind text default 'reveal'). Les APPELS ci-dessus
+   * continuent donc de fonctionner à un argument et dépensent bien le plafond
+   * `reveal`, mais `has_function_privilege` résout une signature TEXTUELLE
+   * sans appliquer les valeurs par défaut : celle-ci cherchait une fonction
+   * supprimée et levait 42883 au lieu de vérifier la permission.
+   */
+  assert not has_function_privilege('anon','public.consume_anon_generation(text, text)','execute'),
     'anon can spend';
-  assert not has_function_privilege('authenticated','public.consume_anon_generation(text)','execute'),
+  assert not has_function_privilege('authenticated','public.consume_anon_generation(text, text)','execute'),
     'a browser session can spend';
   -- The counters are not a browser's business either.
   assert not exists (

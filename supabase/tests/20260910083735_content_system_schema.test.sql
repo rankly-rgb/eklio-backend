@@ -31,9 +31,16 @@ values ('cccccccc-0000-0000-0000-0000000000c1', 2,
         array['named_feeling','practical_note'], 'No politics.');
 insert into public.content_checkins (brand_kit_id, month, sessions_theme, taking_clients)
 values ('cccccccc-0000-0000-0000-0000000000c1', '2026-10-01', 'Burnout.', 'waitlist');
-insert into public.content_months (id, brand_kit_id, month, themes, status)
+
+-- ⚠ `theme_source` EST OBLIGATOIRE DEPUIS 20260910144421 : un mois qui porte
+-- des thèmes doit dire d'où ils viennent, précisément pour qu'une exécution de
+-- test ne puisse jamais être lue comme la preuve que la dérivation fonctionne.
+-- `supplied` est la valeur juste ici — « un humain les a passés », ce qu'un
+-- fixture est par définition. Ces fichiers sont antérieurs à la contrainte et
+-- n'ont jamais été rejoués depuis.
+insert into public.content_months (id, brand_kit_id, month, themes, status, theme_source)
 values ('dddddddd-0000-0000-0000-0000000000c1','cccccccc-0000-0000-0000-0000000000c1',
-        '2026-10-01', array['rest','returning'], 'proposed');
+        '2026-10-01', array['rest','returning'], 'proposed', 'supplied');
 insert into public.content_grounds (month_id, theme, fingerprint, cost_cents, state)
 values ('dddddddd-0000-0000-0000-0000000000c1','rest','fp_rest', 5, 'reserved');
 insert into public.content_image_allowance (brand_kit_id, month, budget_cents, reserved_cents)
@@ -177,9 +184,9 @@ end $$;
 do $$
 declare rejected boolean;
 begin
-  insert into public.content_months (id, brand_kit_id, month, themes, status)
+  insert into public.content_months (id, brand_kit_id, month, themes, status, theme_source)
   values ('dddddddd-0000-0000-0000-0000000000d1','cccccccc-0000-0000-0000-0000000000d1',
-          '2026-10-01', array['rest'], 'generating');
+          '2026-10-01', array['rest'], 'generating', 'supplied');
 
   -- A ground that claims to be settled must have bytes behind it.
   begin

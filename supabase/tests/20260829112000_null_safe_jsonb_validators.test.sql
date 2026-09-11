@@ -74,7 +74,21 @@ insert into array_validators values
   -- coverage elsewhere in the suite": its own missing-key-is-fine,
   -- wrong-type-is-refused and open-unknown-key coverage lives in
   -- 20260901074933_project_briefs_data_shape.test.sql.
-  ('project_briefs_data_valid');
+  ('project_briefs_data_valid'),
+  -- 20260910212308_funnel_events.sql: the CHECK on `funnel_events.props`.
+  -- Same shape as `project_briefs_data_valid` directly above and here for the
+  -- same reason: it is an object with NO required keys — `{}` is its PASSING
+  -- case, so section 3's "remove each required key and assert refusal" would
+  -- be testing something this validator does not claim. What it does claim is
+  -- a SHAPE (flat, at most twelve keys, no nesting, no string over 64
+  -- characters), and that is asserted directly in
+  -- 20260910212308_funnel_events.test.sql, written at the same time as this
+  -- line rather than promised by it.
+  --
+  -- ⚠ IT IS STILL HELD TO NEVER RETURNING NULL by section 2 below, which
+  -- walks all three lists — which is the whole point of this file, and the
+  -- reason naming it here is registration rather than exemption.
+  ('funnel_props_are_safe');
 
 do $$
 declare

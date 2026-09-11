@@ -115,8 +115,20 @@ begin
   assert jsonb_array_length(result) = 1,
          format('a sync with nothing new must still report the still-unread notification, got: %s', result);
 
+  /*
+   * ⚠ UN, PAS DEUX — ET C'EST LA MÊME RETRAITE QUE CI-DESSUS. L'assertion
+   * disait 2 parce qu'il y avait deux genres : `asset_rendered` et
+   * `content_ready`. 20260910082539 a retiré le second avec sa table morte,
+   * et la session qui a corrigé l'assertion `content_ready = 0` juste
+   * au-dessus a laissé ce total à 2. Le fixture ne produit qu'UN événement
+   * notifiable (`monogram_svg`, après le marqueur) — ce que l'assertion
+   * `jsonb_array_length(result) = 1` juste au-dessus affirme déjà.
+   *
+   * Ce que la ligne vérifie n'a pas changé : une seconde synchronisation ne
+   * duplique pas. Seul le compte a été rattrapé.
+   */
   assert (select count(*) from public.notifications
-           where brand_kit_id = 'cccccccc-0000-0000-0000-000000000051') = 2,
+           where brand_kit_id = 'cccccccc-0000-0000-0000-000000000051') = 1,
          'a second sync must not have created duplicate rows for the same events';
 end
 $$;

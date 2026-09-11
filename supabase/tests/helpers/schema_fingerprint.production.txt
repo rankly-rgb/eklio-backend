@@ -1,4 +1,4 @@
-# Fingerprint of PRODUCTION (project fobgdsupyfslxbswfuay), recorded 2026-09-11.
+# Fingerprint of PRODUCTION (project fobgdsupyfslxbswfuay), recorded 2026-09-11, refreshed after 20260911191432.
 #
 # Produced by supabase/tests/helpers/schema_fingerprint.sql. Verified on the way
 # in: all nine per-kind hashes were recomputed from these lines and matched the
@@ -13,7 +13,7 @@
 #     | sort > supabase/tests/helpers/schema_fingerprint.production.txt
 #
 # 1910 objects. Canonical hash (order-independent, collation-immune):
-#   md5(concat of sorted md5-per-line) = 695e4b6468d94fb521493cf48c1b37c3
+#   md5(concat of sorted md5-per-line) = 8df3e121cfcad345a33a0e0808aa7dd0
 # The database reported that same value for the query in schema_fingerprint.sql,
 # which is how this file is known to be a copy and not a retyping.
 column|anon_generation_counters.bucket|bfd7a34b0a0954d9eb54990fcc6ca449
@@ -875,9 +875,9 @@ function.body|enforce_direction_selection_entitlement()|9921b73e0c0c66ca4203f31c
 function.body|funnel_props_are_safe(p_props jsonb)|472be8a66400dde20df9476f71beafaf
 function.body|funnel_report(p_from timestamp with time zone, p_to timestamp with time zone)|c75318877e9da12edf3e86c57abe8b46
 function.body|get_brand_asset_manifest(p_brand_kit_id uuid, p_current_fingerprint text)|92679ad0caa990b2735a0a0f226a7f6e
-function.body|get_brand_asset_previous_inputs(p_brand_kit_id uuid, p_key text, p_fingerprint text)|238ac1d234a5b224e081db12c746a71f
+function.body|get_brand_asset_previous_inputs(p_brand_kit_id uuid, p_key text, p_fingerprint text)|7eba307666008b6befae8fc9db0f874e
 function.body|get_brand_asset_version_path(p_brand_kit_id uuid, p_key text, p_fingerprint text)|fec624ac20534dec58c26ce4568e1f62
-function.body|get_brand_asset_versions(p_brand_kit_id uuid, p_key text)|84a4ca5795f875e8dd8f559d7c76ac0a
+function.body|get_brand_asset_versions(p_brand_kit_id uuid, p_key text)|9af25ec552869e8853c95a3fa10ec4e0
 function.body|get_brand_images(p_brand_kit_id uuid, p_image_fingerprint text)|ceac7310428f54ee7cfa30a847e7a8af
 function.body|get_content_image_allowance(p_brand_kit_id uuid, p_month date)|9e962c95a3c07b140c838b655a90b8b3
 function.body|get_content_item(p_id uuid)|b6c057734da92f0d05f30a42510d80ec
@@ -1108,9 +1108,9 @@ function|enforce_direction_selection_entitlement()|e0c993f6f226de509c0a14d87035a
 function|funnel_props_are_safe(p_props jsonb)|82b9235aaa886ebb1fd12b085f040da2
 function|funnel_report(p_from timestamp with time zone, p_to timestamp with time zone)|b43621171416ac4b694034aa41a4c634
 function|get_brand_asset_manifest(p_brand_kit_id uuid, p_current_fingerprint text)|85c972c860abf702c53caef6915842b9
-function|get_brand_asset_previous_inputs(p_brand_kit_id uuid, p_key text, p_fingerprint text)|95cb2c282836823ee1314ad11f6fa5e3
+function|get_brand_asset_previous_inputs(p_brand_kit_id uuid, p_key text, p_fingerprint text)|975fa4af989066127344872430116f26
 function|get_brand_asset_version_path(p_brand_kit_id uuid, p_key text, p_fingerprint text)|4adacbf311df6e4796c4ed17c5eadc5d
-function|get_brand_asset_versions(p_brand_kit_id uuid, p_key text)|b74501a45919044aba70b3f7feccd2a7
+function|get_brand_asset_versions(p_brand_kit_id uuid, p_key text)|a1e514805da870e4b8fac57eeca3787b
 function|get_brand_images(p_brand_kit_id uuid, p_image_fingerprint text)|61cad7906032e9454de633b0f92fe54b
 function|get_content_image_allowance(p_brand_kit_id uuid, p_month date)|0373b01f92f39f66428e3aa18449d6ce
 function|get_content_item(p_id uuid)|fbe7c6a8d1a52a9c2f09da482c898911

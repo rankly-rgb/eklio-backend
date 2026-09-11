@@ -17,9 +17,16 @@ insert into public.brand_kits (id, project_id) values
 insert into public.purchases (user_id, project_id, tier, stripe_checkout_session_id, amount_cents, status, paid_at)
 values ('aaaaaaaa-0000-0000-0000-00000000ab01','bbbbbbbb-0000-0000-0000-00000000ab01',
         'practice','cs_ab01',14900,'paid',now());
-insert into public.content_months (id, brand_kit_id, month, themes, status)
+
+-- ⚠ `theme_source` EST OBLIGATOIRE DEPUIS 20260910144421 : un mois qui porte
+-- des thèmes doit dire d'où ils viennent, précisément pour qu'une exécution de
+-- test ne puisse jamais être lue comme la preuve que la dérivation fonctionne.
+-- `supplied` est la valeur juste ici — « un humain les a passés », ce qu'un
+-- fixture est par définition. Ces fichiers sont antérieurs à la contrainte et
+-- n'ont jamais été rejoués depuis.
+insert into public.content_months (id, brand_kit_id, month, themes, status, theme_source)
 values ('dddddddd-0000-0000-0000-00000000ab01','cccccccc-0000-0000-0000-00000000ab01',
-        '2026-10-01',array['a','b','c'],'proposed');
+        '2026-10-01',array['a','b','c'],'proposed','supplied');
 
 -- Three proposals inside the month, plus ONE dragged into November.
 insert into public.content_items (brand_kit_id, month_id, archetype, status, register, scheduled_for, alt_text)
