@@ -388,11 +388,31 @@ end
 $$;
 
 -- ⚠ AND A CALLER NAMING SOMEBODY ELSE'S PRACTICE IS OVERRIDDEN, NOT HONOURED.
+--
+-- ⚠ THIS BLOCK HAS TO SAY WHO IT IS, AND IT DID NOT. It asserted what "an
+-- authenticated caller" may do while running as psql with no request context
+-- at all, and passed by accident: the trigger's honour-branch then required
+-- `auth.role() = 'service_role'`, which was equally false, so the override
+-- happened for the wrong reason. 20260911195907 added
+-- `caller_is_the_database()` to that branch — deliberately, because it is the
+-- seam the invitation needs to place a clinician's project in the practice
+-- rather than in their personal organization — and the accident stopped
+-- holding. CI said so within the hour.
+--
+-- Both callers are now asserted, because they are genuinely different rules:
+-- the browser may not name a practice, and the database may.
 do $$
 declare v_org uuid; v_stranger uuid;
 begin
   select organization_id into v_stranger from public.organization_members
-   where user_id = 'cccccccc-0000-0000-0000-000000000002' and role = 'owner';
+   where user_id = 'cccccccc-0000-0000-0000-000000000002'
+     and role = 'owner' and status = 'active';
+
+  -- (a) AN AUTHENTICATED BROWSER. Whatever it sends is overwritten with the
+  -- owner's own practice.
+  set local request.jwt.claims =
+    '{"role":"authenticated","sub":"cccccccc-0000-0000-0000-000000000001"}';
+  set local request.headers = '{}';
 
   insert into public.projects (user_id, name, organization_id)
   values ('cccccccc-0000-0000-0000-000000000001', 'probe', v_stranger)
@@ -400,6 +420,20 @@ begin
 
   assert v_org <> v_stranger,
     'an authenticated caller placed their project inside a stranger''s practice';
+
+  -- (b) THE DATABASE ITSELF — a migration, a backfill, the invitation's
+  -- provisioning path. It MAY name a practice, and that is the seam, not a
+  -- hole: anyone holding a direct connection already outranks this trigger.
+  reset request.jwt.claims;
+  reset request.headers;
+
+  insert into public.projects (user_id, name, organization_id)
+  values ('cccccccc-0000-0000-0000-000000000001', 'provisioned', v_stranger)
+  returning organization_id into v_org;
+
+  assert v_org = v_stranger,
+    'the database could not place a project in a named practice — the seam the '
+    'invitation needs is closed';
 end
 $$;
 
