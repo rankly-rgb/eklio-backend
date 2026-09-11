@@ -143,7 +143,9 @@ declare
 begin
   select count(*) into unread_count from public.notifications
    where brand_kit_id = 'cccccccc-0000-0000-0000-000000000051' and read_at is null;
-  assert unread_count = 2, format('expected the two earlier notifications to still be unread, got %s', unread_count);
+  -- UN, pas deux : même héritage de la retraite de `content_ready` que plus
+  -- haut. Le fixture ne produit qu'un seul événement notifiable.
+  assert unread_count = 1, format('expected the earlier notification to still be unread, got %s', unread_count);
 end
 $$;
 
