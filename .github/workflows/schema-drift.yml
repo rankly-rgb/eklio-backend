@@ -1,0 +1,60 @@
+name: Schema drift
+
+# Does this repository describe the database?
+#
+# Replays every migration into a fresh Postgres, fingerprints the result, and
+# compares it against a recorded fingerprint of production. Every guarantee
+# written into this repo — the in-body authority checks, the function-surface
+# enumeration, the tenancy enumeration — is a guarantee about the REPLAYED
+# schema. Where production differs, those guarantees are about a different
+# database.
+#
+# ⚠ THE BASELINE IS A SNAPSHOT, NOT A LIVE READ. CI cannot reach production, so
+# `schema_fingerprint.production.txt` is a dated recording. It goes stale the
+# moment a migration is applied to production without this file being
+# regenerated, and a stale baseline reports drift that is really just age. Read
+# the date in its header before believing a divergence, and regenerate with:
+#
+#   psql "$PROD_URL" -At -f supabase/tests/helpers/schema_fingerprint.sql \
+#     | sort > supabase/tests/helpers/schema_fingerprint.production.txt
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  schema-drift:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Supabase CLI 2.116.0
+        run: npm install -g supabase@2.116.0
+
+      - name: Start local Supabase stack (Postgres only)
+        run: |
+          supabase start --exclude \
+            gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+
+      - name: Reset local database (full migration replay)
+        run: supabase db reset --local
+
+      - name: Fingerprint the replayed schema
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 -At \
+            -f supabase/tests/helpers/schema_fingerprint.sql \
+            | sort > /tmp/replay.txt
+          echo "replay fingerprint lines: $(wc -l < /tmp/replay.txt)"
+
+      - name: Compare against the recorded production fingerprint
+        run: |
+          python3 supabase/tests/helpers/schema_drift_report.py \
+            supabase/tests/helpers/schema_fingerprint.production.txt \
+            /tmp/replay.txt
