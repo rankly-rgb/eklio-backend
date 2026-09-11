@@ -268,6 +268,15 @@ begin
     'organization_members_one_owned_org_per_user is gone — the claim''s scalar '
     'subquery can now return two rows and raise 21000 at runtime';
 
+  -- ⚠ AND IT MUST EXCLUDE NON-ACTIVE ROWS. Since the invitation lives on the
+  -- membership row (20260911195907), a removed owner would otherwise block the
+  -- same person from owning anywhere else, forever.
+  assert (select indexdef from pg_indexes
+           where schemaname = 'public'
+             and indexname = 'organization_members_one_owned_org_per_user')
+         like '%status%',
+    'the owner index no longer filters on status — a removed owner blocks the person for good';
+
   -- The constraint that makes the claim together-or-neither.
   assert exists (
     select 1 from pg_constraint
@@ -293,13 +302,36 @@ begin
        and pg_get_functiondef(p.oid) like '%auth.uid()%'),
     'is_org_member must be SECURITY DEFINER and must read auth.uid()';
 
-  -- Every profile owns exactly one organization. handle_new_user creates it;
-  -- without it the claim raises and a brief is lost at the moment of signup.
+  -- Every profile owns exactly one ACTIVE organization. handle_new_user
+  -- creates it; without it the claim raises and a brief is lost at signup.
   select count(*) into v_n
     from public.profiles p
    where not exists (select 1 from public.organization_members m
-                      where m.user_id = p.id and m.role = 'owner');
-  assert v_n = 0, format('%s profiles own no organization', v_n);
+                      where m.user_id = p.id and m.role = 'owner'
+                        and m.status = 'active');
+  assert v_n = 0, format('%s profiles own no active organization', v_n);
+
+  /*
+   * ⚠ THE THREE STATES, AND WHAT EACH ONE REQUIRES. An 'active' row with no
+   * user, or an 'invited' row with no token, is a row that reads as valid and
+   * means nothing.
+   */
+  assert exists (select 1 from pg_constraint
+     where conrelid = 'public.organization_members'::regclass
+       and conname = 'organization_members_invited_shape_check'),
+    'an invited membership can be written with no token or no email';
+  assert exists (select 1 from pg_constraint
+     where conrelid = 'public.organization_members'::regclass
+       and conname = 'organization_members_active_shape_check'),
+    'an active membership can be written with no user';
+
+  -- ⚠ ACCESS FOLLOWS status = 'active'. Without this clause in is_org_member a
+  -- REMOVED clinician keeps access to the practice, silently.
+  assert (select pg_get_functiondef(p.oid)
+            from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+           where n.nspname = 'public' and p.proname = 'is_org_member')
+         like '%status%',
+    'is_org_member no longer checks status — invited and removed rows grant access';
 end
 $$;
 
@@ -467,6 +499,114 @@ begin
 
   drop table public.canary_untenanted;
   assert v_caught, 'the enumeration did not catch an untenanted, unnamed table';
+end
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 6. The invitation, walked
+-- ---------------------------------------------------------------------------
+-- The token is the whole security boundary here: it does not pass through
+-- `auth.uid()`, so it is an argument to a SECURITY DEFINER function and never a
+-- permissive policy. What this section pins is that the boundary holds in both
+-- directions — a holder of the token gets her page before she has an account,
+-- and everyone else gets nothing.
+do $$
+declare
+  v_owner uuid := 'cccccccc-0000-0000-0000-000000000001';
+  v_clin  uuid := 'cccccccc-0000-0000-0000-000000000002';
+  v_org   uuid;
+  v_token text;
+  v_res   jsonb;
+begin
+  select organization_id into v_org from public.organization_members
+   where user_id = v_owner and role = 'owner' and status = 'active';
+
+  perform set_config('request.jwt.claims',
+    json_build_object('role', 'authenticated', 'sub', v_owner)::text, true);
+  perform set_config('request.headers', '{}', true);
+  v_token := public.invite_clinician(v_org, 'Invited.Person@Example.com');
+
+  -- ⚠ THE PLAINTEXT IS NOT IN THE TABLE. Only its hash is, which is the whole
+  -- of the anonymous-brief pattern reused rather than reinvented.
+  assert length(v_token) = 43, format('the token is %s characters, not 43', length(v_token));
+  assert not exists (select 1 from public.organization_members where invite_token_hash = v_token),
+    '⚠ THE PLAINTEXT TOKEN IS STORED';
+  assert exists (select 1 from public.organization_members
+                  where invite_token_hash = encode(extensions.digest(v_token, 'sha256'), 'hex')
+                    and status = 'invited' and user_id is null),
+    'the invitation did not land as an invited row with no user';
+
+  -- The address is normalised, or two invitations to the same person do not
+  -- recognise each other.
+  assert exists (select 1 from public.organization_members
+                  where status = 'invited' and invited_email = 'invited.person@example.com'),
+    'the invited address was not lower-cased';
+
+  -- She sees her page before she has an account; nobody else sees anything.
+  perform set_config('request.jwt.claims', '{"role":"anon"}', true);
+  assert public.organization_invitation_preview(v_token) is not null,
+    'the invited clinician cannot see her page before signing up';
+  assert public.organization_invitation_preview(repeat('z', 43)) is null,
+    'a wrong token was previewed';
+  assert public.organization_invitation_preview(null) is null,
+    'a null token was previewed';
+
+  -- An invitation is not membership.
+  perform set_config('request.jwt.claims',
+    json_build_object('role', 'authenticated', 'sub', v_clin)::text, true);
+  assert public.is_org_member(v_org) is false,
+    '⚠ AN INVITED PERSON ALREADY HAS ACCESS TO THE PRACTICE';
+
+  v_res := public.accept_organization_invitation(v_token);
+  assert (v_res ->> 'accepted')::boolean, format('accepting failed: %s', v_res);
+  assert public.is_org_member(v_org) is true, 'accepting did not grant access';
+
+  -- ⚠ SINGLE USE, by verify-then-consume in one statement.
+  v_res := public.accept_organization_invitation(v_token);
+  assert (v_res ->> 'accepted')::boolean is false,
+    format('the token was spent twice: %s', v_res);
+  assert not exists (select 1 from public.organization_members where invite_token_hash = ''),
+    'a spent token was written as the empty string rather than null';
+
+  -- Removal takes access away. This is the assertion that would have caught
+  -- Session 3's is_org_member if it had shipped unchanged into this table.
+  perform set_config('request.jwt.claims', '', true);
+  update public.organization_members set status = 'removed'
+   where user_id = v_clin and organization_id = v_org;
+  perform set_config('request.jwt.claims',
+    json_build_object('role', 'authenticated', 'sub', v_clin)::text, true);
+  assert public.is_org_member(v_org) is false,
+    '⚠ A REMOVED CLINICIAN STILL HAS ACCESS TO THE PRACTICE';
+
+  perform set_config('request.jwt.claims', '', true);
+  perform set_config('request.headers', '', true);
+end
+$$;
+
+-- CANARY — an invitation that has expired is not previewable and not
+-- acceptable, which is a different code path from a wrong token.
+do $$
+declare
+  v_org   uuid;
+  v_token text := 'expired_token_' || repeat('e', 30);
+begin
+  select organization_id into v_org from public.organization_members
+   where user_id = 'cccccccc-0000-0000-0000-000000000001' and role = 'owner';
+
+  insert into public.organization_members
+    (organization_id, user_id, role, status, invited_email, invite_token_hash, invite_expires_at)
+  values (v_org, null, 'clinician', 'invited', 'late@example.com',
+          encode(extensions.digest(v_token, 'sha256'), 'hex'), now() - interval '1 day');
+
+  perform set_config('request.jwt.claims', '{"role":"anon"}', true);
+  assert public.organization_invitation_preview(v_token) is null,
+    'an expired invitation is still previewable';
+
+  perform set_config('request.jwt.claims',
+    '{"role":"authenticated","sub":"cccccccc-0000-0000-0000-000000000002"}', true);
+  assert (public.accept_organization_invitation(v_token) ->> 'accepted')::boolean is false,
+    'an expired invitation was accepted';
+  perform set_config('request.jwt.claims', '', true);
 end
 $$;
 

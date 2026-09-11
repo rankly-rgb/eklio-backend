@@ -1,4 +1,4 @@
-# Fingerprint of PRODUCTION (project fobgdsupyfslxbswfuay), recorded 2026-09-11, refreshed after 20260911193259.
+# Fingerprint of PRODUCTION (project fobgdsupyfslxbswfuay), recorded 2026-09-11, refreshed after 20260911195907.
 #
 # Produced by supabase/tests/helpers/schema_fingerprint.sql. Verified on the way
 # in: all nine per-kind hashes were recomputed from these lines and matched the
@@ -12,8 +12,8 @@
 #   psql "$PROD_URL" -At -f supabase/tests/helpers/schema_fingerprint.sql \
 #     | sort > supabase/tests/helpers/schema_fingerprint.production.txt
 #
-# 1910 objects. Canonical hash (order-independent, collation-immune):
-#   md5(concat of sorted md5-per-line) = bf44a6d350ebfe301d4f8b7dea56ed74
+# 1933 objects. Canonical hash (order-independent, collation-immune):
+#   md5(concat of sorted md5-per-line) = 6ee545cb84dd9189c3ba946f778061b4
 # The database reported that same value for the query in schema_fingerprint.sql,
 # which is how this file is known to be a copy and not a retyping.
 column|anon_generation_counters.bucket|bfd7a34b0a0954d9eb54990fcc6ca449
@@ -292,10 +292,17 @@ column|notifications.kind|bfd7a34b0a0954d9eb54990fcc6ca449
 column|notifications.payload|99540861e5d4a894380d260f2be522c7
 column|notifications.read_at|3b78bc2a0ac0f96164a997cdf0a40dd6
 column|notifications.user_id|44a3ae17bd44ec9ab36d03e5d8b14002
+column|organization_members.activated_at|3b78bc2a0ac0f96164a997cdf0a40dd6
 column|organization_members.created_at|1f4d4e4ad4c5de3894870bee567ea8a7
+column|organization_members.id|941fb71b7f14da4ef6249ea7f0ef7c41
+column|organization_members.invite_expires_at|3b78bc2a0ac0f96164a997cdf0a40dd6
+column|organization_members.invite_token_hash|44735fcd1e7f687a9ac2130e871687ab
+column|organization_members.invited_email|44735fcd1e7f687a9ac2130e871687ab
 column|organization_members.organization_id|44a3ae17bd44ec9ab36d03e5d8b14002
+column|organization_members.project_id|48fab12d214b859cc04a8a4228752965
 column|organization_members.role|bfd7a34b0a0954d9eb54990fcc6ca449
-column|organization_members.user_id|44a3ae17bd44ec9ab36d03e5d8b14002
+column|organization_members.status|b3cc776f15ed991fb2ba8a142b8b399d
+column|organization_members.user_id|48fab12d214b859cc04a8a4228752965
 column|organizations.created_at|1f4d4e4ad4c5de3894870bee567ea8a7
 column|organizations.id|941fb71b7f14da4ef6249ea7f0ef7c41
 column|organizations.name|44735fcd1e7f687a9ac2130e871687ab
@@ -399,7 +406,7 @@ column|purchase_status_events.previous_status|44735fcd1e7f687a9ac2130e871687ab
 column|purchase_status_events.purchase_id|44a3ae17bd44ec9ab36d03e5d8b14002
 column|purchase_status_events.stripe_event_id|bfd7a34b0a0954d9eb54990fcc6ca449
 column|purchases.amount_cents|08dc10c32b29217c8d729bf9fe97d77f
-column|purchases.created_at|1f4d4e4ad4c5de3894870bee567ea8a7
+column|purchases.created_at|9ebe5bd1398ddf2d4bb652aa84cd604f
 column|purchases.currency|7919f51f73efffcc3e60d3d5cdd4502b
 column|purchases.id|941fb71b7f14da4ef6249ea7f0ef7c41
 column|purchases.paid_at|3b78bc2a0ac0f96164a997cdf0a40dd6
@@ -678,9 +685,13 @@ constraint|notifications.notifications_brand_kit_id_fkey|2741a6bc16a0f06f45296dd
 constraint|notifications.notifications_kind_check|0599acff0d1b01da466d4460a78136d5
 constraint|notifications.notifications_pkey|4c6419b3704337bbfe50f018842a9ad3
 constraint|notifications.notifications_user_id_fkey|f52ea365e97de6e8cafd675b03a940e4
+constraint|organization_members.organization_members_active_shape_check|adead69072cf63cf81e1fe85ff83f3c2
+constraint|organization_members.organization_members_invited_shape_check|29c0d0d59416c661899dda990a46da27
 constraint|organization_members.organization_members_organization_id_fkey|3c702b28ccc97a0ac52c0acefcdea477
-constraint|organization_members.organization_members_pkey|b300d3d682dad863b77ea7216ce30b11
+constraint|organization_members.organization_members_pkey|4c6419b3704337bbfe50f018842a9ad3
+constraint|organization_members.organization_members_project_id_fkey|9f094045d0e8886602db7670d5d6f159
 constraint|organization_members.organization_members_role_check|8873b94e1cc62870f6449f8f52ada584
+constraint|organization_members.organization_members_status_check|6eb268ee5ea50e2de5e65153394b9e8a
 constraint|organization_members.organization_members_user_id_fkey|f52ea365e97de6e8cafd675b03a940e4
 constraint|organizations.organizations_pkey|4c6419b3704337bbfe50f018842a9ad3
 constraint|palette_families.palette_families_cta_ink_check|e563a15277fda22f183216bb66eb6c3e
@@ -815,6 +826,7 @@ constraint|usp_fingerprints.usp_fingerprints_brief_id_key|5e590577b7aeda80275ee2
 constraint|usp_fingerprints.usp_fingerprints_pkey|4c6419b3704337bbfe50f018842a9ad3
 constraint|usp_fingerprints.usp_fingerprints_user_id_fkey|85d8b2f5f0c0f6b4dcb854efb61a8cb1
 constraint|usp_stopwords.usp_stopwords_pkey|2ca4eb3aebf71cae7c1a554a3bc4282e
+function.body|accept_organization_invitation(p_token text)|da4c2e904fff592252373b59adf44a0c
 function.body|anon_spend_today()|aa1f39884b700f28e215e05b1939bf12
 function.body|anon_token_hash()|482b057944f1b00466528761d4571dad
 function.body|app_search(p_brand_kit_id uuid, p_query text)|bfc42b8af9265843fb0f980e5f11161e
@@ -889,7 +901,7 @@ function.body|gin_extract_query_trgm(text, internal, smallint, internal, interna
 function.body|gin_extract_value_trgm(text, internal)|cbf36799a23c676d2c590e63a30e4edb
 function.body|gin_trgm_consistent(internal, smallint, text, integer, internal, internal, internal, internal)|20bb29126c49dedecc2b89bab0a052c9
 function.body|gin_trgm_triconsistent(internal, smallint, text, integer, internal, internal, internal)|057364ed46d602ef9bba3469fa51e0c7
-function.body|grant_plan_allowance(p_project_id uuid, p_tier text, p_grant_key text)|76541c8a6d60e6a99eae1a23c5d35dae
+function.body|grant_plan_allowance(p_project_id uuid, p_tier text, p_grant_key text)|99a80a4cd212b88dc8f33721b07dc821
 function.body|gtrgm_compress(internal)|83f8d529cf3995c5b62b6cbef62b2989
 function.body|gtrgm_consistent(internal, text, smallint, oid, internal)|e8b82a2b64bc4cc2d5769319d04c4b8b
 function.body|gtrgm_decompress(internal)|190b091a73cebcd393b395a367399502
@@ -904,10 +916,11 @@ function.body|gtrgm_union(internal, internal)|3427e10561cafe4196dff0801ed9a871
 function.body|handle_brand_kit_direction_selected()|7afa67faf1f7bd74f316a9b2c3812681
 function.body|handle_new_brand_kit()|4f4b268f74e4baab5d79a3c095a6e9ca
 function.body|handle_new_project()|b2645dbbb88d7f1211849ba464c5489f
-function.body|handle_new_user()|c2431ace78f6d306fde0cff09bd2f6ec
+function.body|handle_new_user()|9f3e4d359c2ac9d5d8b1f7ef673f9372
 function.body|hex_rgb(p_hex text)|0fa67c04e828a267e206e86f4c25c27f
 function.body|home_recent_activity(p_brand_kit_id uuid)|d4ff452d60cf88443545a6a559dc624c
-function.body|is_org_member(p_org_id uuid)|c1ab7b9f516422bbf4f654bf44ed6838
+function.body|invite_clinician(p_organization_id uuid, p_email text)|4bb23fb14388495136abeff212b5d1b3
+function.body|is_org_member(p_org_id uuid)|9111256ddee4f37c11d338526ae7882d
 function.body|kit_paid_access(p_brand_kit_id uuid)|47adddd4172ac373a6648141ab225117
 function.body|list_deleted_brand_kits()|0d881ee0039536be76dd6cb4c54616a1
 function.body|list_user_uploads(p_brand_kit_id uuid)|e9beb6001ad9f37460d8a0769ca28d5b
@@ -916,6 +929,7 @@ function.body|mark_brand_kit_delivered(p_brand_kit_id uuid)|0a1150a993973c57b0d0
 function.body|mark_content_posted(p_id uuid, p_posted boolean, p_channel text)|05269b764f44d79912a509ba6cacd6a9
 function.body|mark_notifications_read(p_brand_kit_id uuid)|ec31fce705738e9d2b752f17515cc623
 function.body|nearest_color_name(p_hex text)|5dcbd514d322fe47977f2c17cd213fb0
+function.body|organization_invitation_preview(p_token text)|07e6f414d8dd6c96d6a8010b69c43a68
 function.body|orphaned_purchases()|8bcf1ac1e862b9499b69668bd26ae2da
 function.body|owns_project(p_project_id uuid)|fbfac0b01ea00f089c692a132a0656b9
 function.body|project_briefs_data_valid(p jsonb)|f1a6169dae0820abc9cdf0e106848965
@@ -923,7 +937,7 @@ function.body|project_briefs_tone_cards_valid(p jsonb)|4628495671fb3024d9a6de886
 function.body|project_briefs_usp_options_valid(p jsonb)|c126b4bb703daed86eabd215c00613ea
 function.body|project_briefs_validate_how_you_work_refs()|fb3a3d7f9cacdf68d7e7eb72efc51661
 function.body|project_briefs_validate_selected_usp_id()|8b33d935a24db9ce9cac3c1243b03c1f
-function.body|projects_bind_organization()|013f6d52d8238ac4a945f46d5aa855b8
+function.body|projects_bind_organization()|74b99e1e541779a667488e2177715348
 function.body|purchase_status_before(p_purchase_id uuid, p_status text)|7f2bc3ec10c34af55c3234e8539485aa
 function.body|purchase_status_events_advance()|123f8bc63589d518ea1fa0fcc47c00fd
 function.body|purchase_status_events_append_only()|b4a0ecf6c30aa6d2cb6bc3f6fdc538ad
@@ -1048,6 +1062,7 @@ function.body|word_similarity_commutator_op(text, text)|d18bc4eee8ca082d515e7cff
 function.body|word_similarity_dist_commutator_op(text, text)|02eaec0ce535a90a338fb5ad7dbbd0e5
 function.body|word_similarity_dist_op(text, text)|211ec4576f43590d12ca73f3654a71b4
 function.body|word_similarity_op(text, text)|4e71be6933b5cf5f71638bce7143d020
+function|accept_organization_invitation(p_token text)|0b28fc353b0843c668b8733165fd6d6f
 function|anon_spend_today()|37cde0f534cb778510c35863b492b023
 function|anon_token_hash()|6ef9a88504193e8548f6cfca5b6ef3c6
 function|app_search(p_brand_kit_id uuid, p_query text)|3923dfd2c7233e0c110ed10a13a5ae27
@@ -1122,7 +1137,7 @@ function|gin_extract_query_trgm(text, internal, smallint, internal, internal, in
 function|gin_extract_value_trgm(text, internal)|42bc3d69fe7ae6ba4409315e68686e93
 function|gin_trgm_consistent(internal, smallint, text, integer, internal, internal, internal, internal)|3b5516ee327d210cf276d0f7cbec6a1b
 function|gin_trgm_triconsistent(internal, smallint, text, integer, internal, internal, internal)|ebb9557e4d7f2342aa65aa319bf2f6ad
-function|grant_plan_allowance(p_project_id uuid, p_tier text, p_grant_key text)|2851f104e024d2c5582e9992d2bd9dc6
+function|grant_plan_allowance(p_project_id uuid, p_tier text, p_grant_key text)|219cbca0d4f7d425fd0b181c7d5cdc1a
 function|gtrgm_compress(internal)|0ac3144cfd060482fab5339fe0e2a9e1
 function|gtrgm_consistent(internal, text, smallint, oid, internal)|00d55f7471e62f08ca85d8d4e61991e7
 function|gtrgm_decompress(internal)|217b0af3efb9f430e911c6e2aeb0aa99
@@ -1137,10 +1152,11 @@ function|gtrgm_union(internal, internal)|1e514b035bac6c001492f0ec64f222b8
 function|handle_brand_kit_direction_selected()|abbebbc1b20b7c3302651f02aa2e4510
 function|handle_new_brand_kit()|1d8bfc25fb0c9f79f783752595412dbb
 function|handle_new_project()|1c6f99dfd160cad25fbbe660c16751a9
-function|handle_new_user()|11ab324a78d20b4a0a0c0f69126d509a
+function|handle_new_user()|41932e749c6db3811bce994d4a4523af
 function|hex_rgb(p_hex text)|be49289141753d5d18177201ddf5809a
 function|home_recent_activity(p_brand_kit_id uuid)|575592132446f07c4454bde590b5f8b6
-function|is_org_member(p_org_id uuid)|23c5604a254e96608ca4589b6e40ea41
+function|invite_clinician(p_organization_id uuid, p_email text)|4c47129dbb68ae2faf6061a8dc4c7f80
+function|is_org_member(p_org_id uuid)|dfea061ff13cb0dfb08d583df178ee5e
 function|kit_paid_access(p_brand_kit_id uuid)|bae60b271d60bd875903933b44f78308
 function|list_deleted_brand_kits()|e84bef71bdfb41a15076e25d48097816
 function|list_user_uploads(p_brand_kit_id uuid)|c0f0aadb119b0e986371887146dc904d
@@ -1149,6 +1165,7 @@ function|mark_brand_kit_delivered(p_brand_kit_id uuid)|bf0959ae94753061226ce342e
 function|mark_content_posted(p_id uuid, p_posted boolean, p_channel text)|5cd4e80e9b3e5f1c3651032c473b0a43
 function|mark_notifications_read(p_brand_kit_id uuid)|d1690efe3bd8c6e3f3160ba27217b554
 function|nearest_color_name(p_hex text)|190ca02e1ebde2b6369e055081c6cc75
+function|organization_invitation_preview(p_token text)|d7415aeac2c3431a368b56d64ffb93dc
 function|orphaned_purchases()|e0063405888cf2889352b4f0c7cb9850
 function|owns_project(p_project_id uuid)|03af99749de299a343a751ce3ce3198b
 function|project_briefs_data_valid(p jsonb)|0f486ac0a268e9ff8fad93a3b10aac0d
@@ -1156,7 +1173,7 @@ function|project_briefs_tone_cards_valid(p jsonb)|f397965e90abb7219c360a7eab0993
 function|project_briefs_usp_options_valid(p jsonb)|c5b59646404f5c5a12a943ca2e2a70e4
 function|project_briefs_validate_how_you_work_refs()|41924fa614ed1e7bf7fad00cb5104ab8
 function|project_briefs_validate_selected_usp_id()|d047980bb231039372fa1b4c62874c5c
-function|projects_bind_organization()|efad30c2193905a5e5cae57f80746773
+function|projects_bind_organization()|ca8ce81ee44206d420e12e88f1067ff1
 function|purchase_status_before(p_purchase_id uuid, p_status text)|3a8193a373c1c3bdad7216821ba6448d
 function|purchase_status_events_advance()|309fa4b3a0f7b355c5202a5663a2d137
 function|purchase_status_events_append_only()|6e94302c3aacd83a54b8c80759cb645a
@@ -1281,6 +1298,7 @@ function|word_similarity_commutator_op(text, text)|98ece0ccacd71230bea0e7805d310
 function|word_similarity_dist_commutator_op(text, text)|db36854b61d077b4cb945606bab01fc6
 function|word_similarity_dist_op(text, text)|ab0c2cb7ec6c0cbe0937ec3288d2cfda
 function|word_similarity_op(text, text)|9cb3bc9ce246a2c4c4d17c7205f4a17f
+grant.function|accept_organization_invitation(p_token text)|f440cb7547aafb71bac3b9275ad5f4bd
 grant.function|anon_spend_today()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|anon_token_hash()|d78174332163bd0ee30d25636fc7a93d
 grant.function|app_search(p_brand_kit_id uuid, p_query text)|f440cb7547aafb71bac3b9275ad5f4bd
@@ -1373,6 +1391,7 @@ grant.function|handle_new_project()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|handle_new_user()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|hex_rgb(p_hex text)|59a9d60d2ccf51b0c7c03f225c171a7d
 grant.function|home_recent_activity(p_brand_kit_id uuid)|f440cb7547aafb71bac3b9275ad5f4bd
+grant.function|invite_clinician(p_organization_id uuid, p_email text)|f440cb7547aafb71bac3b9275ad5f4bd
 grant.function|is_org_member(p_org_id uuid)|d78174332163bd0ee30d25636fc7a93d
 grant.function|kit_paid_access(p_brand_kit_id uuid)|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|list_deleted_brand_kits()|f440cb7547aafb71bac3b9275ad5f4bd
@@ -1382,6 +1401,7 @@ grant.function|mark_brand_kit_delivered(p_brand_kit_id uuid)|f440cb7547aafb71bac
 grant.function|mark_content_posted(p_id uuid, p_posted boolean, p_channel text)|59a9d60d2ccf51b0c7c03f225c171a7d
 grant.function|mark_notifications_read(p_brand_kit_id uuid)|f440cb7547aafb71bac3b9275ad5f4bd
 grant.function|nearest_color_name(p_hex text)|59a9d60d2ccf51b0c7c03f225c171a7d
+grant.function|organization_invitation_preview(p_token text)|d78174332163bd0ee30d25636fc7a93d
 grant.function|orphaned_purchases()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|owns_project(p_project_id uuid)|d78174332163bd0ee30d25636fc7a93d
 grant.function|project_briefs_data_valid(p jsonb)|59a9d60d2ccf51b0c7c03f225c171a7d
@@ -1646,8 +1666,11 @@ index|notifications.notifications_asset_rendered_idx|c539a59e89017e539699082acb3
 index|notifications.notifications_pkey|3435fbb51aa7e7d2ac858b253960952b
 index|notifications.notifications_site_stale_unread_idx|1350b27a8ec9cead9ced3d412ecc1716
 index|notifications.notifications_user_id_read_at_idx|478178db622d0ddbbf6db81ef94c73a9
-index|organization_members.organization_members_one_owned_org_per_user|afa46fc5d767fd0318aad6c8c600364f
-index|organization_members.organization_members_pkey|2ac2f89a9363f82766138ca8ef6c4f1a
+index|organization_members.organization_members_invite_token_hash_key|e38d2cab04f48d5e641107ac87002080
+index|organization_members.organization_members_invited_email_idx|68acbf122e2b3830bb4795427e343c33
+index|organization_members.organization_members_one_owned_org_per_user|299bfdd8f8d95d46606fd8084925003d
+index|organization_members.organization_members_one_row_per_member|523a961523c2f205f896e34b52b76c28
+index|organization_members.organization_members_pkey|0958b9906b37482cf5ebd4675dd6e0c1
 index|organization_members.organization_members_user_id_idx|9ccd258cf9e6760fc07b8aecddc37769
 index|organizations.organizations_pkey|f45c1aefdc5c9e573ccc52f6cb1e62d3
 index|palette_families.palette_families_pkey|e9164473f85696690dce041721df80ee
