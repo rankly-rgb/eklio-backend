@@ -12,8 +12,8 @@
 #   psql "$PROD_URL" -At -f supabase/tests/helpers/schema_fingerprint.sql \
 #     | sort > supabase/tests/helpers/schema_fingerprint.production.txt
 #
-# 1675 objects. Canonical hash (order-independent, collation-immune):
-#   md5(concat of sorted md5-per-line) = 881266a948993d9fd49258ce3120e725
+# 1910 objects. Canonical hash (order-independent, collation-immune):
+#   md5(concat of sorted md5-per-line) = 695e4b6468d94fb521493cf48c1b37c3
 # The database reported that same value for the query in schema_fingerprint.sql,
 # which is how this file is known to be a copy and not a retyping.
 column|anon_generation_counters.bucket|bfd7a34b0a0954d9eb54990fcc6ca449
@@ -815,6 +815,239 @@ constraint|usp_fingerprints.usp_fingerprints_brief_id_key|5e590577b7aeda80275ee2
 constraint|usp_fingerprints.usp_fingerprints_pkey|4c6419b3704337bbfe50f018842a9ad3
 constraint|usp_fingerprints.usp_fingerprints_user_id_fkey|85d8b2f5f0c0f6b4dcb854efb61a8cb1
 constraint|usp_stopwords.usp_stopwords_pkey|2ca4eb3aebf71cae7c1a554a3bc4282e
+function.body|anon_spend_today()|aa1f39884b700f28e215e05b1939bf12
+function.body|anon_token_hash()|482b057944f1b00466528761d4571dad
+function.body|app_search(p_brand_kit_id uuid, p_query text)|bfc42b8af9265843fb0f980e5f11161e
+function.body|approve_content_month(p_month_id uuid)|3f7063b6c20bba59301d466f123b6308
+function.body|asset_variant_path(p_brand_kit_id uuid, p_key text, p_fingerprint text, p_kind text, p_size integer, p_format text)|37971710a51387c6af5339b2ec82d1e3
+function.body|brand_images_claim(p_brand_kit_id uuid, p_slot text, p_image_fingerprint text, p_cost_estimate_cents integer, p_daily_cap_cents integer, p_reclaim_after interval)|e7381c216697e71625bda29822c855c9
+function.body|brand_images_enabled()|bcf7f40765d424d22df65041007baeb4
+function.body|brand_images_mark_failed(p_image_id uuid, p_claim_token timestamp with time zone, p_status text, p_failure_reason text)|b7cd193b04cb7e556dff3b841e28307c
+function.body|brand_images_mark_ready(p_image_id uuid, p_claim_token timestamp with time zone, p_storage_path text, p_byte_size integer, p_cost_cents integer, p_model text, p_quality text, p_size text)|858fdcce20976929e30db0ec34ea9d74
+function.body|brand_images_path(p_brand_kit_id uuid, p_image_fingerprint text, p_slot text)|f893d1c95d30378cc8a64f65d48284cf
+function.body|brand_images_setting_int(p_key text, p_fallback integer)|3424c3f3456db2feb55f21030631a6a1
+function.body|brand_kit_asset_path_owner(p_name text)|a493d6f1ca2357fc22b718456308053d
+function.body|brand_kit_direction_contrast(p_direction jsonb)|8e71451da63d1b96de7210207d41b8ff
+function.body|brand_kit_direction_palette_hash(p_palette jsonb)|70876038542472eb3889867910d5054e
+function.body|brand_kit_directions_contrasted(p jsonb)|ec7625df78f226383e4fa72b00a440ae
+function.body|brand_kit_directions_rendering_valid(p jsonb)|2d19636b592afb0bf4df34bb9978cbbb
+function.body|brand_kit_directions_shape_valid(p jsonb)|3230ffaba881d514a0d6e23cadb6ef28
+function.body|brand_kit_entitled(p_brand_kit_id uuid)|deeb34d1b1de0da08b19e4ecd68021ca
+function.body|brand_kit_entitling_statuses()|dd1c332191f4f0c12d10c99b7423aa6c
+function.body|brand_kit_ethics_check_valid(p jsonb)|7b86900f415abb5a9fadbd24703b2680
+function.body|brand_kit_has_generation_credit(p_brand_kit_id uuid)|c48fcaca918d9f672c8b5597ed2f8a72
+function.body|brand_kit_hero_valid(p jsonb)|d9923ad75d81d067eb7050af11c9bcfd
+function.body|brand_kit_is_owned(p_brand_kit_id uuid)|bb9991f5e22692cb1e691278b6e32854
+function.body|brand_kit_palette_valid(p jsonb)|1501b367a25964b81f8931a619ee61ac
+function.body|brand_kit_reveal_get(p_brand_kit_id uuid)|98b8250105fb726261e0d0ac99d1d676
+function.body|brand_kit_select_direction(p_brand_kit_id uuid, p_direction_id text)|6a6e7f7f8a6ada26d5a3d6adfb666b7a
+function.body|brand_kit_selection_valid(p_directions jsonb, p_selected text)|0fe09838c5bd9ab8e7724ab765294195
+function.body|brand_kit_social_templates_rendering_valid(p jsonb)|e8a09c497b906d7bf4f483b1ffe44854
+function.body|brand_kit_social_templates_shape_valid(p jsonb)|cbf3975bb955b9150afa792ff9785878
+function.body|brand_kit_voice_guide_valid(p jsonb)|33f62d3d57c20d6b7ca8d387f09ed77b
+function.body|brief_completed_steps_renumber_up(p_steps smallint[])|3590cca05ddb1a3eea595f830f35d11b
+function.body|brief_preview(p_brief_id uuid)|7aad44e4a5cdbec69d401eddbe0c976d
+function.body|brief_progress_step_renumber_up(p_progress integer)|403f670fd5188ec0895612e69ee093fc
+function.body|brief_step_renumber_up(p_step smallint)|33885912a6111cb504c16be6701954b7
+function.body|caller_is_the_database()|166929c27d574e3b27524a3c3540b60b
+function.body|comp_access_active()|9046df1f8d68cb08ab093d56294b506d
+function.body|comp_grant_active(p_user_id uuid)|f85fc6cbc58e61ca0f57f1d739b85639
+function.body|comp_grant_credits(p_user_id uuid)|aa787dd645d3369f60398940092c4402
+function.body|complete_choose_direction(p_brand_kit_id uuid)|69e0267901d853d50c0e11dab81f7c30
+function.body|consume_anon_generation(p_ip_hash text, p_kind text)|0922907c45111476b34e2d67fdeacbc6
+function.body|consume_check_rewrite()|65d8d8b7d29aef50d9942b6c07b90af6
+function.body|consume_generation_credit(p_brand_kit_id uuid)|7ca84edac4b55c94f42e967dc4261a74
+function.body|content_error(p_code text)|b7f8c40886ac1bb462b0db8e7cc9a296
+function.body|content_item_json(p_id uuid)|e40584ba798ad45accfd553ad7ae8622
+function.body|content_items_theme_belongs_to_month()|ac065d95237419b3ea450a1ba68191f9
+function.body|content_kit_access(p_brand_kit_id uuid)|bce3e6013e04ba8e5ef9a124bc5f4c72
+function.body|content_normalize_tags(p_tags text[])|db92a986695a32bfe4d877ef420940a1
+function.body|content_preferences_validate_registers()|d4ac79616ddb7e7ced2f96a716e02a56
+function.body|create_content_item(p_brand_kit_id uuid, p_archetype text, p_scheduled_for date)|05d66934455b6d91bb59551e1a15cd13
+function.body|delete_brand_kit(p_brand_kit_id uuid)|db68845a7607af49e6e6cd40204a1cdc
+function.body|delete_content_item(p_id uuid)|d3c9c91510404c2273b6e1b04f9dc1d5
+function.body|delete_user_upload(p_id uuid)|628745af1e46dfdd091d7a9436275c0f
+function.body|direction_assets_claim(p_brand_kit_id uuid, p_direction_index integer, p_palette_hash text, p_cost_estimate_cents integer, p_daily_cap_cents integer, p_reclaim_after interval)|16b6f819448e82af467061425038f4c5
+function.body|direction_assets_mark_failed(p_asset_id uuid, p_claim_token timestamp with time zone)|21ae9b7f5163c2bb7056eb6d6fca4a4a
+function.body|direction_assets_mark_ready(p_asset_id uuid, p_claim_token timestamp with time zone, p_url text, p_storage_path text, p_cost_cents integer)|74bf427624fbf51fab5d9bdf3fefec6b
+function.body|direction_limits()|3a0e053b910ae9f04b2ff82c0f761330
+function.body|enforce_direction_selection_entitlement()|9921b73e0c0c66ca4203f31c8491b0c6
+function.body|funnel_props_are_safe(p_props jsonb)|472be8a66400dde20df9476f71beafaf
+function.body|funnel_report(p_from timestamp with time zone, p_to timestamp with time zone)|c75318877e9da12edf3e86c57abe8b46
+function.body|get_brand_asset_manifest(p_brand_kit_id uuid, p_current_fingerprint text)|92679ad0caa990b2735a0a0f226a7f6e
+function.body|get_brand_asset_previous_inputs(p_brand_kit_id uuid, p_key text, p_fingerprint text)|238ac1d234a5b224e081db12c746a71f
+function.body|get_brand_asset_version_path(p_brand_kit_id uuid, p_key text, p_fingerprint text)|fec624ac20534dec58c26ce4568e1f62
+function.body|get_brand_asset_versions(p_brand_kit_id uuid, p_key text)|84a4ca5795f875e8dd8f559d7c76ac0a
+function.body|get_brand_images(p_brand_kit_id uuid, p_image_fingerprint text)|ceac7310428f54ee7cfa30a847e7a8af
+function.body|get_content_image_allowance(p_brand_kit_id uuid, p_month date)|9e962c95a3c07b140c838b655a90b8b3
+function.body|get_content_item(p_id uuid)|b6c057734da92f0d05f30a42510d80ec
+function.body|get_content_month(p_brand_kit_id uuid, p_month date)|3d144395cd73cf13086dcebcc8d4d0e7
+function.body|get_image_regeneration_budget(p_brand_kit_id uuid)|60fecb556215bad8e3dde5516cf2d3b3
+function.body|get_launch_progress(p_brand_kit_id uuid)|33fa7e683e464c2667c054bf0d584aa2
+function.body|get_publishing_log(p_brand_kit_id uuid, p_limit integer)|b911b4d4f879e99af9f42b4170356042
+function.body|gin_extract_query_trgm(text, internal, smallint, internal, internal, internal, internal)|34c100af1fd184f3c78d9bca4696b4ae
+function.body|gin_extract_value_trgm(text, internal)|cbf36799a23c676d2c590e63a30e4edb
+function.body|gin_trgm_consistent(internal, smallint, text, integer, internal, internal, internal, internal)|20bb29126c49dedecc2b89bab0a052c9
+function.body|gin_trgm_triconsistent(internal, smallint, text, integer, internal, internal, internal)|057364ed46d602ef9bba3469fa51e0c7
+function.body|grant_plan_allowance(p_project_id uuid, p_tier text, p_grant_key text)|76541c8a6d60e6a99eae1a23c5d35dae
+function.body|gtrgm_compress(internal)|83f8d529cf3995c5b62b6cbef62b2989
+function.body|gtrgm_consistent(internal, text, smallint, oid, internal)|e8b82a2b64bc4cc2d5769319d04c4b8b
+function.body|gtrgm_decompress(internal)|190b091a73cebcd393b395a367399502
+function.body|gtrgm_distance(internal, text, smallint, oid, internal)|756b49d7eb8dc79ccce0b2513b4f323d
+function.body|gtrgm_in(cstring)|69ff0f0399d90cc0d559266c54101be2
+function.body|gtrgm_options(internal)|07174ac1761dd870be4ae14f73e45cc0
+function.body|gtrgm_out(gtrgm)|bb888cda14625d570e69f7b59436f72b
+function.body|gtrgm_penalty(internal, internal, internal)|bdfe32fb8527e888166e4455c708e1b5
+function.body|gtrgm_picksplit(internal, internal)|e92cf065b9542f0c9fcf021f4ddad6b3
+function.body|gtrgm_same(gtrgm, gtrgm, internal)|bc5b8fee488f7e12c6e90b86ab7b6ce7
+function.body|gtrgm_union(internal, internal)|3427e10561cafe4196dff0801ed9a871
+function.body|handle_brand_kit_direction_selected()|7afa67faf1f7bd74f316a9b2c3812681
+function.body|handle_new_brand_kit()|4f4b268f74e4baab5d79a3c095a6e9ca
+function.body|handle_new_project()|b2645dbbb88d7f1211849ba464c5489f
+function.body|handle_new_user()|c2431ace78f6d306fde0cff09bd2f6ec
+function.body|hex_rgb(p_hex text)|0fa67c04e828a267e206e86f4c25c27f
+function.body|home_recent_activity(p_brand_kit_id uuid)|d4ff452d60cf88443545a6a559dc624c
+function.body|is_org_member(p_org_id uuid)|c1ab7b9f516422bbf4f654bf44ed6838
+function.body|kit_paid_access(p_brand_kit_id uuid)|47adddd4172ac373a6648141ab225117
+function.body|list_deleted_brand_kits()|0d881ee0039536be76dd6cb4c54616a1
+function.body|list_user_uploads(p_brand_kit_id uuid)|e9beb6001ad9f37460d8a0769ca28d5b
+function.body|maintain_site_spec_text_variants()|b74718d8f9ff4bb145410615a32c11d4
+function.body|mark_brand_kit_delivered(p_brand_kit_id uuid)|0a1150a993973c57b0d0720b28a16455
+function.body|mark_content_posted(p_id uuid, p_posted boolean, p_channel text)|05269b764f44d79912a509ba6cacd6a9
+function.body|mark_notifications_read(p_brand_kit_id uuid)|ec31fce705738e9d2b752f17515cc623
+function.body|nearest_color_name(p_hex text)|5dcbd514d322fe47977f2c17cd213fb0
+function.body|orphaned_purchases()|8bcf1ac1e862b9499b69668bd26ae2da
+function.body|owns_project(p_project_id uuid)|fbfac0b01ea00f089c692a132a0656b9
+function.body|project_briefs_data_valid(p jsonb)|f1a6169dae0820abc9cdf0e106848965
+function.body|project_briefs_tone_cards_valid(p jsonb)|4628495671fb3024d9a6de886798828a
+function.body|project_briefs_usp_options_valid(p jsonb)|c126b4bb703daed86eabd215c00613ea
+function.body|project_briefs_validate_how_you_work_refs()|fb3a3d7f9cacdf68d7e7eb72efc51661
+function.body|project_briefs_validate_selected_usp_id()|8b33d935a24db9ce9cac3c1243b03c1f
+function.body|projects_bind_organization()|013f6d52d8238ac4a945f46d5aa855b8
+function.body|purchase_status_before(p_purchase_id uuid, p_status text)|7f2bc3ec10c34af55c3234e8539485aa
+function.body|purchase_status_events_advance()|123f8bc63589d518ea1fa0fcc47c00fd
+function.body|purchase_status_events_append_only()|b4a0ecf6c30aa6d2cb6bc3f6fdc538ad
+function.body|purchase_status_events_apply()|bd6fd4b54fb7711103e629151069c034
+function.body|purge_funnel_events()|c6f5b2d66563988bb48daa98cdd35895
+function.body|record_asset_download(p_brand_kit_id uuid, p_key text, p_fingerprint text, p_size integer, p_format text)|328968fdf71eb93839859ba79eb0eb8f
+function.body|record_brand_asset(p_brand_kit_id uuid, p_key text, p_fingerprint text, p_storage_path text, p_byte_size integer, p_width integer, p_height integer, p_size integer, p_format text, p_change_summary text, p_fingerprint_inputs jsonb)|c357fb85a764036551d42aebda49dd35
+function.body|record_funnel_events(p_events jsonb)|79d5eb3ae2c182860e6c98bf3cd17cdc
+function.body|record_purchase_status_event(p_purchase_id uuid, p_stripe_event_id text, p_new_status text, p_event_type text, p_amount_cents integer, p_occurred_at timestamp with time zone)|1372bb088e8391ac22eaebe8f7214ddd
+function.body|record_user_upload(p_brand_kit_id uuid, p_id uuid, p_kind text, p_storage_path text, p_mime_type text, p_byte_size integer, p_original_name text)|b00e9223614738d6a9597c34d21ba637
+function.body|refresh_brand_kit_site_prompt()|0774eff524575c9a60fc7401cbe6dfae
+function.body|release_generation_credit(p_brand_kit_id uuid)|bcd1dda228ca057bdb35f4b6687a226c
+function.body|request_brand_asset_upload(p_brand_kit_id uuid, p_key text, p_fingerprint text, p_size integer, p_format text)|8565f0be3860c17b4ac811b93205c97f
+function.body|request_user_upload(p_brand_kit_id uuid, p_kind text, p_mime_type text, p_byte_size integer)|7b20321bcada05645461edb5752e123a
+function.body|reserve_content_image(p_brand_kit_id uuid, p_month date, p_cost_cents integer)|227237554fdafeb26530e958f38f9baf
+function.body|reserve_image_regeneration(p_brand_kit_id uuid, p_cost_cents integer)|ea88eedc8b1b32a9361cd79d6cb57722
+function.body|restore_brand_kit(p_brand_kit_id uuid)|8d0089e8601bfe37897dc64efeeec09f
+function.body|retire_seed_clamp_notes()|9d703deecbc9061fef46f39ea98f7130
+function.body|rls_auto_enable()|58249bb7e7ad29ddb07a33b2d61f4a16
+function.body|section_type_fields_valid(p jsonb)|29052ba5d30c1104addfb60614418293
+function.body|seed_launch_checklist(p_brand_kit_id uuid)|8608dae00025d884c5c9a9dc62dd770d
+function.body|seed_site_spec(p_brand_kit_id uuid)|9d2c6ad98963dff695c1d44728bf1440
+function.body|set_content_checkin(p_brand_kit_id uuid, p_month date, p_sessions_theme text, p_taking_clients text, p_happening text)|f53fb83eb886615a775fb3d1a3840ff5
+function.body|set_content_preferences(p_brand_kit_id uuid, p_cadence_per_week smallint, p_accepted_registers text[], p_off_limits text)|9021983b35a2d77c2e73a3a9ef89e922
+function.body|set_launch_step(p_brand_kit_id uuid, p_key text, p_status text)|a6d6a7db5d982cb5c2876a3bbc492f9d
+function.body|set_limit(real)|0ecc3e27be7f9c8103dbb3707f835095
+function.body|set_updated_at()|9ea5fd0cca29cf2505b6e391a2fb1a57
+function.body|settle_content_image(p_brand_kit_id uuid, p_month date, p_cost_cents integer, p_succeeded boolean)|6db21a4240068c9af19f9752facfc822
+function.body|settle_image_regeneration(p_brand_kit_id uuid, p_cost_cents integer, p_succeeded boolean)|15c18138f62eb8a8c1f52dbb21de2eaa
+function.body|show_limit()|4c2e62b6a66772a0544f7161c65f58d9
+function.body|show_trgm(text)|e4bc335cf26250af2f457dfff43a1a6a
+function.body|similarity(text, text)|c2134f9738d7908e38a522cea03ed9b6
+function.body|similarity_dist(text, text)|9712e0aa0bc8ac268eaf05a352f24f76
+function.body|similarity_op(text, text)|93cceab9949d9952875da211b99a0ba6
+function.body|site_catalog()|3c84d6358e40e7168b75dcf7757ffd1b
+function.body|site_output_catalog_version()|8b19186fa86bbdce61ac0c37c9d2f7ae
+function.body|site_output_fill(p_template text, p_vars jsonb)|f3032848a2ef3b8a3320540d0e4effc2
+function.body|site_output_fragments(p_target text)|e7672322fd2de2fe445ac2fc6bc3615c
+function.body|site_output_get(p_brand_kit_id uuid, p_target text, p_format text)|591c7f7bc74dde342ae9c62535f17352
+function.body|site_output_mark_copied(p_brand_kit_id uuid)|f0d705532adf197cd2bc8fa02c6784bf
+function.body|site_output_step_title_count(p_title text)|9bb4650b17c7a84a0500e8cbdda7d92d
+function.body|site_spec_accent_try(p_primary text, p_secondary text, p_light_neutral text, p_deg numeric, p_check_distance boolean)|39d782bef770b5007812a2e6674f1d7f
+function.body|site_spec_clamp_note(p_key text, p_original text, p_max integer)|56196a625a2396a0ac615111d8a8dc65
+function.body|site_spec_constraint_lines(p_spec jsonb, p_frag jsonb)|ef61b318da88943d972f39c0dc719293
+function.body|site_spec_contrast(p_spec jsonb)|d518b51539d4953b7db9ffe8cae5ac98
+function.body|site_spec_contrast_level(p_ratio numeric)|af415d8ec33c26646919043ad0010e3b
+function.body|site_spec_contrast_ratio(p_fg text, p_bg text)|1dbbaa526f6d0870aa898e910c190eed
+function.body|site_spec_copy_blocks(p_spec jsonb)|137294b32503cfe2c60e1b1aa23e2871
+function.body|site_spec_credential_line(p_details jsonb, p_frag jsonb)|c4d2351b89a60c0969f0c32ce754796c
+function.body|site_spec_cta_ink(p_primary_hex text, p_dark_neutral_hex text)|5ec8771d386686dd10e286114834c4b3
+function.body|site_spec_cta_target_url_valid(p jsonb)|bb665de2d8a401cb5f0a39358459474d
+function.body|site_spec_curated_accent(p_palette jsonb)|e3ddedc554f0641aef9c84430e5e3e2c
+function.body|site_spec_default_pages(p_specialties text[], p_personas text[])|acd387e800b54d955202c68c9953c075
+function.body|site_spec_default_target(p_brand_kit_id uuid)|e0c35082441223f4595de31ae2b15ad9
+function.body|site_spec_delta_e(p_a text, p_b text)|e00335d67bbef8891ef21d9c09140209
+function.body|site_spec_derive_accent(p_primary text, p_secondary text, p_light_neutral text)|e2e59d8ca6e9a5ebf29c745688e2c013
+function.body|site_spec_diff(p_spec jsonb)|fe47b39d9a12a96284948e77c5a78066
+function.body|site_spec_entitlement_error(p_brand_kit_id uuid)|03e19e4c70cbf18560cc2b20292aa195
+function.body|site_spec_envelope(p_row jsonb)|58eb2628ded87534127ebc0eca2fd724
+function.body|site_spec_error(p_code text, p_message text, p_field text)|7072df32029ae0bb62a7ea58e384bfcd
+function.body|site_spec_first_overlong_field(p_pages jsonb)|1490b86309cf871338fda2339e4f9618
+function.body|site_spec_fix_contrast(p_brand_kit_id uuid, p_pair_id text)|1257783dacde26079fb965e1fbc447c3
+function.body|site_spec_get(p_brand_kit_id uuid)|6ba44d5f2e6b487e799ab0f7faff85b5
+function.body|site_spec_hero_lengths_valid(p jsonb)|1739758c5c2683801d6f7b7d5cb60e7c
+function.body|site_spec_hero_valid(p jsonb)|e06ebe7698fd93dd4a902c3fa37f9328
+function.body|site_spec_hex_to_hsl(p_hex text)|52d4a64e8888f40665f7471b007b2719
+function.body|site_spec_hsl_to_hex(p_h numeric, p_s numeric, p_l numeric)|f408869e77ca57c20c5c2df5d6b01cb1
+function.body|site_spec_hue_tolerance(p_saturation numeric)|8aee9b81c1bc80fc7ee5bb05e7a9c111
+function.body|site_spec_identity_lines(p_spec jsonb, p_frag jsonb)|ebb97258f462f9a335619eaa7b89677b
+function.body|site_spec_lab(p_hex text)|235c501e0ba2da4fe01f64f61fe30e25
+function.body|site_spec_limits()|5a6d98bcac4c219e9b463c119b754a02
+function.body|site_spec_output(p_spec jsonb, p_target text)|7747d2605606c04e509be8a410b5fd12
+function.body|site_spec_output_prompt(p_spec jsonb, p_target text)|1e38e8537e46639043a90fa657971861
+function.body|site_spec_output_render(p_spec text, p_output jsonb, p_markdown boolean)|50639271308dd9fa5b07864b9a513913
+function.body|site_spec_output_setup_sheet(p_spec jsonb, p_target text)|4daa1175cd3ae60c311bc592e0198580
+function.body|site_spec_page_keys()|56425006e379cdd503a8ccf8318898c7
+function.body|site_spec_pages_copy(p_pages jsonb)|1d4fc0f27cb75c780d7e53426bf09c05
+function.body|site_spec_pages_lengths_valid(p jsonb)|271c4b2cf79b7678cffc0a3dddd3c4da
+function.body|site_spec_pages_skeleton(p_pages jsonb)|53924debd8b21f5abe743c07dad56414
+function.body|site_spec_pages_valid(p jsonb)|5922c74e45be6778435fb90c8bc30d2b
+function.body|site_spec_palette_role(p_palette jsonb, p_role text)|28e1577f4bf3920423f4c278b69fc844
+function.body|site_spec_patch(p_brand_kit_id uuid, p_patch jsonb)|43d96a6dc7622135fe5e0cd1548dd7f7
+function.body|site_spec_patchable_keys()|2c13b09794f35164cb1bd17e8b254598
+function.body|site_spec_practice_detail_keys()|e8de52674ff75aaa4b250d9329718797
+function.body|site_spec_practice_details_valid(p jsonb)|47f12918a8b7a319060687555df8de1b
+function.body|site_spec_preview_model(p_spec jsonb)|4d45c1c78ac0c2be3bea4f7e63c687a0
+function.body|site_spec_relative_luminance(p_hex text)|7e2b61adab7bab24c0c09325e4e5ec44
+function.body|site_spec_render_field(p_field jsonb, p_value jsonb)|dc88b200bea2d4b7023c4ebde6161be8
+function.body|site_spec_render_field_or_null(p_field jsonb, p_value jsonb)|7d7ca223f7e5862acade83401186c9c8
+function.body|site_spec_reset(p_brand_kit_id uuid, p_scope text)|4dd5faaf60b8f22c3801b6234e22abd1
+function.body|site_spec_retired_clamp_keys(p_patch jsonb)|05b52a09063a1da20e779d1b80ade139
+function.body|site_spec_section_fields(p_spec jsonb, p_section jsonb)|020f988b9836f94a1b38ffafa594da6a
+function.body|site_spec_section_types()|c2abba2220d64d4864caa8728edeec16
+function.body|site_spec_seed_clamped_valid(p jsonb)|5c32167dcd51247af49e236a7ecedc81
+function.body|site_spec_seed_values(p_brand_kit_id uuid)|c8ae541e40cf8e6e2ddc83db3b68d7be
+function.body|site_spec_set_target(p_brand_kit_id uuid, p_target text)|b055338d755f140f60ae7dd5660d75c7
+function.body|site_spec_structure_lines(p_spec jsonb, p_frag jsonb)|96ea09dbeef4a263097e88bddf056b82
+function.body|site_spec_suggest_hex(p_move_hex text, p_fixed_hex text, p_target numeric)|b1687f4379ee82251beaa296c8760ebc
+function.body|site_spec_text_variant(p_brand_hex text, p_paper_hex text)|7ec70304feb8795802cbaae6b1437796
+function.body|site_spec_token_lines(p_spec jsonb, p_frag jsonb)|17cdba9a67455c854c673d56eb190935
+function.body|site_spec_variant_of(p_spec jsonb, p_role text)|bbdce481235a763f4eaad63217e70418
+function.body|site_spec_voice_guide(p_spec jsonb)|f320f58300d60cc0e3ea7f5e5cbb8783
+function.body|site_spec_voice_lines(p_spec jsonb, p_frag jsonb)|85d15bc08e973a93796f8784c9872326
+function.body|site_specs_set_color_labels()|c6c97e198a1c1efa6527ab188912fe5c
+function.body|strict_word_similarity(text, text)|ee45a2ab384e122787c477314d32dfc6
+function.body|strict_word_similarity_commutator_op(text, text)|f3c27cc9a03570d0a57fd78ffc616aa3
+function.body|strict_word_similarity_dist_commutator_op(text, text)|3dfd12cf4e11fbb885827250d340c492
+function.body|strict_word_similarity_dist_op(text, text)|f82eb930eabec53f64225f36bbbec25d
+function.body|strict_word_similarity_op(text, text)|e2aab7ed586ee17e52955f3340ef44f1
+function.body|sync_notifications(p_brand_kit_id uuid)|070cb2c50db983c907096fe94d5e66d1
+function.body|truncate_on_word_boundary(p_text text, p_max integer)|34068bb00c9a482d36f02a6439afca27
+function.body|update_content_item(p_id uuid, p_patch jsonb)|614b1b58ecf6d2875f8e019f21a19c21
+function.body|user_uploads_error(p_code text)|8ec391baf3709ebefbf3c312e950cd0e
+function.body|user_uploads_quota_error(p_brand_kit_id uuid, p_byte_size integer, p_replacing uuid)|0e9ae0c440f9baa2ab8f2df5cb764556
+function.body|user_uploads_setting_int(p_key text, p_fallback integer)|d9801df51d03c5c8b3ed4eb971e60739
+function.body|usp_banned_phrases_check(p_text text)|955bb2c47395448ef5c9702b54538388
+function.body|usp_check_distinct(p_scope_key text, p_statement text, p_exclude_brief uuid)|c7d00d8ca64c3b4cb6b5aa0c95859ebb
+function.body|usp_fingerprint_confirm(p_brief_id uuid, p_statement text)|3570b9fcf094d17dff499ef7150efc86
+function.body|usp_normalize(p_text text)|6e0a320bbc6ba80b2550b8bbc2c27b72
+function.body|word_similarity(text, text)|e8426ac088dd2282fcee1dcf6cbe72e0
+function.body|word_similarity_commutator_op(text, text)|d18bc4eee8ca082d515e7cff6ce65211
+function.body|word_similarity_dist_commutator_op(text, text)|02eaec0ce535a90a338fb5ad7dbbd0e5
+function.body|word_similarity_dist_op(text, text)|211ec4576f43590d12ca73f3654a71b4
+function.body|word_similarity_op(text, text)|4e71be6933b5cf5f71638bce7143d020
 function|anon_spend_today()|37cde0f534cb778510c35863b492b023
 function|anon_token_hash()|6ef9a88504193e8548f6cfca5b6ef3c6
 function|app_search(p_brand_kit_id uuid, p_query text)|3923dfd2c7233e0c110ed10a13a5ae27
@@ -825,7 +1058,7 @@ function|brand_images_enabled()|37e256566648f65bd4f5b07293bd1707
 function|brand_images_mark_failed(p_image_id uuid, p_claim_token timestamp with time zone, p_status text, p_failure_reason text)|46619b22e76133449e7f5c1117e9a650
 function|brand_images_mark_ready(p_image_id uuid, p_claim_token timestamp with time zone, p_storage_path text, p_byte_size integer, p_cost_cents integer, p_model text, p_quality text, p_size text)|25276d898c7474ba6e7eeb7c9037f545
 function|brand_images_path(p_brand_kit_id uuid, p_image_fingerprint text, p_slot text)|7778b199b65f292da26c0786823ff9ab
-function|brand_images_setting_int(p_key text, p_fallback integer)|2cbb0c4b3acdfc3d0324e278c99fd97d
+function|brand_images_setting_int(p_key text, p_fallback integer)|bacfd3fc817b2260d020ffe3b3c7f52a
 function|brand_kit_asset_path_owner(p_name text)|b4ca22ff140f176bed09ef3d6cf12559
 function|brand_kit_direction_contrast(p_direction jsonb)|54b37b9594afa92f44b80306a3215506
 function|brand_kit_direction_palette_hash(p_palette jsonb)|5488ad109d0a18b39943376be0f8ff16
@@ -849,6 +1082,7 @@ function|brief_completed_steps_renumber_up(p_steps smallint[])|bfa8abc6099647a25
 function|brief_preview(p_brief_id uuid)|75f864b2d995cf47f4119b8d4696a792
 function|brief_progress_step_renumber_up(p_progress integer)|7224ff6c835fd1429a69fb13f286d083
 function|brief_step_renumber_up(p_step smallint)|68d7170718e2ca615c6e7db2c1d8c878
+function|caller_is_the_database()|62c3f1aee0cbc64f2c0305f2aba2c67e
 function|comp_access_active()|0c39cf3807bc56253cc2e3aa03e75555
 function|comp_grant_active(p_user_id uuid)|f65f8542d3ef11cb73714ca7ac596181
 function|comp_grant_credits(p_user_id uuid)|50009ab8b5d221058e8071c44fdcb408
@@ -923,7 +1157,7 @@ function|project_briefs_usp_options_valid(p jsonb)|c5b59646404f5c5a12a943ca2e2a7
 function|project_briefs_validate_how_you_work_refs()|41924fa614ed1e7bf7fad00cb5104ab8
 function|project_briefs_validate_selected_usp_id()|d047980bb231039372fa1b4c62874c5c
 function|projects_bind_organization()|efad30c2193905a5e5cae57f80746773
-function|purchase_status_before(p_purchase_id uuid, p_status text)|b2436eaa2c0cad5ec3947100e986996a
+function|purchase_status_before(p_purchase_id uuid, p_status text)|3a8193a373c1c3bdad7216821ba6448d
 function|purchase_status_events_advance()|309fa4b3a0f7b355c5202a5663a2d137
 function|purchase_status_events_append_only()|6e94302c3aacd83a54b8c80759cb645a
 function|purchase_status_events_apply()|7b40772cd98be02f7af108708896e225
@@ -976,7 +1210,7 @@ function|site_spec_cta_ink(p_primary_hex text, p_dark_neutral_hex text)|249eefca
 function|site_spec_cta_target_url_valid(p jsonb)|72ddb7681f998974662bf79059bebebc
 function|site_spec_curated_accent(p_palette jsonb)|77f5e4f4a51ed364f70b4c909fd99f9d
 function|site_spec_default_pages(p_specialties text[], p_personas text[])|6d12565b730fc7370dd0ec7f79703a9d
-function|site_spec_default_target(p_brand_kit_id uuid)|ff396777f2284e9a42ca9f2cdc36f44f
+function|site_spec_default_target(p_brand_kit_id uuid)|3970c461db9bccfed5898bb44c680e49
 function|site_spec_delta_e(p_a text, p_b text)|8dd28c9ad4dc2b97f1f81080d565473c
 function|site_spec_derive_accent(p_primary text, p_secondary text, p_light_neutral text)|6f4701d2627d41a7c4e07aa84544be08
 function|site_spec_diff(p_spec jsonb)|33d71a7b3d0e23c70f33c720516a83fa
@@ -1081,6 +1315,7 @@ grant.function|brief_completed_steps_renumber_up(p_steps smallint[])|59a9d60d2cc
 grant.function|brief_preview(p_brief_id uuid)|59a9d60d2ccf51b0c7c03f225c171a7d
 grant.function|brief_progress_step_renumber_up(p_progress integer)|59a9d60d2ccf51b0c7c03f225c171a7d
 grant.function|brief_step_renumber_up(p_step smallint)|59a9d60d2ccf51b0c7c03f225c171a7d
+grant.function|caller_is_the_database()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|comp_access_active()|f440cb7547aafb71bac3b9275ad5f4bd
 grant.function|comp_grant_active(p_user_id uuid)|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|comp_grant_credits(p_user_id uuid)|8dd1771e78316f3d93a564b7d81a4c88

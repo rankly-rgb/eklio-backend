@@ -65,6 +65,38 @@ functions as (
     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
    where n.nspname = 'public'
 ),
+/*
+ * ⚠ THE SAME FUNCTIONS AGAIN, WITH THE COMMENTARY TAKEN OUT.
+ *
+ * `pg_get_functiondef` returns the body exactly as it was stored, comments
+ * included — so a migration file whose comments were edited AFTER it was
+ * applied produces a body that differs from production in prose and not in
+ * behaviour. That is a real divergence (the repository no longer says what
+ * ran) but it is not a behavioural one, and conflating the two would either
+ * cry wolf or hide a genuine difference inside a pile of noise.
+ *
+ * A function that differs in `function` but NOT in `function.body` differs
+ * only in its comments or whitespace. One that differs in both differs in
+ * what it does.
+ *
+ * ⚠ THE NORMALISATION IS APPROXIMATE, AND IN THE UNSAFE DIRECTION: it strips
+ * `--` and block comments without knowing whether they sit inside a string
+ * literal, so a function containing the literal text '--' would be normalised
+ * wrongly and could be made to look equal when it is not. It is therefore only
+ * ever used to EXPLAIN a difference the raw comparison already found, never to
+ * dismiss one on its own.
+ */
+function_bodies as (
+  select 'function.body',
+         p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')',
+         md5(btrim(regexp_replace(
+           regexp_replace(
+             regexp_replace(pg_get_functiondef(p.oid), '/\*.*?\*/', ' ', 'gs'),
+             '--[^\n]*', ' ', 'g'),
+           '\s+', ' ', 'g')))
+    from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+   where n.nspname = 'public'
+),
 -- ⚠ GRANTS ARE NORMALISED, NOT DUMPED. `relacl` is an array whose ORDER is an
 -- artefact of the order grants were issued, so two identical permission sets
 -- compare unequal if dumped raw. aclexplode + sort is the comparable form.
@@ -113,6 +145,7 @@ everything as (
   union all select * from indexes
   union all select * from triggers
   union all select * from functions
+  union all select * from function_bodies
   union all select * from table_grants
   union all select * from function_grants
   union all select * from columns
