@@ -131,7 +131,23 @@ Trois conséquences visibles dans le schéma :
 | Ref | Région | Rôle |
 |---|---|---|
 | `fobgdsupyfslxbswfuay` | `us-east-1` | **actif** — cible de toutes les migrations |
-| `enolgemfqeajrwpftppm` | `eu-west-1` | ancien projet, données de test. Conservé intact comme filet de sécurité. **Ne jamais y pousser de migration.** |
+| `enolgemfqeajrwpftppm` | `eu-west-1` | **à supprimer** — artefact d'avant-migration. **Ne jamais y pousser de migration.** |
+
+⚠ **`enolgemfqeajrwpftppm` n'est pas un filet de sécurité, et cette ligne a
+longtemps dit le contraire.** C'est un artefact d'avant-migration : créé le
+2026-08-08, construit à la main dans l'éditeur SQL, sans aucun registre
+`supabase_migrations`, figé depuis le 2026-08-16, et ne contenant que dix
+lignes de données de test de l'auteur, antérieures au pivot vers les
+thérapeutes américaines. Il est antérieur à **toutes** les décisions de schéma
+prises depuis le 23 août : il ne pourrait rien restaurer.
+
+Le vrai filet de sécurité est le *point-in-time recovery* du plan Pro sur le
+projet de production. Le contenu complet de eu-west-1 est conservé dans
+[`supabase/fixtures/eu_west_1_final_state.json`](supabase/fixtures/eu_west_1_final_state.json) ;
+le projet lui-même doit être supprimé depuis le dashboard (voir `FINDINGS.md`
+côté frontend — et **ne pas suivre** le conseil de l'API de pause, qui
+demande un passage en free tier : le plan est réglé au niveau de
+l'organisation, donc cela emporterait la production avec lui).
 
 ## Migrations
 
