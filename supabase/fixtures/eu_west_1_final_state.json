@@ -1,0 +1,202 @@
+{
+  "_provenance": {
+    "project_ref": "enolgemfqeajrwpftppm",
+    "project_name": "eklio-backend",
+    "region": "eu-west-1",
+    "project_created_at": "2026-08-08T13:56:03Z",
+    "captured_at": "2026-09-12T14:28:55Z",
+    "last_write_in_database": "2026-08-16T20:01:12Z",
+    "what_this_is": "Final and complete state of the public schema of the eu-west-1 project, captured immediately before decommissioning. This is the pre-migration artefact: built by hand through the SQL editor, never via migrations, holding only the author's own August test data from the original French freelance-oriented product, before the pivot to US therapists in private practice. It predates every schema decision taken from 23 August onward and could restore nothing.",
+    "capture_method": "Table list derived from information_schema rather than hand-written; one json_agg per table; the result was read from the tool-result file on disk rather than transcribed.",
+    "not_covered_here": [
+      "auth.users - 1 row, the author's own account (last sign-in 2026-08-22), plus 1 identity, 9 sessions, 13 refresh tokens",
+      "storage.buckets and storage.objects - both zero rows, nothing to capture",
+      "the schema itself - already captured in supabase/migrations/20260823000000_reference_schema_from_live.sql",
+      "realtime / vault / auth internal tables - Supabase-managed, no Eklio data (vault.secrets is empty)",
+      "edge functions - none deployed"
+    ]
+  },
+  "tables": {
+    "profiles": [
+      {
+        "id": "48b118ec-7b20-4a6a-b439-6ff714c6d572",
+        "email": "nainarahal@gmail.com",
+        "full_name": null,
+        "created_at": "2026-08-15T07:19:38.2545+00:00",
+        "updated_at": "2026-08-15T07:19:38.2545+00:00"
+      }
+    ],
+    "projects": [
+      {
+        "id": "6a1bd322-12fa-4b37-8879-dda6eb604d1a",
+        "name": "Eklio",
+        "metier": null,
+        "status": "brief",
+        "user_id": "48b118ec-7b20-4a6a-b439-6ff714c6d572",
+        "created_at": "2026-08-15T07:25:41.073845+00:00",
+        "updated_at": "2026-08-15T07:25:41.073845+00:00",
+        "current_step": 1
+      },
+      {
+        "id": "792fcb3f-b863-42f7-9e11-4fed02c1a4b5",
+        "name": "Eklio 2",
+        "metier": "freelance créa/tech",
+        "status": "directions",
+        "user_id": "48b118ec-7b20-4a6a-b439-6ff714c6d572",
+        "created_at": "2026-08-15T07:37:55.755623+00:00",
+        "updated_at": "2026-08-16T20:01:12.073667+00:00",
+        "current_step": 8
+      }
+    ],
+    "brand_kits": [],
+    "directions": [
+      {
+        "id": "367ee57d-a007-4f8a-bea9-ff6a525832ea",
+        "name": "Encre Vivante",
+        "palette": {
+          "accent": "#FAFAF7",
+          "primaire": "#181614",
+          "secondaire": "#57534E",
+          "neutre_clair": "#E7E5E1",
+          "neutre_fonce": "#332F2C"
+        },
+        "position": 3,
+        "created_at": "2026-08-16T20:01:12.015926+00:00",
+        "project_id": "792fcb3f-b863-42f7-9e11-4fed02c1a4b5",
+        "updated_at": "2026-08-16T20:01:12.015926+00:00",
+        "description": "Un monochrome plus dense et plus habité, où les gris chauds et l'encre profonde créent de la matière plutôt que de la froideur. Cette direction humanise la rigueur : elle s'adresse à des entrepreneurs indépendants qui veulent du caractère sans tomber dans le corporate. Contemporaine et généreuse, elle laisse respirer les contenus tout en gardant une signature typographique forte.",
+        "is_selected": false,
+        "typographie_corps": "Work Sans",
+        "typographie_titre": "Poppins"
+      },
+      {
+        "id": "513b0013-27d4-431a-bfe2-eba137e4fd86",
+        "name": "Signal Net",
+        "palette": {
+          "accent": "#FFFFFF",
+          "primaire": "#0A0A0A",
+          "secondaire": "#1F1F1F",
+          "neutre_clair": "#F4F4F2",
+          "neutre_fonce": "#3D3D3D"
+        },
+        "position": 1,
+        "created_at": "2026-08-16T20:01:12.015926+00:00",
+        "project_id": "792fcb3f-b863-42f7-9e11-4fed02c1a4b5",
+        "updated_at": "2026-08-16T20:01:12.015926+00:00",
+        "description": "Une personnalité affirmée et chirurgicale, qui parle le langage de la précision plutôt que celui du conseil. Le noir profond et le blanc pur s'affrontent en aplats francs, sans demi-teinte, pour traduire la rigueur et l'exigence du sur-mesure. C'est la direction la plus structurée : elle rassure les indépendants qui veulent une identité immédiatement exploitable sur tous leurs supports.",
+        "is_selected": false,
+        "typographie_corps": "Inter",
+        "typographie_titre": "Space Grotesk"
+      },
+      {
+        "id": "e41c1d13-9deb-45c5-b0c0-403e5368be88",
+        "name": "Contraste Maximal",
+        "palette": {
+          "accent": "#141414",
+          "primaire": "#000000",
+          "secondaire": "#FFFFFF",
+          "neutre_clair": "#EDEDED",
+          "neutre_fonce": "#2B2B2B"
+        },
+        "position": 2,
+        "created_at": "2026-08-16T20:01:12.015926+00:00",
+        "project_id": "792fcb3f-b863-42f7-9e11-4fed02c1a4b5",
+        "updated_at": "2026-08-16T20:01:12.015926+00:00",
+        "description": "La direction la plus audacieuse : titres énormes, noir absolu contre blanc éclatant, aucune zone grise. Elle transmet l'énergie brute d'une marque qui assume son statut d'application unique en France et refuse le vocabulaire tiède des agences. Idéale pour un site de vente en ligne où chaque écran doit frapper et convertir.",
+        "is_selected": false,
+        "typographie_corps": "Archivo",
+        "typographie_titre": "Archivo Expanded"
+      }
+    ],
+    "brief_answers": [],
+    "project_briefs": [
+      {
+        "data": {},
+        "project_id": "6a1bd322-12fa-4b37-8879-dda6eb604d1a",
+        "updated_at": "2026-08-15T07:25:41.179802+00:00",
+        "completed_steps": []
+      },
+      {
+        "data": {
+          "stade": "lancement",
+          "metier": "freelance",
+          "emotions": [
+            "energie",
+            "rigueur",
+            "audace"
+          ],
+          "objections": [
+            "peur_du_resultat"
+          ],
+          "contraintes": "aucune",
+          "a_eviter_ton": "consultant, agence",
+          "alternatives": "font appel à un graphique",
+          "nom_activite": "Eklio 2",
+          "objectif_site": "vente_en_ligne",
+          "contexte_achat": "projet_reflechi",
+          "action_attendue": "Voir la démo",
+          "differenciation": "application unique en france",
+          "probleme_resolu": "absence d'identité visuelle chez les entrepreneurs faisant appel à nous",
+          "resultat_client": "une identité claire et actionnable sur tous ses supports et un prompt clé en main pour générer son site web",
+          "niveau_caractere": "affirme",
+          "niveau_contraste": "marque",
+          "offre_principale": "création de marques sur-mesure",
+          "pages_souhaitees": [
+            "accueil",
+            "tarifs",
+            "contact",
+            "blog"
+          ],
+          "cible_description": "entrepreneurs indépendants et freelance",
+          "couleurs_a_eviter": "aucune couleur, thème en noir et blanc",
+          "preuves_disponibles": [
+            "portfolio"
+          ],
+          "style_typographique": "sans_serif_geometrique",
+          "ton_sobre_audacieux": 4,
+          "familles_chromatiques": [
+            "monochrome_noir_blanc"
+          ],
+          "ton_minimal_expressif": 2,
+          "ton_classique_contemporain": 5,
+          "ton_chaleureux_professionnel": 4
+        },
+        "project_id": "792fcb3f-b863-42f7-9e11-4fed02c1a4b5",
+        "updated_at": "2026-08-15T09:41:35.925672+00:00",
+        "completed_steps": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      }
+    ],
+    "generation_credits": [
+      {
+        "id": "79b3937b-ad21-451d-bc7f-59da5b6b3d37",
+        "has_paid": false,
+        "created_at": "2026-08-15T07:37:55.755623+00:00",
+        "project_id": "792fcb3f-b863-42f7-9e11-4fed02c1a4b5",
+        "updated_at": "2026-08-15T07:37:55.755623+00:00",
+        "directions_limit": 3,
+        "regenerations_used": 0,
+        "regenerations_limit": 1,
+        "directions_generated": 0
+      },
+      {
+        "id": "e6c81477-c3ac-4cb0-a715-49241365af90",
+        "has_paid": false,
+        "created_at": "2026-08-15T07:25:41.073845+00:00",
+        "project_id": "6a1bd322-12fa-4b37-8879-dda6eb604d1a",
+        "updated_at": "2026-08-15T07:25:41.073845+00:00",
+        "directions_limit": 3,
+        "regenerations_used": 0,
+        "regenerations_limit": 1,
+        "directions_generated": 0
+      }
+    ]
+  }
+}
