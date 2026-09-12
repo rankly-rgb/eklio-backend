@@ -1,4 +1,4 @@
-# Fingerprint of PRODUCTION (project fobgdsupyfslxbswfuay), recorded 2026-09-12, refreshed after 20260912145638.
+# Fingerprint of PRODUCTION (project fobgdsupyfslxbswfuay), recorded 2026-09-12, refreshed after 20260912153157.
 #
 # Produced by supabase/tests/helpers/schema_fingerprint.sql. Verified on the way
 # in: the canonical hash was recomputed locally from these lines and matched the
@@ -12,17 +12,15 @@
 #   psql "$PROD_URL" -At -f supabase/tests/helpers/schema_fingerprint.sql \
 #     | sort > supabase/tests/helpers/schema_fingerprint.production.txt
 #
-# 1954 objects. Canonical hash (order-independent, collation-immune):
-#   md5(concat of sorted md5-per-line) = 11251e9f74ecd93d50a38ea408a32a0b
+# 1965 objects. Canonical hash (order-independent, collation-immune):
+#   md5(concat of sorted md5-per-line) = aab9b6e7f24e0321993badb3db728f37
 # The database reported that same value for the query in schema_fingerprint.sql,
 # which is how this file is known to be a copy and not a retyping.
 #
-# Change since the earlier 2026-09-12 snapshot (1940 objects,
-# 2cc83fa7926a0da2233b76fc1aac445c): 14 lines added, 0 removed, all of
-# them 20260912145638 — the four ruling columns, their constraints and index,
-# the `brand_kit_charter_is_own_practice` trigger and its function, and that
-# function's grant row. Checked line by line rather than inferred from the
-# count: a refresh touching anything else would mean the helper had drifted.
+# Change since the 1954-object snapshot (11251e9f74ecd93d50a38ea408a32a0b):
+# 11 added, 0 removed — the five trial-notice columns on
+# `subscriptions`, their three constraints, and `unwarned_trials(integer)` with
+# its body and grant rows. Checked line by line, not inferred from the count.
 column|anon_generation_counters.bucket|bfd7a34b0a0954d9eb54990fcc6ca449
 column|anon_generation_counters.day|507d91db1cacfe4362f078375f6b42b5
 column|anon_generation_counters.used|25f2c985f13dbb4b044e6947b5be27cf
@@ -503,7 +501,12 @@ column|subscriptions.status|bfd7a34b0a0954d9eb54990fcc6ca449
 column|subscriptions.stripe_price_id|44735fcd1e7f687a9ac2130e871687ab
 column|subscriptions.stripe_subscription_id|bfd7a34b0a0954d9eb54990fcc6ca449
 column|subscriptions.trial_end|3b78bc2a0ac0f96164a997cdf0a40dd6
+column|subscriptions.trial_extensions|25f2c985f13dbb4b044e6947b5be27cf
+column|subscriptions.trial_guard_acted_at|3b78bc2a0ac0f96164a997cdf0a40dd6
+column|subscriptions.trial_notice_accepted_at|3b78bc2a0ac0f96164a997cdf0a40dd6
+column|subscriptions.trial_notice_provider_id|44735fcd1e7f687a9ac2130e871687ab
 column|subscriptions.trial_notice_sent_for|3b78bc2a0ac0f96164a997cdf0a40dd6
+column|subscriptions.trial_notice_state|44735fcd1e7f687a9ac2130e871687ab
 column|subscriptions.updated_at|1f4d4e4ad4c5de3894870bee567ea8a7
 column|subscriptions.user_id|44a3ae17bd44ec9ab36d03e5d8b14002
 column|tone_cards.active|dae01412d6b86590b78a042d88105c2c
@@ -829,6 +832,9 @@ constraint|stripe_events.stripe_events_pkey|8d5c9d3e5748af72a0544cda8e73efbd
 constraint|subscriptions.subscriptions_pkey|4c6419b3704337bbfe50f018842a9ad3
 constraint|subscriptions.subscriptions_status_check|a34827a25f9e44db185ecbaa00e2bf4d
 constraint|subscriptions.subscriptions_stripe_subscription_id_key|4c452bfc718f42ef4f5e84e50065271a
+constraint|subscriptions.subscriptions_trial_extensions_sane|d4332531361f4355ec489426c3a72d80
+constraint|subscriptions.subscriptions_trial_notice_state_check|d26283be994a186cee37797e76e1b840
+constraint|subscriptions.subscriptions_trial_notice_state_needs_a_date|afe6850da9ad3913e51ce5913d87d47b
 constraint|subscriptions.subscriptions_user_id_fkey|f52ea365e97de6e8cafd675b03a940e4
 constraint|subscriptions.subscriptions_user_id_key|180ab7ada944bc4434863ec0e09cc727
 constraint|tone_cards.tone_cards_keywords_check|9856186b7b30955f6e1be6e201c2a5aa
@@ -1071,6 +1077,7 @@ function.body|strict_word_similarity_dist_op(text, text)|f82eb930eabec53f64225f3
 function.body|strict_word_similarity_op(text, text)|e2aab7ed586ee17e52955f3340ef44f1
 function.body|sync_notifications(p_brand_kit_id uuid)|070cb2c50db983c907096fe94d5e66d1
 function.body|truncate_on_word_boundary(p_text text, p_max integer)|34068bb00c9a482d36f02a6439afca27
+function.body|unwarned_trials(p_within_days integer)|94a5e723bbaa0a7b3e43a1a11d0193eb
 function.body|update_content_item(p_id uuid, p_patch jsonb)|614b1b58ecf6d2875f8e019f21a19c21
 function.body|user_uploads_error(p_code text)|8ec391baf3709ebefbf3c312e950cd0e
 function.body|user_uploads_quota_error(p_brand_kit_id uuid, p_byte_size integer, p_replacing uuid)|0e9ae0c440f9baa2ab8f2df5cb764556
@@ -1308,6 +1315,7 @@ function|strict_word_similarity_dist_op(text, text)|bc660db5cc387e8821747f1ecfb3
 function|strict_word_similarity_op(text, text)|fa21d1ae2c217ba161bb3f7777e5e020
 function|sync_notifications(p_brand_kit_id uuid)|95ebc8bb97b4f901db12861a73553825
 function|truncate_on_word_boundary(p_text text, p_max integer)|145dbb6d73973a552765a00ddbba97a7
+function|unwarned_trials(p_within_days integer)|e01f6075cad948f10c1f20bac4a7f148
 function|update_content_item(p_id uuid, p_patch jsonb)|9cae8fc0fce4af0c7bb25718a2a4d269
 function|user_uploads_error(p_code text)|4d57b61057bdc276c632b9ad6a151f12
 function|user_uploads_quota_error(p_brand_kit_id uuid, p_byte_size integer, p_replacing uuid)|dac6cc2f0ec34fa9ff1556c7e698d86f
@@ -1545,6 +1553,7 @@ grant.function|strict_word_similarity_dist_op(text, text)|3e03604fcd30712c372b91
 grant.function|strict_word_similarity_op(text, text)|3e03604fcd30712c372b91c0f1455e78
 grant.function|sync_notifications(p_brand_kit_id uuid)|f440cb7547aafb71bac3b9275ad5f4bd
 grant.function|truncate_on_word_boundary(p_text text, p_max integer)|59a9d60d2ccf51b0c7c03f225c171a7d
+grant.function|unwarned_trials(p_within_days integer)|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|update_content_item(p_id uuid, p_patch jsonb)|59a9d60d2ccf51b0c7c03f225c171a7d
 grant.function|user_uploads_error(p_code text)|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|user_uploads_quota_error(p_brand_kit_id uuid, p_byte_size integer, p_replacing uuid)|8dd1771e78316f3d93a564b7d81a4c88
