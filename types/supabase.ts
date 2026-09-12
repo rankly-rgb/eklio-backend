@@ -308,11 +308,15 @@ export type Database = {
       }
       brand_kits: {
         Row: {
+          charter_accepted_at: string | null
+          charter_accepted_state: Json | null
           content: Json
           created_at: string
           deleted_at: string | null
           delivered_seen_at: string | null
           derived_from_charter_kit_id: string | null
+          detached_at: string | null
+          detached_from_charter_kit_id: string | null
           direction_id: string | null
           directions: Json | null
           ethics_check: Json | null
@@ -333,11 +337,15 @@ export type Database = {
           voice_guide: Json | null
         }
         Insert: {
+          charter_accepted_at?: string | null
+          charter_accepted_state?: Json | null
           content?: Json
           created_at?: string
           deleted_at?: string | null
           delivered_seen_at?: string | null
           derived_from_charter_kit_id?: string | null
+          detached_at?: string | null
+          detached_from_charter_kit_id?: string | null
           direction_id?: string | null
           directions?: Json | null
           ethics_check?: Json | null
@@ -358,11 +366,15 @@ export type Database = {
           voice_guide?: Json | null
         }
         Update: {
+          charter_accepted_at?: string | null
+          charter_accepted_state?: Json | null
           content?: Json
           created_at?: string
           deleted_at?: string | null
           delivered_seen_at?: string | null
           derived_from_charter_kit_id?: string | null
+          detached_at?: string | null
+          detached_from_charter_kit_id?: string | null
           direction_id?: string | null
           directions?: Json | null
           ethics_check?: Json | null
@@ -386,6 +398,13 @@ export type Database = {
           {
             foreignKeyName: "brand_kits_derived_from_charter_kit_id_fkey"
             columns: ["derived_from_charter_kit_id"]
+            isOneToOne: false
+            referencedRelation: "brand_kits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brand_kits_detached_from_charter_kit_id_fkey"
+            columns: ["detached_from_charter_kit_id"]
             isOneToOne: false
             referencedRelation: "brand_kits"
             referencedColumns: ["id"]

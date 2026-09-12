@@ -1,4 +1,4 @@
-# Fingerprint of PRODUCTION (project fobgdsupyfslxbswfuay), recorded 2026-09-12, refreshed after 20260912144121.
+# Fingerprint of PRODUCTION (project fobgdsupyfslxbswfuay), recorded 2026-09-12, refreshed after 20260912145638.
 #
 # Produced by supabase/tests/helpers/schema_fingerprint.sql. Verified on the way
 # in: the canonical hash was recomputed locally from these lines and matched the
@@ -12,18 +12,17 @@
 #   psql "$PROD_URL" -At -f supabase/tests/helpers/schema_fingerprint.sql \
 #     | sort > supabase/tests/helpers/schema_fingerprint.production.txt
 #
-# 1940 objects. Canonical hash (order-independent, collation-immune):
-#   md5(concat of sorted md5-per-line) = 2cc83fa7926a0da2233b76fc1aac445c
+# 1954 objects. Canonical hash (order-independent, collation-immune):
+#   md5(concat of sorted md5-per-line) = 11251e9f74ecd93d50a38ea408a32a0b
 # The database reported that same value for the query in schema_fingerprint.sql,
 # which is how this file is known to be a copy and not a retyping.
 #
-# Change since the 2026-09-11 snapshot (1933 objects, 6ee545cb84dd9189c3ba946f778061b4):
-# seven lines added, none removed, all of them 20260912144121 —
-# `organizations.brand_charter_kit_id` and `brand_kits.derived_from_charter_kit_id`,
-# their two foreign keys, the `brand_kits_charter_is_not_itself` check, and the
-# two partial indexes. The diff was checked line by line, not assumed from the
-# count: a refresh that changed anything else would mean the helper itself had
-# drifted.
+# Change since the earlier 2026-09-12 snapshot (1940 objects,
+# 2cc83fa7926a0da2233b76fc1aac445c): 14 lines added, 0 removed, all of
+# them 20260912145638 — the four ruling columns, their constraints and index,
+# the `brand_kit_charter_is_own_practice` trigger and its function, and that
+# function's grant row. Checked line by line rather than inferred from the
+# count: a refresh touching anything else would mean the helper had drifted.
 column|anon_generation_counters.bucket|bfd7a34b0a0954d9eb54990fcc6ca449
 column|anon_generation_counters.day|507d91db1cacfe4362f078375f6b42b5
 column|anon_generation_counters.used|25f2c985f13dbb4b044e6947b5be27cf
@@ -83,11 +82,15 @@ column|brand_images.status|ace6bd8e916c40f4a123ea5204e9ad27
 column|brand_images.storage_path|44735fcd1e7f687a9ac2130e871687ab
 column|brand_images.updated_at|1f4d4e4ad4c5de3894870bee567ea8a7
 column|brand_images.user_id|48fab12d214b859cc04a8a4228752965
+column|brand_kits.charter_accepted_at|3b78bc2a0ac0f96164a997cdf0a40dd6
+column|brand_kits.charter_accepted_state|75cfa09e88ebe48706483bf199825a4a
 column|brand_kits.content|99540861e5d4a894380d260f2be522c7
 column|brand_kits.created_at|1f4d4e4ad4c5de3894870bee567ea8a7
 column|brand_kits.deleted_at|3b78bc2a0ac0f96164a997cdf0a40dd6
 column|brand_kits.delivered_seen_at|3b78bc2a0ac0f96164a997cdf0a40dd6
 column|brand_kits.derived_from_charter_kit_id|48fab12d214b859cc04a8a4228752965
+column|brand_kits.detached_at|3b78bc2a0ac0f96164a997cdf0a40dd6
+column|brand_kits.detached_from_charter_kit_id|48fab12d214b859cc04a8a4228752965
 column|brand_kits.direction_id|48fab12d214b859cc04a8a4228752965
 column|brand_kits.directions|75cfa09e88ebe48706483bf199825a4a
 column|brand_kits.ethics_check|75cfa09e88ebe48706483bf199825a4a
@@ -556,13 +559,18 @@ constraint|brand_images.brand_images_pkey|4c6419b3704337bbfe50f018842a9ad3
 constraint|brand_images.brand_images_slot_check|a4aaf2f3066f7fd5336cd0371fb34fb8
 constraint|brand_images.brand_images_status_check|648bb3e25072554b0b3e9b05f64735c7
 constraint|brand_images.brand_images_unique_slot|4d79a3107253a309e3c6427392984765
+constraint|brand_kits.brand_kits_charter_accepted_is_object|80a1d3bada2dca7529674eae6081f6ef
+constraint|brand_kits.brand_kits_charter_accepted_pair|d2587b7f03541f03f4a65cda48102bee
 constraint|brand_kits.brand_kits_charter_is_not_itself|d7b9aa955449a58ed49a1478744a6abc
 constraint|brand_kits.brand_kits_derived_from_charter_kit_id_fkey|6dc73dbeabbc5784ec9a39f291e45153
+constraint|brand_kits.brand_kits_detached_from_charter_kit_id_fkey|12a0215dd3dfb437bcb3465af64e9242
+constraint|brand_kits.brand_kits_detached_pair|2bf7af6beb721bd3cbbcb9b003a8da06
 constraint|brand_kits.brand_kits_direction_id_fkey|0cff58211b0644da83542fbc0bebd822
 constraint|brand_kits.brand_kits_directions_contrast_check|e6b3b1d7eef01673b5827c68b105af35
 constraint|brand_kits.brand_kits_directions_rendering_check|47d8a0eeca93c3db148059f8cbac17a8
 constraint|brand_kits.brand_kits_directions_shape_check|a7f5c3d61a025aa86d78c1419cddca4c
 constraint|brand_kits.brand_kits_ethics_check_shape_check|94814c970806a6dca5adcdcbc51e49b0
+constraint|brand_kits.brand_kits_not_detached_from_current_charter|48e9802d30a0e82601d5c680489596c7
 constraint|brand_kits.brand_kits_pkey|4c6419b3704337bbfe50f018842a9ad3
 constraint|brand_kits.brand_kits_project_id_fkey|07f3414b4de8691ee7edea30c01f758f
 constraint|brand_kits.brand_kits_project_id_key|4d5536461431e71ddfa1a4ffd2a451a2
@@ -852,6 +860,7 @@ function.body|brand_images_mark_ready(p_image_id uuid, p_claim_token timestamp w
 function.body|brand_images_path(p_brand_kit_id uuid, p_image_fingerprint text, p_slot text)|f893d1c95d30378cc8a64f65d48284cf
 function.body|brand_images_setting_int(p_key text, p_fallback integer)|3424c3f3456db2feb55f21030631a6a1
 function.body|brand_kit_asset_path_owner(p_name text)|a493d6f1ca2357fc22b718456308053d
+function.body|brand_kit_charter_is_own_practice()|e1d1ad35c803fa3d769e532fafb3c483
 function.body|brand_kit_direction_contrast(p_direction jsonb)|8e71451da63d1b96de7210207d41b8ff
 function.body|brand_kit_direction_palette_hash(p_palette jsonb)|70876038542472eb3889867910d5054e
 function.body|brand_kit_directions_contrasted(p jsonb)|ec7625df78f226383e4fa72b00a440ae
@@ -1088,6 +1097,7 @@ function|brand_images_mark_ready(p_image_id uuid, p_claim_token timestamp with t
 function|brand_images_path(p_brand_kit_id uuid, p_image_fingerprint text, p_slot text)|7778b199b65f292da26c0786823ff9ab
 function|brand_images_setting_int(p_key text, p_fallback integer)|bacfd3fc817b2260d020ffe3b3c7f52a
 function|brand_kit_asset_path_owner(p_name text)|b4ca22ff140f176bed09ef3d6cf12559
+function|brand_kit_charter_is_own_practice()|851ee4581eec923c0d51ffea9eb15665
 function|brand_kit_direction_contrast(p_direction jsonb)|54b37b9594afa92f44b80306a3215506
 function|brand_kit_direction_palette_hash(p_palette jsonb)|5488ad109d0a18b39943376be0f8ff16
 function|brand_kit_directions_contrasted(p jsonb)|b6ba219ce48123995b826b29cdde2ff0
@@ -1324,6 +1334,7 @@ grant.function|brand_images_mark_ready(p_image_id uuid, p_claim_token timestamp 
 grant.function|brand_images_path(p_brand_kit_id uuid, p_image_fingerprint text, p_slot text)|59a9d60d2ccf51b0c7c03f225c171a7d
 grant.function|brand_images_setting_int(p_key text, p_fallback integer)|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|brand_kit_asset_path_owner(p_name text)|f440cb7547aafb71bac3b9275ad5f4bd
+grant.function|brand_kit_charter_is_own_practice()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|brand_kit_direction_contrast(p_direction jsonb)|59a9d60d2ccf51b0c7c03f225c171a7d
 grant.function|brand_kit_direction_palette_hash(p_palette jsonb)|59a9d60d2ccf51b0c7c03f225c171a7d
 grant.function|brand_kit_directions_contrasted(p jsonb)|59a9d60d2ccf51b0c7c03f225c171a7d
@@ -1621,6 +1632,7 @@ index|brand_images.brand_images_brand_kit_id_idx|86c9cd3f4a1a02939f8dd42d9eaa6ad
 index|brand_images.brand_images_pkey|a23630fe890e88ed1807c7394204aafb
 index|brand_images.brand_images_unique_slot|071d36c1e91f5b733e8faff718d6178c
 index|brand_kits.brand_kits_derived_from_charter_kit_id_idx|f6e2e93e426f174bfd13965072f476bf
+index|brand_kits.brand_kits_detached_from_charter_kit_id_idx|a54849d7ee45065892df41bb75c1560a
 index|brand_kits.brand_kits_direction_id_idx|48471c76cde073319968e843236be217
 index|brand_kits.brand_kits_pkey|f36d9c92246a9f73c6b204f696e5fa96
 index|brand_kits.brand_kits_project_id_key|e1d400cde681e519ba1c31adc59148dd
@@ -1936,6 +1948,7 @@ rls|type_pairings|on
 rls|user_uploads|on
 rls|usp_fingerprints|on
 rls|usp_stopwords|on
+trigger|brand_kits.brand_kits_charter_is_own_practice|73cd62416f56a508e5c2bb4e120afbce
 trigger|brand_kits.enforce_direction_selection_entitlement|a32f1a09a1a46f32f503b79d7b15d831
 trigger|brand_kits.on_brand_kit_created|7cb9362152861ee538f3a715ee69b81c
 trigger|brand_kits.on_brand_kit_direction_selected|62c33d0437118a478c6d54fe10f1ccc7
