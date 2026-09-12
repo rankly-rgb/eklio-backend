@@ -1,9 +1,9 @@
-# Fingerprint of PRODUCTION (project fobgdsupyfslxbswfuay), recorded 2026-09-11, refreshed after 20260911195907.
+# Fingerprint of PRODUCTION (project fobgdsupyfslxbswfuay), recorded 2026-09-12, refreshed after 20260912144121.
 #
 # Produced by supabase/tests/helpers/schema_fingerprint.sql. Verified on the way
-# in: all nine per-kind hashes were recomputed from these lines and matched the
-# hashes the database itself reported, so this is a proven copy rather than a
-# transcription.
+# in: the canonical hash was recomputed locally from these lines and matched the
+# hash the database itself reported for the same query, so this is a proven copy
+# rather than a transcription.
 #
 # ⚠ A SNAPSHOT, NOT A LIVE READ. CI cannot reach production. This file goes
 # stale the moment a migration is applied to production without regenerating it,
@@ -12,10 +12,18 @@
 #   psql "$PROD_URL" -At -f supabase/tests/helpers/schema_fingerprint.sql \
 #     | sort > supabase/tests/helpers/schema_fingerprint.production.txt
 #
-# 1933 objects. Canonical hash (order-independent, collation-immune):
-#   md5(concat of sorted md5-per-line) = 6ee545cb84dd9189c3ba946f778061b4
+# 1940 objects. Canonical hash (order-independent, collation-immune):
+#   md5(concat of sorted md5-per-line) = 2cc83fa7926a0da2233b76fc1aac445c
 # The database reported that same value for the query in schema_fingerprint.sql,
 # which is how this file is known to be a copy and not a retyping.
+#
+# Change since the 2026-09-11 snapshot (1933 objects, 6ee545cb84dd9189c3ba946f778061b4):
+# seven lines added, none removed, all of them 20260912144121 —
+# `organizations.brand_charter_kit_id` and `brand_kits.derived_from_charter_kit_id`,
+# their two foreign keys, the `brand_kits_charter_is_not_itself` check, and the
+# two partial indexes. The diff was checked line by line, not assumed from the
+# count: a refresh that changed anything else would mean the helper itself had
+# drifted.
 column|anon_generation_counters.bucket|bfd7a34b0a0954d9eb54990fcc6ca449
 column|anon_generation_counters.day|507d91db1cacfe4362f078375f6b42b5
 column|anon_generation_counters.used|25f2c985f13dbb4b044e6947b5be27cf
@@ -79,6 +87,7 @@ column|brand_kits.content|99540861e5d4a894380d260f2be522c7
 column|brand_kits.created_at|1f4d4e4ad4c5de3894870bee567ea8a7
 column|brand_kits.deleted_at|3b78bc2a0ac0f96164a997cdf0a40dd6
 column|brand_kits.delivered_seen_at|3b78bc2a0ac0f96164a997cdf0a40dd6
+column|brand_kits.derived_from_charter_kit_id|48fab12d214b859cc04a8a4228752965
 column|brand_kits.direction_id|48fab12d214b859cc04a8a4228752965
 column|brand_kits.directions|75cfa09e88ebe48706483bf199825a4a
 column|brand_kits.ethics_check|75cfa09e88ebe48706483bf199825a4a
@@ -303,6 +312,7 @@ column|organization_members.project_id|48fab12d214b859cc04a8a4228752965
 column|organization_members.role|bfd7a34b0a0954d9eb54990fcc6ca449
 column|organization_members.status|b3cc776f15ed991fb2ba8a142b8b399d
 column|organization_members.user_id|48fab12d214b859cc04a8a4228752965
+column|organizations.brand_charter_kit_id|48fab12d214b859cc04a8a4228752965
 column|organizations.created_at|1f4d4e4ad4c5de3894870bee567ea8a7
 column|organizations.id|941fb71b7f14da4ef6249ea7f0ef7c41
 column|organizations.name|44735fcd1e7f687a9ac2130e871687ab
@@ -546,6 +556,8 @@ constraint|brand_images.brand_images_pkey|4c6419b3704337bbfe50f018842a9ad3
 constraint|brand_images.brand_images_slot_check|a4aaf2f3066f7fd5336cd0371fb34fb8
 constraint|brand_images.brand_images_status_check|648bb3e25072554b0b3e9b05f64735c7
 constraint|brand_images.brand_images_unique_slot|4d79a3107253a309e3c6427392984765
+constraint|brand_kits.brand_kits_charter_is_not_itself|d7b9aa955449a58ed49a1478744a6abc
+constraint|brand_kits.brand_kits_derived_from_charter_kit_id_fkey|6dc73dbeabbc5784ec9a39f291e45153
 constraint|brand_kits.brand_kits_direction_id_fkey|0cff58211b0644da83542fbc0bebd822
 constraint|brand_kits.brand_kits_directions_contrast_check|e6b3b1d7eef01673b5827c68b105af35
 constraint|brand_kits.brand_kits_directions_rendering_check|47d8a0eeca93c3db148059f8cbac17a8
@@ -693,6 +705,7 @@ constraint|organization_members.organization_members_project_id_fkey|9f094045d0e
 constraint|organization_members.organization_members_role_check|8873b94e1cc62870f6449f8f52ada584
 constraint|organization_members.organization_members_status_check|6eb268ee5ea50e2de5e65153394b9e8a
 constraint|organization_members.organization_members_user_id_fkey|f52ea365e97de6e8cafd675b03a940e4
+constraint|organizations.organizations_brand_charter_kit_id_fkey|180f2cf96c25d55bdee8efd7c32c9617
 constraint|organizations.organizations_pkey|4c6419b3704337bbfe50f018842a9ad3
 constraint|palette_families.palette_families_cta_ink_check|e563a15277fda22f183216bb66eb6c3e
 constraint|palette_families.palette_families_hex_check|e2030f641c5a6e3c9ad104e307251e6b
@@ -1607,6 +1620,7 @@ index|brand_image_daily_spend.brand_image_daily_spend_pkey|41d011ac77e9eb8abce30
 index|brand_images.brand_images_brand_kit_id_idx|86c9cd3f4a1a02939f8dd42d9eaa6ad7
 index|brand_images.brand_images_pkey|a23630fe890e88ed1807c7394204aafb
 index|brand_images.brand_images_unique_slot|071d36c1e91f5b733e8faff718d6178c
+index|brand_kits.brand_kits_derived_from_charter_kit_id_idx|f6e2e93e426f174bfd13965072f476bf
 index|brand_kits.brand_kits_direction_id_idx|48471c76cde073319968e843236be217
 index|brand_kits.brand_kits_pkey|f36d9c92246a9f73c6b204f696e5fa96
 index|brand_kits.brand_kits_project_id_key|e1d400cde681e519ba1c31adc59148dd
@@ -1672,6 +1686,7 @@ index|organization_members.organization_members_one_owned_org_per_user|299bfdd8f
 index|organization_members.organization_members_one_row_per_member|523a961523c2f205f896e34b52b76c28
 index|organization_members.organization_members_pkey|0958b9906b37482cf5ebd4675dd6e0c1
 index|organization_members.organization_members_user_id_idx|9ccd258cf9e6760fc07b8aecddc37769
+index|organizations.organizations_brand_charter_kit_id_idx|e23855be160c4553902eefe3af32c836
 index|organizations.organizations_pkey|f45c1aefdc5c9e573ccc52f6cb1e62d3
 index|palette_families.palette_families_pkey|e9164473f85696690dce041721df80ee
 index|plan_grants.plan_grants_grant_key_key|278b222d0da03505a0ac504327f3a54e
