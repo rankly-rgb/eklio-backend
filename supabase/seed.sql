@@ -910,3 +910,98 @@ on conflict (key) do update set
   label = excluded.label, sort_order = excluded.sort_order;
 
 -- <<< SITE PAGE DATA <<<
+
+-- ── 20260914170000_the_guard_moves_into_the_write.sql ──────────────────
+-- >>> ETHICS PATTERN DATA (mirrored verbatim in supabase/seed.sql) >>>
+
+-- ⚠ TRADUITS UN À UN DEPUIS `lib/ethics/rules.ts`, pas réinventés. `\b` devient
+-- `\y`, qui est la limite de mot de PostgreSQL ; le reste de la syntaxe est
+-- commun. L'ordre est celui du fichier source, pour que les deux se relisent
+-- en vis-à-vis.
+insert into public.ethics_patterns (id, rule_id, pattern, exception_pattern, severity, sort_order) values
+  ('resolution_verb', 'proven',
+   '\y(heal|heals|healed|healing|cure|cures|cured|curing|fix|fixes|fixed|fixing|eliminate|eliminates|eliminated|eliminating|erase|erases|erasing|end|ends|ending|resolve|resolves|resolved|resolving|overcome|overcomes|overcoming|banish|banishes|banishing|remove|removes|removing|conquer|conquers|conquering|defeat|defeats)\y( +\w+){0,3} +\y(anxiety|anxieties|depression|trauma|traumas|ptsd|panic +attacks?|panic|ocd|grief|addiction|addictions|burnout|stress|insomnia|adhd|phobias?|shame|codependency|overwhelm)\y',
+   null, 'block', 1),
+
+  ('free_you_from', 'proven',
+   '\y(free +you +from|rid +you +of|get +rid +of|take +away +your|make +(it|your +\w+) +go +away)\y',
+   null, 'block', 2),
+
+  ('is_gone', 'proven',
+   '\y(anxiety|anxieties|depression|trauma|traumas|ptsd|panic +attacks?|panic|ocd|grief|addiction|addictions|burnout|stress|insomnia|adhd|phobias?|shame|codependency|overwhelm)\y[^.!?]{0,30}\y(is|are|will +be|''?ll +be) +(gone|behind +you|history|a +thing +of +the +past|no +longer +(a +problem|an +issue))\y',
+   null, 'block', 3),
+
+  ('dated_promise', 'timeframe',
+   '\y(results?|relief|change|changes|healing|progress|improvement|breakthrough|transformation|better)\y[^.!?]{0,40}\yin +(as +little +as +|just +|only +)?[0-9]+ *(days?|weeks?|months?|sessions?)\y',
+   null, 'block', 4),
+
+  ('guarantee', 'proven', '\yguarantee(s|d|ing)?\y', null, 'block', 5),
+
+  ('clinically_proven', 'proven',
+   '\y(clinically|scientifically|medically|statistically) +proven\y|\yproven +(to\y|results?\y|method|approach|system|technique|protocol|track +record)',
+   null, 'block', 6),
+
+  ('success_rate', 'proven',
+   '\y([0-9]{1,3} *(%|percent)|[0-9]+ +out +of +[0-9]+|nine +out +of +ten) +(of +)?(my|our|her|his|their)? *(clients?|patients?)\y|\ysuccess +rate\y',
+   null, 'block', 7),
+
+  ('lasting_relief', 'proven',
+   '\y(lasting|permanent|life-?long|complete|full) +(relief|results?|recovery|healing|peace|calm|freedom)\y',
+   null, 'block', 8),
+
+  ('therapy_that_works', 'proven',
+   '\y(treatment|therapy|approach|method) +that +(actually +|really +)?(works|will +work)\y',
+   -- ⚠ L'EXCEPTION QUE POSTGRES NE SAIT PAS EXPRIMER EN LIGNE. « a therapy
+   -- that works best for you » est une phrase correcte et fréquente.
+   '\y(treatment|therapy|approach|method) +that +(actually +|really +)?(works|will +work) +(best +)?for +you\y',
+   'block', 9),
+
+  ('testimonial_word', 'client_voice', '\ytestimonials?\y', null, 'block', 10),
+
+  ('clients_say', 'client_voice',
+   '\y((my|our|her|his|their) +)?(clients?|patients?) +(often|frequently|sometimes|usually|always|regularly|routinely|consistently)? *(say|says|said|report|reports|reported|tell|tells|told|describe|describes|rave|love|feel|feels|felt)\y',
+   null, 'block', 11),
+
+  ('client_reviews', 'client_voice',
+   '\yclient +(reviews?|feedback|ratings?)\y|\ypatient +reviews?\y|\y(reviewed|rated|recommended) +by +(my|our|former|past|hundreds +of|[0-9]+) *(clients?|patients?)\y',
+   null, 'block', 12),
+
+  ('star_rating', 'client_voice',
+   '\yfive[- ]star\y|\y[0-9](\.[0-9])? *(/ *5|out +of +5) *stars?\y|[★⭐]',
+   null, 'block', 13),
+
+  ('success_story', 'client_voice',
+   '\y(success|client|patient) +stor(y|ies)\y', null, 'block', 14),
+
+  ('best_therapist', 'scarcity',
+   '(\y(best|top|leading|premier|foremost|most +trusted|top-?rated|number +one)|# *1) +(\w+ +){0,2}(therapist|therapists|counselor|counselors|counsellor|psychologist|psychologists|clinician|clinicians|clinic|provider|providers|coach|therapy)\y',
+   null, 'block', 15),
+
+  ('award_winning', 'credential',
+   '\y(award-?winning|nationally +recognized|world-?class|world-?renowned|renowned)\y',
+   null, 'warn', 16),
+
+  ('weekend_certification', 'credential',
+   '\y(weekend|two-?day|one-?day|[0-9]+-?(day|hour)) +(certification|certificate|certified|intensive)\y|\ycertified\y[^.!?]{0,40}\y(weekend|workshop|webinar|ce +course|short +course)\y',
+   null, 'block', 17),
+
+  ('you_have_condition', 'diagnosis',
+   '\yyou +(have|clearly +have|probably +have|likely +have|are +suffering +from|suffer +from) +(\w+ +){0,2}\y(anxiety|anxieties|depression|trauma|traumas|ptsd|panic +attacks?|panic|ocd|grief|addiction|addictions|burnout|stress|insomnia|adhd|phobias?|shame|codependency|overwhelm)\y',
+   null, 'block', 18),
+
+  -- ⚠ `limited spots` MANQUAIT DES DEUX CÔTÉS, et c'est ce fichier qui l'a
+  -- trouvé. `ethics_rules.scarcity.example_forbidden` vaut « Limited spots
+  -- available. » — l'exemple que le produit MONTRE à la praticienne pour lui
+  -- dire ce qui est interdit — et ni le motif TypeScript ni sa traduction ne
+  -- l'attrapaient : les deux exigeaient « only N spots left » ou « limited-TIME
+  -- offer ». Le produit affichait une règle qu'il ne faisait pas respecter.
+  -- Corrigé ici ET dans `lib/ethics/rules.ts`, ensemble.
+  ('scarcity_urgency', 'scarcity',
+   '\yonly +[0-9]+ +(spots?|slots?|places?|openings?) +(left|remaining|available)\y|\ylimited +(spots?|slots?|places?|openings?|availability|space)\y|\y(spots?|slots?|places?|openings?) +(are +)?(limited|filling +up)\y|\ylimited[- ]time +offer\y|\yact +now\y|\ydon''?t +wait\y|\ylast +chance\y|\ybook +(now +)?before +(prices|rates|spots)\y',
+   null, 'block', 19)
+on conflict (id) do update set
+  rule_id = excluded.rule_id, pattern = excluded.pattern,
+  exception_pattern = excluded.exception_pattern,
+  severity = excluded.severity, sort_order = excluded.sort_order;
+
+-- <<< ETHICS PATTERN DATA <<<

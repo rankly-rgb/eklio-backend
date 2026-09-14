@@ -171,6 +171,17 @@ insert into never_tenanted values
    * the next, decided by a column nobody looks at.
    */
   ('site_pages'),
+  /*
+   * `ethics_patterns` — the deterministic advertising-ethics patterns. The
+   * same six rules bind every licensed clinician in the United States: they
+   * come from the ACA Code of Ethics, the APA Ethics Code and state licensing
+   * boards, not from anything a practice decides. An organization_id here
+   * would say one practice may advertise what another may not, which is not a
+   * thing Eklio is entitled to offer.
+   *
+   * Its sibling `ethics_rules` is already on this list, two lines up.
+   */
+  ('ethics_patterns'),
   -- Eklio's own instruments. Never a customer's data.
   ('anon_generation_counters'), ('app_settings'), ('brand_image_daily_spend'),
   ('direction_asset_daily_spend'), ('funnel_events'), ('funnel_steps'),
