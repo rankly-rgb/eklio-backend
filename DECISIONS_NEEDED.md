@@ -398,3 +398,51 @@ génération n'a aucune raison d'être importé par un écran.
 ⚠ **La famille de défaut n'est donc pas fermée ailleurs.** Si un autre dossier devait recevoir la
 même garde, `lib/billing/` serait le premier candidat : il décide ce qui est vendable, et une
 règle qu'aucun écran ne lit y aurait les mêmes conséquences qu'ici.
+
+---
+---
+
+# Ce que le LOT 3 (branchement) a ouvert
+
+## 17. ⚠ La prose du profil Psychology Today n'est produite par personne
+
+**Lot concerné** : la génération. Non attribué à un numéro.
+**Ce qui est en place** : l'écran existe et rend le profil complet dès qu'une ligne existe.
+`save_directory_profile` n'est appelée **nulle part** — vérifié dans les deux dépôts.
+
+Les champs structurés sont dérivés du brief sans modèle et s'affichent aujourd'hui. La prose — le
+premier paragraphe et le reste — attend une génération qui n'a jamais été écrite. L'écran dit
+laquelle des deux absences elle regarde (« jamais produite » / « rangée mais refusée ») plutôt que
+d'afficher un vide.
+
+**Ce qu'il faut décider** : d'où vient cette prose. Deux voies, et elles ne coûtent pas pareil.
+Une génération dédiée, avec son prompt et son passage par l'Ethics Guard, est le livrable que
+l'offre décrit (« intégral **rédigé** »). Un assemblage à partir de la page « à propos » du site
+serait moins cher et ne serait pas ce qui est vendu. **Je n'ai pas tranché : assembler une prose
+d'annuaire à la volée aurait ressemblé à un livrable rédigé sans en être un.**
+
+## 18. Le palier qu'un octroi comp vaut est le sommet de l'échelle
+
+**Constat, pas décision — mais il mérite d'être confirmé.**
+
+`resolveEntitledTier` lit désormais `comp_access_active()`. `comp_grants` ne porte aucun palier :
+sa table promet « the full paid product ». J'en ai déduit **le dernier de `KIT_TIERS`**, dérivé et
+non écrit, pour qu'un palier ajouté au-dessus l'emporte avec lui.
+
+Si un octroi comp doit un jour valoir un palier PRÉCIS — donner Foundation à une testeuse sans lui
+donner Roster — il faudra une colonne `tier` sur `comp_grants`, et ce n'est pas un défaut de ce
+lot : c'est une fonctionnalité que personne n'a demandée.
+
+## 19. Le garde-fou couvre trois dossiers, et la règle n'est pas universelle
+
+**Constat.** `lib/brief/`, `lib/directory/`, `lib/billing/` — chacun avec sa raison écrite dans le
+test, et le critère commun : *un module de ce dossier décrit quelque chose que la cliente achète
+ou parcourt*.
+
+⚠ **Ce qui n'est PAS couvert, et pourquoi.** `lib/stripe/` n'est atteint que par un webhook,
+`lib/api/cron/` que par une tâche planifiée, `lib/generation/` et `lib/content/` tournent derrière
+des routes qui ne rendent rien. Exiger un écran de ces dossiers produirait des exemptions, et une
+liste d'exemptions est une liste qu'on allonge au lieu de corriger.
+
+`lib/content/` deviendra un candidat le jour où The Fill sera vendable — il porte alors un
+livrable vendu. Aujourd'hui `plans.sellable = false` sur les deux abonnements, donc non.

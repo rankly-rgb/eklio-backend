@@ -2,7 +2,7 @@
 
 Écrit pendant le lot 1 d'implémentation de l'offre du 13 septembre.
 **Complété au lot 2** — les entrées 23 à 26 sont nouvelles, et deux entrées anciennes ont reçu une
-suite. **Complété au correctif du lot 2** — entrées 27 à 30. **Rien n'a été réécrit.**
+suite. **Complété au correctif du lot 2** — entrées 27 à 30. **Complété au lot 3** — entrées 31 à 35, et le recensement mesuré. **Rien n'a été réécrit.**
 
 **Ce fichier est un livrable, pas une excuse pour intervenir.** Chaque ligne est quelque chose que
 j'ai vu, vérifié assez pour l'écrire, et laissé en place — avec le lot à qui il appartient.
@@ -266,6 +266,62 @@ Ce qui EST fait : la règle d'éligibilité tient à la porte du paiement (donc 
 `?plan=foundation` forgé à la main est gouverné dès aujourd'hui), et la conséquence de sa réponse
 lui est dite **à l'étape 1**, le seul écran qui existe pour la porter. Mettre la nouvelle offre en
 vitrine est un autre travail, et c'est L23.
+
+---
+
+## Le recensement du lot 1, mesuré (lot 3)
+
+**Méthode** : graphe d'imports complet sur la plage `56c8e40..49cd654`, racines = `app/` seul.
+Les chaînes comptent (`launch-copy` ← `material` ← `components/launch/`), et `components/` n'est
+PAS une racine : un composant qu'aucune page ne rend est aussi mort que ce qu'il importe. Ce point
+a été trouvé en sondant le garde-fou, pas en le relisant.
+
+**28 fichiers touchés par les lots 1 et 2** : 6 sont des écrans, **16 atteints**, **2 atteints par
+`app/dev/` seulement**, **4 non atteints**. Au niveau des EXPORTS, le compte est plus dur : cinq
+fonctions livrées n'avaient aucun appelant hors de leur propre module.
+
+### 31. ⚠⚠ `lib/directory/profile.ts` — corrigé dans ce lot
+
+Le livrable CENTRAL de The Foundation, importé par son seul test. Troisième occurrence du défaut.
+Corrigé : section `directory` du kit, surface `kit_directory` réservée à `foundation`, premier
+paragraphe adressable seul (`#directory-first-paragraph`).
+
+⚠ **Ce que ça n'ouvre pas** : rien n'appelle `save_directory_profile` — la prose n'est produite par
+personne. L'écran le DIT plutôt que d'afficher un vide qu'on prendrait pour une panne, et rend les
+champs structurés, qui eux sont dérivables du brief sans modèle. Produire la prose appartient à la
+génération, et reste dû.
+
+### 32. `lib/billing/offer.ts` — dette nommée, pas corrigée
+
+Le miroir applicatif des six SKU, qu'aucun écran ne lit : **la nouvelle offre n'est en vitrine
+nulle part** (§30). Le brancher, c'est la mettre en vente — **L23**. Inscrit dans `KNOWN_DEBT`,
+avec son lot, une liste épinglée à l'unité et un contrôle que le module existe encore : une dette
+effacée n'est pas une dette payée.
+
+### 33. `lib/content/generate/plan.ts` et `pipeline.ts` — non atteints, et c'est attendu
+
+Le cycle mensuel de contenu. `/api/cron/content-month` existe, n'importe ni l'un ni l'autre, et
+est derrière `CONTENT_GENERATION_ARMED` (§12). Non couverts par le garde-fou : `lib/content/` ne
+décrit pas un livrable vendu aujourd'hui — The Fill n'est pas vendable (`plans.sellable = false`).
+Propriétaire : **L18**.
+
+### 34. Cinq exports livrés sans aucun appelant
+
+Mesuré hors tests et hors leur propre module :
+
+| Export | Lot | Appelants |
+|---|---|---|
+| `offerSku`, `offerPrice`, `PURCHASABLE_SKUS` | L3 | 0 — cf. §32 |
+| `buildDirectoryProfile` | L9 | 0 — l'écran appelle `buildStructuredFields` et `checkProse` directement |
+| `carriesImage` | L11 | 0 |
+| `hasPurchasedAddon` | L4 | 0 hors `entitlements.ts` — l'add-on à 89 $ n'est proposé nulle part |
+
+Aucun n'est faux. Tous décrivent une chose que le produit ne fait pas encore.
+
+### 35. `lib/brief/fixtures/catalog.ts` et `lib/content/generate/capacity.ts` — `app/dev/` seulement
+
+Atteints par des pages de démonstration, pas par le produit. Normal pour une fixture ; noté pour
+`capacity.ts`, qui est de la logique et dont le seul chemin réel passe par L18.
 
 ---
 
