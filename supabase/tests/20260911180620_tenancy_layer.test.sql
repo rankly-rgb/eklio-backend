@@ -151,6 +151,16 @@ insert into never_tenanted values
   ('section_types'), ('session_style_cards'), ('site_goals'),
   ('site_output_templates'), ('specialties'), ('tone_cards'), ('type_pairings'),
   ('banned_phrases'), ('usp_stopwords'),
+  /*
+   * `site_platforms` — which website platforms Eklio will publish to. The same
+   * for everybody, owned by nobody, and READ BEFORE THERE IS ANYBODY: the
+   * qualification happens at signup, so an anonymous visitor with no project
+   * and no account must be able to see the list to learn that hers is not on
+   * it. An organization_id on this table would be a claim that one practice's
+   * list of supported platforms differs from another's, which is not a product
+   * anyone has asked for.
+   */
+  ('site_platforms'),
   -- Eklio's own instruments. Never a customer's data.
   ('anon_generation_counters'), ('app_settings'), ('brand_image_daily_spend'),
   ('direction_asset_daily_spend'), ('funnel_events'), ('funnel_steps'),

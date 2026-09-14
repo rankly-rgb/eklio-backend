@@ -859,3 +859,38 @@ on conflict (tier) do update set
   sort_order          = excluded.sort_order;
 
 -- <<< OFFER SKU DATA <<<
+
+-- ── 20260914120000_platform_qualification.sql ──────────────────────────
+-- >>> SITE PLATFORM DATA (mirrored verbatim in supabase/seed.sql) >>>
+
+-- ⚠ CES TROIS STATUTS SONT LA DÉCISION, et `squarespace` est celui qui bougera.
+-- Le jour où la question est tranchée, c'est UN UPDATE sur une ligne.
+insert into public.site_platforms (id, label, status, notice, sort_order) values
+  ('wordpress', 'WordPress', 'accepted', null, 1),
+
+  ('squarespace', 'Squarespace', 'conditional',
+   'We are still confirming what we can publish to Squarespace on your behalf. You can sign up, and we will tell you before you pay if anything has to be done by hand.',
+   2),
+
+  -- Les plateformes qu'on rencontre et qu'on ne sait pas atteindre. Nommées
+  -- une par une plutôt que repliées sur « autre » : une visiteuse dont la
+  -- plateforme est nommée comprend qu'on l'a envisagée.
+  ('wix', 'Wix', 'refused',
+   'We do not publish to Wix yet. Everything we write for you would still be yours to paste, but putting it in place is the part we could not do.',
+   3),
+  ('webflow', 'Webflow', 'refused',
+   'We do not publish to Webflow yet. Everything we write for you would still be yours to paste, but putting it in place is the part we could not do.',
+   4),
+  ('other', 'Something else', 'refused',
+   'We only publish to WordPress today. Everything we write for you would still be yours to paste, but putting it in place is the part we could not do.',
+   5),
+  ('none', 'I do not have a website yet', 'refused',
+   'You will need a site before we can put anything on it. WordPress is the one we publish to today.',
+   6)
+on conflict (id) do update set
+  label      = excluded.label,
+  status     = excluded.status,
+  notice     = excluded.notice,
+  sort_order = excluded.sort_order;
+
+-- <<< SITE PLATFORM DATA <<<
