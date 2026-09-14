@@ -1023,3 +1023,15 @@ update public.site_platforms
  where id = 'squarespace';
 
 -- <<< SQUARESPACE VERDICT <<<
+
+-- >>> SELLABILITY DATA (mirrored verbatim in supabase/seed.sql) >>>
+
+-- ⚠ NOMMÉES UNE PAR UNE, PAS `where kind <> 'kit'`. Une règle par nature
+-- ferait d'une future ligne de catalogue une chose invendable par accident, et
+-- l'inverse : `identity_addon` n'est pas un kit et SE VEND — il livre l'add-on
+-- identité à 89 $, qui existe et fonctionne. Ce ne sont pas les catégories qui
+-- sont invendables, ce sont ces trois lignes-là, chacune pour sa raison.
+update public.plans set sellable = false
+ where tier = any (array['roster_seat', 'fill_solo', 'fill_practice']);
+
+-- <<< SELLABILITY DATA <<<
