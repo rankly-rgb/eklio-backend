@@ -803,3 +803,59 @@ insert into public.app_settings (key, value) values
   ('check_rewrites_per_user_per_day', '20')
 on conflict (key) do nothing;
 -- <<< CHECK REWRITE LIMIT <<<
+
+-- ── 20260914100000_the_new_offer_skus.sql ──────────────────────────────
+-- >>> OFFER SKU DATA (mirrored verbatim in supabase/seed.sql) >>>
+
+-- ⚠ CES NOMBRES SONT LA DÉCISION, comme pour le bloc PLAN DATA au-dessus.
+-- Changer un prix est un UPDATE ici et nulle part ailleurs. Les identifiants
+-- de prix Stripe ne sont PAS ici : ils diffèrent entre le mode test et le mode
+-- live, donc ils viennent de l'environnement (cf. ENV_REQUIRED.md).
+--
+-- `sort_order` reprend à 10 : l'offre précédente occupe 0 à 3, et intercaler
+-- aurait renuméroté des lignes que personne n'a demandé à déplacer.
+insert into public.plans
+  (tier, label, price_cents, kind, billing_period, per_seat, included_seats,
+   directions_limit, regenerations_limit, image_budget_cents, sort_order)
+values
+  -- Le livrable de tête de l'offre solo.
+  ('foundation', 'The Foundation', 39000, 'kit', 'once', false, null,
+   3, 6, 400, 10),
+
+  -- L'offre cabinet. Cinq cliniciennes comprises ; la sixième est un `seat`.
+  ('roster', 'The Roster', 69000, 'kit', 'once', false, 5,
+   3, 12, 600, 11),
+
+  -- ⚠ L'ACTUEL LIVRABLE DE TÊTE, DEVENU ACCESSOIRE. Il porte une allocation
+  -- parce qu'il en a besoin : produire logo, couleurs et typographie est une
+  -- vraie génération, avec ses reprises. Ce qui change est son prix et sa
+  -- place dans l'offre, pas ce qu'il fait.
+  ('identity_addon', 'Visual identity', 8900, 'addon', 'once', false, null,
+   3, 3, 200, 12),
+
+  -- ⚠ PAS D'ALLOCATION, ET C'EST VOULU. Ce qu'une clinicienne de plus reçoit
+  -- — son pack complet — est déclenché par son arrivée dans le cabinet, pas
+  -- par cette ligne de catalogue. Tant que ce déclenchement n'est pas écrit,
+  -- l'absence d'allocation fait échouer fermé plutôt que d'ouvrir une
+  -- génération que personne n'a branchée.
+  ('roster_seat', 'Additional clinician', 12000, 'seat', 'once', true, null,
+   null, null, 0, 13),
+
+  -- Les deux loyers. Ils ne produisent pas de kit : pas d'allocation.
+  ('fill_solo', 'The Fill', 5900, 'subscription', 'month', false, null,
+   null, null, 0, 14),
+  ('fill_practice', 'The Fill (practice)', 6900, 'subscription', 'month', true, null,
+   null, null, 0, 15)
+on conflict (tier) do update set
+  label               = excluded.label,
+  price_cents         = excluded.price_cents,
+  kind                = excluded.kind,
+  billing_period      = excluded.billing_period,
+  per_seat            = excluded.per_seat,
+  included_seats      = excluded.included_seats,
+  directions_limit    = excluded.directions_limit,
+  regenerations_limit = excluded.regenerations_limit,
+  image_budget_cents  = excluded.image_budget_cents,
+  sort_order          = excluded.sort_order;
+
+-- <<< OFFER SKU DATA <<<
