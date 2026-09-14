@@ -1005,3 +1005,21 @@ on conflict (id) do update set
   severity = excluded.severity, sort_order = excluded.sort_order;
 
 -- <<< ETHICS PATTERN DATA <<<
+
+-- >>> SQUARESPACE VERDICT (mirrored verbatim in supabase/seed.sql) >>>
+
+-- ⚠ UN UPDATE, PAS UN INSERT ... ON CONFLICT. La ligne existe depuis
+-- `20260914120000` et ce bloc ne fait que changer d'avis sur elle. Réécrire la
+-- ligne entière ici en ferait une seconde source pour son `label` et son
+-- `sort_order` — exactement la divergence que ce dépôt paie déjà ailleurs.
+--
+-- Le `notice` est la phrase que la visiteuse LIT. Elle est calquée sur celles
+-- de Wix et de Webflow, à un mot près : le nôtre ne dit pas « yet ». « Pas
+-- encore » serait une promesse implicite, et il n'y a rien à attendre — il n'y
+-- a pas d'API à laquelle se brancher.
+update public.site_platforms
+   set status = 'refused',
+       notice = 'We do not publish to Squarespace. Its API covers store orders and forms, not website pages, so there is no way for us to put anything on your site for you. Everything we write for you would still be yours to paste, but putting it in place is the part we could not do.'
+ where id = 'squarespace';
+
+-- <<< SQUARESPACE VERDICT <<<
