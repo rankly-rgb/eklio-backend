@@ -404,7 +404,24 @@ règle qu'aucun écran ne lit y aurait les mêmes conséquences qu'ici.
 
 # Ce que le LOT 3 (branchement) a ouvert
 
-## 17. ⚠ La prose du profil Psychology Today n'est produite par personne
+## 17. ✅ TRANCHÉE — la prose du profil est produite par une génération dédiée
+
+**Décision prise : une génération dédiée, pas un assemblage.** L'offre dit « intégral **rédigé** » ;
+un assemblage à partir de la page « à propos » aurait ressemblé à un livrable rédigé sans en être un.
+
+`lib/directory/generate.ts` : même client (`getAnthropicClient` + `GENERATION_MODEL`), plafond en
+NOMBRE D'APPELS vérifié avant l'appel (2 au plus — le second n'existe que pour la reprise
+déontologique), journalisation par `track("directory_profile_generated", { model_calls })`, comme
+`usp_options_generated`. Déclenchée depuis l'écran du profil, par un bouton.
+
+⚠ **L'Ethics Guard est celui qui existe.** Le trigger `directory_profiles_ethics_gate` (L13) passe
+déjà les deux champs par `ethics_blocks` ET par les trente clichés d'annuaire. La génération
+pré-scanne avec `checkEthics` — le même scanner que le reste de l'application — pour offrir une
+REPRISE plutôt qu'une exception ; la base reste l'autorité qui tranche à l'écriture.
+
+<details><summary>La question telle qu'elle était posée</summary>
+
+### La prose du profil Psychology Today n'est produite par personne
 
 **Lot concerné** : la génération. Non attribué à un numéro.
 **Ce qui est en place** : l'écran existe et rend le profil complet dès qu'une ligne existe.
