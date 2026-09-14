@@ -84,18 +84,41 @@ grant select on auth.users to anon, authenticated, service_role;
 -- with `set local role authenticated; set local request.jwt.claims =
 -- '{"sub":"<uuid>"}';` — this function is what makes that simulation mean
 -- anything.
+-- ⚠ COPIED VERBATIM FROM THE LIVE PROJECT (`pg_get_functiondef` against
+-- fobgdsupyfslxbswfuay, 2026-09-14), not written from memory. The version
+-- this replaces was a paraphrase, and the paraphrase was wrong in a way that
+-- only showed up in the second transaction of a test file:
+--
+--   nullif(current_setting('request.jwt.claims', true)::jsonb ->> 'sub', '')
+--        -- guards the EXTRACTED sub, not the SETTING
+--
+-- A custom GUC that has been `set local` once reverts, at rollback, to the
+-- empty string rather than to NULL. `''::jsonb` then raises `invalid input
+-- syntax for type json`, and the raise happens INSIDE whatever policy or
+-- trigger asked the question. Live, `nullif(setting, '')` absorbs it and the
+-- answer is NULL — which is why the suite was red locally and green in the
+-- product. A harness that is more brittle than the thing it stands in for
+-- reports defects that do not exist, and this one did.
 create or replace function auth.uid()
 returns uuid
 language sql stable
 as $$
-  select nullif(current_setting('request.jwt.claims', true)::jsonb ->> 'sub', '')::uuid
+  select
+  coalesce(
+    nullif(current_setting('request.jwt.claim.sub', true), ''),
+    (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')
+  )::uuid
 $$;
 
 create or replace function auth.role()
 returns text
 language sql stable
 as $$
-  select nullif(current_setting('request.jwt.claims', true)::jsonb ->> 'role', '')::text
+  select
+  coalesce(
+    nullif(current_setting('request.jwt.claim.role', true), ''),
+    (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'role')
+  )::text
 $$;
 
 -- ── storage schema ──────────────────────────────────────────────────────
@@ -156,3 +179,17 @@ grant select on all tables in schema auth, storage to anon, authenticated, servi
 -- (Supabase's own Postgres image pre-enables these; a stock apt install
 -- does not.) gen_random_uuid() is core since PG13, needs nothing.
 create extension if not exists pg_trgm;
+
+-- ⚠ `extensions`, and it is NOT cosmetic. Supabase installs pgcrypto into a
+-- schema called `extensions`, and `20260911195907_the_invitation.sql` calls
+-- `extensions.digest(...)` and `extensions.gen_random_bytes(...)` by that
+-- fully-qualified name — because the functions it lives in are
+-- `SECURITY DEFINER … SET search_path TO ''`, where an unqualified name
+-- resolves to nothing. A stock apt install puts pgcrypto in `public`, so the
+-- replay died on `schema "extensions" does not exist` at the FIRST migration
+-- that needed it: found by running the replay and reading the error, the way
+-- this file's header says to.
+create schema if not exists extensions;
+grant usage on schema extensions to anon, authenticated, service_role;
+create extension if not exists pgcrypto with schema extensions;
+grant execute on all functions in schema extensions to anon, authenticated, service_role;

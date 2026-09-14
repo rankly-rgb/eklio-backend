@@ -793,3 +793,13 @@ insert into public.app_settings (key, value) values
   ('usp_similarity_threshold', '0.55')
 on conflict (key) do nothing;
 -- <<< USP GUARDRAIL DATA <<<
+
+-- ── 20260909094038_check_rewrite_daily_limit.sql ────────────────────────
+-- >>> CHECK REWRITE LIMIT (mirrored verbatim in supabase/seed.sql) >>>
+-- ⚠ THIS NUMBER IS THE DECISION, and it lives here so it moves without a
+-- deploy. Twenty a day: far past any honest editing session on one piece of
+-- copy, far short of a script.
+insert into public.app_settings (key, value) values
+  ('check_rewrites_per_user_per_day', '20')
+on conflict (key) do nothing;
+-- <<< CHECK REWRITE LIMIT <<<
