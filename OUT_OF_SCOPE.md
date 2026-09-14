@@ -1,6 +1,8 @@
 # OUT_OF_SCOPE.md — ce que j'ai croisé et laissé
 
 Écrit pendant le lot 1 d'implémentation de l'offre du 13 septembre.
+**Complété au lot 2** — les entrées 23 à 26 sont nouvelles, et deux entrées anciennes ont reçu une
+suite. **Rien n'a été réécrit.**
 
 **Ce fichier est un livrable, pas une excuse pour intervenir.** Chaque ligne est quelque chose que
 j'ai vu, vérifié assez pour l'écrire, et laissé en place — avec le lot à qui il appartient.
@@ -122,6 +124,84 @@ l'attraper. Il l'a attrapée. Corrigé dans L2, parce que la suite ne pouvait pa
 
 ---
 
+## Croisé pendant le LOT 2, et laissé
+
+### 23. ⚠ L'étape 7 du brief propose un prompt Squarespace que la qualification refuse
+
+**Où** : `eklio-frontend/components/brief/step-bodies.tsx`, constante `BUILDER_TARGETS`
+(`squarespace`, `lovable`, `framer`, `webflow`), en dur.
+**Lot propriétaire** : **L23**.
+
+C'est une surface de l'offre PRÉCÉDENTE : elle choisit pour quel constructeur écrire un **prompt à
+coller**, livrable que The Foundation ne vend pas. Elle n'a rien à voir avec `site_platforms`, qui
+décide où Eklio PUBLIE.
+
+⚠ Depuis le verdict Squarespace de ce lot, les deux se contredisent en façade : la qualification
+dit « nous ne publions pas sur Squarespace », l'étape 7 propose toujours un prompt Squarespace.
+Les deux phrases sont vraies séparément ; personne ne lit un produit en les séparant. Consigné
+aussi dans `DECISIONS_NEEDED.md` §12.
+
+### 24. `createMonthlyPresenceCheckout` ne passe par aucune garde de vendabilité
+
+**Où** : `eklio-frontend/lib/stripe/checkout.ts`.
+**Lot propriétaire** : **L23**.
+
+`plans.sellable` est lu par `createCheckoutSession`. L'autre checkout — celui de l'abonnement
+Monthly Presence seul — ne l'interroge pas, et **ne le peut pas** : `monthly_presence` n'a pas de
+ligne dans `plans` (`ENV_REQUIRED.md` le disait déjà). Ce n'est pas un trou : cet abonnement est
+livré, il fonctionne, et il n'y a rien à refuser. Mais il échappe structurellement au mécanisme,
+et le jour où L23 le retire de la vente, ce n'est pas `sellable` qui l'arrêtera.
+
+**Je n'ai pas créé la ligne `plans` manquante** : ce serait ranger l'offre précédente dans un
+catalogue que le lot 1 a construit pour la nouvelle, et personne n'a décidé ça.
+
+### 25. Un commentaire orphelin au-dessus de `AlreadyPurchasedError`
+
+**Où** : `eklio-frontend/lib/stripe/checkout.ts`, le bloc « Crée la session et rend l'URL hébergée
+par Stripe » qui ne surplombe plus `createCheckoutSession`.
+**Lot propriétaire** : aucun.
+
+Préexistant au lot 2 — il était déjà détaché avant que quoi que ce soit ne bouge. Laissé tel quel :
+le déplacer est un refactor d'opportunité, et ils sont interdits. Noté pour qu'on sache que c'est
+vu et non subi.
+
+### 26. `types/supabase.ts` avait dérivé — et la dérive est fermée
+
+**Où** : les deux dépôts.
+**Statut** : **corrigé**, pas laissé. Inscrit ici parce que c'est un constat sur la méthode.
+
+La copie régénérée au lot 1 précédait **ses propres migrations L9, L10 et L13** :
+`directory_profiles`, `site_pages`, `ethics_patterns` et leurs fonctions (`ethics_scan`,
+`ethics_blocks`, `save_directory_profile`, `get_directory_profile`, `directory_structured_valid`)
+n'y figuraient pas. Régénéré depuis le projet vivant au lot 2 : **124 lignes ajoutées, zéro
+retirée.** Rien ne cassait, parce que rien n'appelait encore ces surfaces depuis le TypeScript —
+c'est exactement pourquoi ça pouvait passer inaperçu.
+
+⚠ **La leçon, pour les lots suivants** : régénérer les types AU BOUT du lot, pas au milieu.
+
+---
+
+## Deux entrées du lot 1 qui ont reçu une suite
+
+### §17 — les deux Ethics Guard : **toujours deux, et maintenant comptées**
+
+La fusion n'a pas eu lieu et n'était pas au programme. Ce qui a changé : chaque motif porte
+désormais un **nom identique des deux côtés** (`ethics_patterns.id` ↔ `FORBIDDEN_PATTERNS[].id`),
+et deux tests jumeaux exigent le même recensement — même nombre, mêmes identifiants, même règle
+derrière chaque identifiant.
+
+Ce que ça ferme : un motif ajouté d'un seul côté. Ce que ça **ne ferme pas** : deux motifs de même
+nom qui n'attrapent pas le même texte. Les dialectes restent deux, et la fusion reste le lot
+décrit ici au lot 1.
+
+### §18 — les deux vocabulaires de « page » : **l'écart est maintenant chiffré**
+
+`KIT_TIER_RULES.roster.maxPages` est passé de 4 à 6 (décision §2). La raison donnée — « un cabinet
+porte une page équipe » — bute sur ce même écart : `PAGES_WANTED` n'a pas de clé `team`, et
+`site_pages` en base porte un troisième découpage encore. Voir `DECISIONS_NEEDED.md` §11.
+
+---
+
 ## Trois interdits généraux : tenus
 
 - **Aucune suppression en base.** Aucune table, aucune colonne, aucune ligne, aucune policy
@@ -131,3 +211,9 @@ l'attraper. Il l'a attrapée. Corrigé dans L2, parce que la suite ne pouvait pa
 - **Aucun refactor d'opportunité.** Les fichiers laids mais corrects et hors lot n'ont pas été
   touchés.
 - **Aucune dépendance nouvelle.** `package.json` est inchangé.
+
+**Au lot 2, les trois tiennent encore.** Les deux migrations ajoutées ne retirent rien : un
+`update` sur `site_platforms` (la ligne Squarespace reste au catalogue, refusée et expliquée) et
+un `add column` sur `plans` (aucune ligne, aucun prix, aucun palier retiré). Aucun refactor
+d'opportunité — l'`id` posé sur chaque motif déontologique est ce que le sous-lot B3 exigeait, pas
+un rangement. `package.json` est toujours inchangé.
