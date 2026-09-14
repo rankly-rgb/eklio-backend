@@ -894,3 +894,19 @@ on conflict (id) do update set
   sort_order = excluded.sort_order;
 
 -- <<< SITE PLATFORM DATA <<<
+
+-- ── 20260914150000_pages_are_data.sql ──────────────────────────────────
+-- >>> SITE PAGE DATA (mirrored verbatim in supabase/seed.sql) >>>
+
+-- Les quatre d'aujourd'hui, à l'identique. Ce lot OUVRE la liste ; il n'ajoute
+-- aucune page, parce qu'aucune page mensuelle n'est encore produite et qu'une
+-- clé au catalogue que rien ne remplit est une promesse vide.
+insert into public.site_pages (key, label, sort_order) values
+  ('home',     'Home',     1),
+  ('about',    'About',    2),
+  ('services', 'Services', 3),
+  ('contact',  'Contact',  4)
+on conflict (key) do update set
+  label = excluded.label, sort_order = excluded.sort_order;
+
+-- <<< SITE PAGE DATA <<<

@@ -161,6 +161,16 @@ insert into never_tenanted values
    * anyone has asked for.
    */
   ('site_platforms'),
+  /*
+   * `site_pages` — which page keys a site specification may carry. Reference
+   * data in the strictest sense: `site_spec_page_keys()` reads it and
+   * `site_spec_pages_valid()` reads that, so it is read from inside a CHECK
+   * constraint, on every write, for every practice. An organization_id here
+   * would mean one practice's site may carry a page another's may not — which
+   * would make the same specification valid for one customer and invalid for
+   * the next, decided by a column nobody looks at.
+   */
+  ('site_pages'),
   -- Eklio's own instruments. Never a customer's data.
   ('anon_generation_counters'), ('app_settings'), ('brand_image_daily_spend'),
   ('direction_asset_daily_spend'), ('funnel_events'), ('funnel_steps'),
