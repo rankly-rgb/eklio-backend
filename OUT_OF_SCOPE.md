@@ -2,7 +2,7 @@
 
 Écrit pendant le lot 1 d'implémentation de l'offre du 13 septembre.
 **Complété au lot 2** — les entrées 23 à 26 sont nouvelles, et deux entrées anciennes ont reçu une
-suite. **Rien n'a été réécrit.**
+suite. **Complété au correctif du lot 2** — entrées 27 à 30. **Rien n'a été réécrit.**
 
 **Ce fichier est un livrable, pas une excuse pour intervenir.** Chaque ligne est quelque chose que
 j'ai vu, vérifié assez pour l'écrire, et laissé en place — avec le lot à qui il appartient.
@@ -199,6 +199,73 @@ décrit ici au lot 1.
 `KIT_TIER_RULES.roster.maxPages` est passé de 4 à 6 (décision §2). La raison donnée — « un cabinet
 porte une page équipe » — bute sur ce même écart : `PAGES_WANTED` n'a pas de clé `team`, et
 `site_pages` en base porte un troisième découpage encore. Voir `DECISIONS_NEEDED.md` §11.
+
+---
+
+## Trouvé en PARCOURANT le produit, et corrigé (lot 2-fix)
+
+### 27. ⚠⚠ Le défaut que ce correctif existe pour réparer, et sa vraie gravité
+
+**Où** : `lib/brief/platform.ts`, `lib/brief/flow.ts:200`, `components/brief/step-bodies.tsx`.
+**Statut** : **corrigé**, pas laissé. Consigné parce que la MÉTHODE qui l'a laissé passer est ce
+qui compte.
+
+`lib/brief/platform.ts` a été écrit au lot 1, couvert par deux fichiers de test, et importé par
+**aucun** fichier de `app/` ni de `components/`.
+
+⚠ **Et ce n'était pas du code mort inoffensif.** `stepIssue("practice")` EXIGEAIT
+`site_platform_id` depuis le même lot — *« Tell us where your website lives »* — pendant qu'aucun
+écran n'offrait le champ pour répondre. **Un brief neuf se bloquait à l'étape 1, sur une question
+que personne ne posait.** Le projet de test existant ne le montrait pas : il porte
+`completed_steps = [1..7]` et `site_platform_id = null`, ayant été rempli avant que l'exigence
+n'existe.
+
+**Pourquoi toute la suite était verte** : chaque module était juste. Ce qui manquait était
+*entre* eux, et rien ne regardait là. Deux tests l'attrapent désormais, et les deux ont été
+sondés en remettant le produit dans son état défectueux (entrée 28).
+
+### 28. La qualification refusait, alors que l'ancienne offre est toujours vendue
+
+**Où** : `20260914120000_platform_qualification.sql`, en tête de fichier.
+**Statut** : **corrigé** — erreur de spec, pas de code.
+
+Le fichier disait : « Les autres sont refusées à l'inscription ». Mais `starter`, `practice` et
+`signature` sont toujours au catalogue, toujours sur `/pricing`, et **ne promettent aucune
+publication** : elles livrent des fichiers et un texte à coller. Refuser à l'inscription une
+praticienne sur Wix revenait à lui refuser une vente qu'on sait honorer, pour un service qu'elle
+ne demandait pas.
+
+`plans.requires_publishable_platform` remplace le refus par une éligibilité, **à la même porte que
+`plans.sellable`** plutôt que par un second mécanisme — un second point de passage serait un
+second endroit où oublier de brancher une règle, ce qui est exactement l'entrée 27.
+
+### 29. `BUILDER_TARGETS` a quitté l'écran ; la donnée est intacte
+
+**Où** : `components/brief/step-bodies.tsx` (l'entrée 23 du lot 2 signalait la contradiction).
+**Statut** : la QUESTION est retirée, **rien n'est supprimé en base**.
+
+`data.builder_target` reste dans le jsonb des briefs qui le portent, `builder_target_id` reste une
+colonne de `project_briefs`, et `lib/kit/site-prompt.ts` continue de les lire pour les kits déjà
+vendus. La constante de rendu part avec le contrôle qu'elle alimentait — c'était du code mort créé
+par ce correctif même, pas un refactor d'opportunité.
+
+⚠ **L'entrée 23 n'est donc PLUS la contradiction qu'elle décrivait**, mais son lot propriétaire ne
+change pas : retirer l'offre précédente de la vente reste **L23**.
+
+### 30. `plans.requires_publishable_platform` n'a aucun écran qui le LIT pour afficher un prix
+
+**Où** : `lib/billing/plans.ts` — `ORDERED_PLANS = LEGACY_KIT_TIERS.map(...)`.
+**Lot propriétaire** : **L23**.
+
+Le cahier de ce correctif demandait que « les paliers de la nouvelle offre soient présentés comme
+indisponibles avec la raison ». ⚠ **Ils ne sont présentés nulle part** : `/pricing` et
+`/app/checkout` n'itèrent que les trois paliers de l'offre précédente. `foundation` et `roster`
+existent dans `KIT_PLANS` et ne sont offerts par aucun écran.
+
+Ce qui EST fait : la règle d'éligibilité tient à la porte du paiement (donc un
+`?plan=foundation` forgé à la main est gouverné dès aujourd'hui), et la conséquence de sa réponse
+lui est dite **à l'étape 1**, le seul écran qui existe pour la porter. Mettre la nouvelle offre en
+vitrine est un autre travail, et c'est L23.
 
 ---
 

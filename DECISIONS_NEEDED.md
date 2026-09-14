@@ -343,3 +343,58 @@ retirer est L23. Le signaler est ce que je peux faire sans déborder.
 **Pour trancher** : soit L23 arrive et la question disparaît, soit il faut une phrase à l'étape 7
 qui distingue « publié par nous » de « à coller vous-même ». La seconde est un petit travail
 d'interface, pas une décision de schéma.
+
+---
+---
+
+# Ce que le CORRECTIF DU LOT 2 a ouvert
+
+## 13. ✅ TRANCHÉE — la plateforme n'est plus un refus
+
+Rappel de ce qui a changé, pour que §1 se relise correctement : `site_platforms.squarespace` reste
+`refused`, et **ce statut ne refuse plus une cliente**. Il ferme les quatre SKU qui promettent
+qu'Eklio publie (`foundation`, `roster`, `fill_solo`, `fill_practice`) et laisse tout le reste
+ouvert. Une praticienne sur Squarespace ou sur Wix achète l'offre précédente sans obstacle.
+
+## 14. ⚠ Un achat parti de `/pricing` ne peut pas acheter la nouvelle offre
+
+**Lot concerné** : non attribué. Le plus proche est **L23**.
+**Ce qui est en place** : `createCheckoutSession` refuse un SKU conditionné quand `projectId` est
+nul, avec la phrase *« Tell us where your website lives first »*.
+
+**Pourquoi ce choix** : la plateforme est une réponse du BRIEF. Un checkout parti de `/pricing`
+n'en a pas, et deviner reviendrait à encaisser 390 $ en promettant de publier sur une plateforme
+dont on ne sait rien. C'est le même sens de repli que `loadSitePlatforms`, qui rend une liste vide
+sur une lecture ratée.
+
+**Ce qu'il faut décider** : est-ce que `/pricing` doit pouvoir vendre The Foundation directement ?
+Si oui, il faut soit poser la question de plateforme sur `/pricing`, soit rattacher l'achat à un
+brief après coup. Les deux sont du travail, aucun n'est ce correctif.
+
+**Aujourd'hui la question est théorique** : aucun écran ne propose `foundation` ni `roster` à la
+vente (`OUT_OF_SCOPE.md` §30). Elle deviendra réelle le jour où L23 met la nouvelle offre en
+vitrine — et il vaut mieux l'avoir tranchée avant.
+
+## 15. La nouvelle offre n'est en vitrine nulle part
+
+**Lot concerné** : **L23**.
+
+Le cahier demandait que les paliers de la nouvelle offre soient « présentés comme indisponibles
+avec la raison ». Ils ne sont **présentés du tout** : `ORDERED_PLANS` n'itère que
+`LEGACY_KIT_TIERS`. La règle d'éligibilité est en place et gouverne le paiement ; la vitrine reste
+à faire, et elle appartient au lot qui retire l'offre précédente. Détail dans
+`OUT_OF_SCOPE.md` §30.
+
+## 16. Le garde-fou ne couvre que `lib/brief/`
+
+**Lot concerné** : aucun. C'est une limite assumée, écrite pour ne pas être prise pour un oubli.
+
+`lib/brief/__tests__/wired-to-a-screen.test.ts` échoue si un module de `lib/brief/` n'est importé
+par aucun fichier de `app/` ni de `components/`. Il s'arrête là volontairement : ce dossier décrit
+un **parcours**, donc un module que l'interface n'atteint pas est une étape qui n'existe pas pour
+la cliente. L'étendre à `lib/` entier en ferait une règle générale fausse — un module de
+génération n'a aucune raison d'être importé par un écran.
+
+⚠ **La famille de défaut n'est donc pas fermée ailleurs.** Si un autre dossier devait recevoir la
+même garde, `lib/billing/` serait le premier candidat : il décide ce qui est vendable, et une
+règle qu'aucun écran ne lit y aurait les mêmes conséquences qu'ici.
