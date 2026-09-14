@@ -1035,3 +1035,15 @@ update public.plans set sellable = false
  where tier = any (array['roster_seat', 'fill_solo', 'fill_practice']);
 
 -- <<< SELLABILITY DATA <<<
+
+-- >>> PUBLISHABLE PLATFORM DATA (mirrored verbatim in supabase/seed.sql) >>>
+
+-- ⚠ LES QUATRE DE LA NOUVELLE OFFRE, NOMMÉES UNE PAR UNE. Pas
+-- `where sort_order >= 10` : une future ligne de catalogue deviendrait
+-- silencieusement conditionnée à WordPress, et `identity_addon`, qui est de la
+-- même génération, ne l'est PAS — il livre un logo et des exports, qui
+-- n'exigent aucun site.
+update public.plans set requires_publishable_platform = true
+ where tier = any (array['foundation', 'roster', 'fill_solo', 'fill_practice']);
+
+-- <<< PUBLISHABLE PLATFORM DATA <<<
