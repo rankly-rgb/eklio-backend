@@ -1,5 +1,5 @@
 -- ============================================================================
--- Tests — 20260915103412_the_catalog_the_anonymous_brief_cannot_read.sql
+-- Tests — 20260915053102_the_catalog_the_anonymous_brief_cannot_read.sql
 -- ============================================================================
 -- Two questions, and they pull in opposite directions:
 --
