@@ -837,3 +837,28 @@ delete from public.license_type_states where license_type_id in ('psyd', 'phd');
 delete from public.license_types       where id in ('psyd', 'phd');
 
 -- <<< DEGREE AND PRACTICE TITLE DATA <<<
+
+-- >>> PSYCHOLOGIST HANDLE CORRECTION (mirrored verbatim in supabase/seed.sql) >>>
+
+update public.license_types
+   set label = 'PSYCH'
+ where id = 'licensed_psychologist';
+
+-- <<< PSYCHOLOGIST HANDLE CORRECTION <<<
+
+-- >>> LSW CATALOG ROW (mirrored verbatim in supabase/seed.sql) >>>
+
+insert into public.license_types (id, label, description, sort_order, active) values
+  ('lsw', 'LSW', 'Licensed Social Worker', 10, true)
+on conflict (id) do update
+  set label = excluded.label,
+      description = excluded.description;
+
+insert into public.license_type_states (license_type_id, state_code) values
+  ('lsw', 'PA')
+on conflict do nothing;
+
+delete from public.license_type_states
+ where license_type_id = 'lmsw' and state_code = 'PA';
+
+-- <<< LSW CATALOG ROW <<<
