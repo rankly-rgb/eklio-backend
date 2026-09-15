@@ -793,3 +793,47 @@ insert into public.app_settings (key, value) values
   ('usp_similarity_threshold', '0.55')
 on conflict (key) do nothing;
 -- <<< USP GUARDRAIL DATA <<<
+
+-- >>> DEGREE AND PRACTICE TITLE DATA (mirrored verbatim in supabase/seed.sql) >>>
+
+-- ⚠ CE BLOC CORRIGE `CATALOG DATA`, ET DOIT DONC ÊTRE REJOUÉ APRÈS LUI.
+-- `CATALOG DATA` (20260827100000) insère encore `psyd` et `phd` comme titres
+-- d'exercice — c'est son histoire, on ne la réécrit pas. Ce bloc-ci est la
+-- correction, et `check_seed_mirrors.sh` vérifie qu'il est mirroré APRÈS dans
+-- seed.sql : mirroré avant, l'ancienne copie gagnerait à chaque `db reset` et
+-- les deux diplômes redeviendraient des licences en silence.
+
+insert into public.degrees (id, label, full_name, sort_order) values
+  ('ma',    'MA',    'Master of Arts',            1),
+  ('ms',    'MS',    'Master of Science',         2),
+  ('msw',   'MSW',   'Master of Social Work',     3),
+  ('psyd',  'PsyD',  'Doctor of Psychology',      4),
+  ('phd',   'PhD',   'Doctor of Philosophy',      5),
+  ('edd',   'EdD',   'Doctor of Education',       6),
+  ('md',    'MD',    'Doctor of Medicine',        7)
+on conflict (id) do update
+  set label = excluded.label,
+      full_name = excluded.full_name,
+      sort_order = excluded.sort_order;
+
+insert into public.license_types (id, label, description, sort_order, active) values
+  ('licensed_psychologist', 'LP', 'Licensed Psychologist', 9, true)
+on conflict (id) do update
+  set label = excluded.label,
+      description = excluded.description;
+
+insert into public.license_type_states (license_type_id, state_code)
+select 'licensed_psychologist', st
+  from (values
+    ('AL'),('AK'),('AZ'),('AR'),('CA'),('CO'),('CT'),('DE'),('DC'),('FL'),
+    ('GA'),('HI'),('ID'),('IL'),('IN'),('IA'),('KS'),('KY'),('LA'),('ME'),
+    ('MD'),('MA'),('MI'),('MN'),('MS'),('MO'),('MT'),('NE'),('NV'),('NH'),
+    ('NJ'),('NM'),('NY'),('NC'),('ND'),('OH'),('OK'),('OR'),('PA'),('RI'),
+    ('SC'),('SD'),('TN'),('TX'),('UT'),('VT'),('VA'),('WA'),('WV'),('WI'),('WY')
+  ) as s(st)
+on conflict do nothing;
+
+delete from public.license_type_states where license_type_id in ('psyd', 'phd');
+delete from public.license_types       where id in ('psyd', 'phd');
+
+-- <<< DEGREE AND PRACTICE TITLE DATA <<<

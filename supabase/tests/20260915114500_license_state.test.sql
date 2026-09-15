@@ -178,9 +178,26 @@ end $$;
 do $$
 declare v_n int;
 begin
-  -- Anti-vacuité : la matrice existe et n'est pas réduite aux universels.
-  select count(*) into v_n from public.license_type_states;
-  assert v_n >= 250, format('la matrice ne porte que %s lignes', v_n);
+  /*
+   * ⚠ ANTI-VACUITÉ DÉRIVÉE, PAS UN NOMBRE ÉCRIT EN DUR. Un plancher figé était
+   * ici (250) et il est devenu faux le jour où `psyd`/`phd` ont quitté les
+   * licences pour devenir des diplômes : 290 lignes sont tombées à 239 et le
+   * test a viré au rouge sur un défaut qui n'existait pas. C'est la même
+   * famille que les trois défauts de la semaine, dans ce fichier.
+   *
+   * Ce qu'on veut prouver n'est pas « combien de lignes » mais « c'est une
+   * MATRICE, pas un produit cartésien » — car un cross join rendrait tous les
+   * États identiques et ferait passer chaque assertion « tel titre est
+   * délivré ici ». Donc : les 51 juridictions sont couvertes, et elles ne
+   * délivrent PAS toutes le même nombre de titres.
+   */
+  select count(distinct state_code) into v_n from public.license_type_states;
+  assert v_n = 51, format('la matrice ne couvre que %s juridictions', v_n);
+
+  select count(distinct c) into v_n
+    from (select count(*) as c from public.license_type_states group by state_code) t;
+  assert v_n > 1,
+    'toutes les juridictions délivrent le même nombre de titres : c''est un produit cartésien, pas une matrice';
 
   -- Les dix titres du catalogue y figurent tous : un titre proposé à l'écran 1
   -- sans aucune juridiction serait un titre impossible à choisir partout.
@@ -222,12 +239,23 @@ end $$;
 -- Le catalogue se lit comme les autres : une session oui, un anonyme sans
 -- jeton non.
 do $$
-declare v_n int;
+declare v_n int; v_total int;
 begin
+  /*
+   * ⚠ ON COMPARE À LA MATRICE, PAS À UN NOMBRE. Un plancher écrit en dur était
+   * ici et il a viré au rouge le jour où `psyd`/`phd` sont devenus des
+   * diplômes — sur un défaut qui n'existait pas. Ce qui compte est que la
+   * session voie TOUT, et l'anonyme sans jeton RIEN.
+   */
+  select count(*) into v_total from public.license_type_states;
+  assert v_total > 51,
+    'la matrice est trop courte pour que cette lecture prouve quoi que ce soit';
+
   set local role authenticated;
   set local request.headers = '{}';
   select count(*) into v_n from public.license_type_states;
-  assert v_n >= 250, format('une session ne voit que %s lignes du catalogue', v_n);
+  assert v_n = v_total,
+    format('une session voit %s lignes sur les %s de la matrice', v_n, v_total);
 
   set local role anon;
   select count(*) into v_n from public.license_type_states;
