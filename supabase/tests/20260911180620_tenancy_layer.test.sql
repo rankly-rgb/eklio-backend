@@ -146,6 +146,14 @@ insert into never_tenanted values
   -- Reference data: the vocabularies.
   ('asset_catalog'), ('builder_targets'), ('client_persona_cards'), ('color_names'),
   ('content_registers'), ('ethics_rules'), ('gain_cards'), ('license_types'),
+  /*
+   * `license_type_states` — QUELLE juridiction délivre QUEL titre. Du
+   * vocabulaire, au même titre que `license_types` dont elle est l'annexe :
+   * elle décrit les États-Unis, pas une cliente. Lui donner un
+   * organization_id prétendrait qu'une praticienne possède la nomenclature de
+   * son board.
+   */
+  ('license_type_states'),
   ('modality_cards'), ('modality_prominence_options'), ('not_a_fit_cards'),
   ('palette_families'), ('plans'), ('primary_actions'), ('problem_cards'),
   ('section_types'), ('session_style_cards'), ('site_goals'),
