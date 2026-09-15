@@ -156,3 +156,16 @@ grant select on all tables in schema auth, storage to anon, authenticated, servi
 -- (Supabase's own Postgres image pre-enables these; a stock apt install
 -- does not.) gen_random_uuid() is core since PG13, needs nothing.
 create extension if not exists pg_trgm;
+
+-- Supabase installs its extensions into a schema literally named
+-- `extensions`, and this repo's migrations call through it by that name —
+-- `extensions.digest(...)` in `anon_token_hash()`
+-- (20260910192157_anonymous_briefs.sql), in `accept_invitation()`
+-- (20260911195907_the_invitation.sql) and in the tests that mint token
+-- hashes. A stock apt install has no such schema, so the replay died on the
+-- first migration to use it with `schema "extensions" does not exist`.
+-- Added the same way as everything else here: by reading the actual error.
+create schema if not exists extensions;
+grant usage on schema extensions to anon, authenticated, service_role;
+create extension if not exists pgcrypto with schema extensions;
+grant execute on all functions in schema extensions to anon, authenticated, service_role;
