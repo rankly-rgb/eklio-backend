@@ -151,6 +151,37 @@ insert into never_tenanted values
   ('section_types'), ('session_style_cards'), ('site_goals'),
   ('site_output_templates'), ('specialties'), ('tone_cards'), ('type_pairings'),
   ('banned_phrases'), ('usp_stopwords'),
+  /*
+   * `site_platforms` — which website platforms Eklio will publish to. The same
+   * for everybody, owned by nobody, and READ BEFORE THERE IS ANYBODY: the
+   * qualification happens at signup, so an anonymous visitor with no project
+   * and no account must be able to see the list to learn that hers is not on
+   * it. An organization_id on this table would be a claim that one practice's
+   * list of supported platforms differs from another's, which is not a product
+   * anyone has asked for.
+   */
+  ('site_platforms'),
+  /*
+   * `site_pages` — which page keys a site specification may carry. Reference
+   * data in the strictest sense: `site_spec_page_keys()` reads it and
+   * `site_spec_pages_valid()` reads that, so it is read from inside a CHECK
+   * constraint, on every write, for every practice. An organization_id here
+   * would mean one practice's site may carry a page another's may not — which
+   * would make the same specification valid for one customer and invalid for
+   * the next, decided by a column nobody looks at.
+   */
+  ('site_pages'),
+  /*
+   * `ethics_patterns` — the deterministic advertising-ethics patterns. The
+   * same six rules bind every licensed clinician in the United States: they
+   * come from the ACA Code of Ethics, the APA Ethics Code and state licensing
+   * boards, not from anything a practice decides. An organization_id here
+   * would say one practice may advertise what another may not, which is not a
+   * thing Eklio is entitled to offer.
+   *
+   * Its sibling `ethics_rules` is already on this list, two lines up.
+   */
+  ('ethics_patterns'),
   -- Eklio's own instruments. Never a customer's data.
   ('anon_generation_counters'), ('app_settings'), ('brand_image_daily_spend'),
   ('direction_asset_daily_spend'), ('funnel_events'), ('funnel_steps'),

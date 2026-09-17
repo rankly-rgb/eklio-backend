@@ -793,3 +793,257 @@ insert into public.app_settings (key, value) values
   ('usp_similarity_threshold', '0.55')
 on conflict (key) do nothing;
 -- <<< USP GUARDRAIL DATA <<<
+
+-- ── 20260909094038_check_rewrite_daily_limit.sql ────────────────────────
+-- >>> CHECK REWRITE LIMIT (mirrored verbatim in supabase/seed.sql) >>>
+-- ⚠ THIS NUMBER IS THE DECISION, and it lives here so it moves without a
+-- deploy. Twenty a day: far past any honest editing session on one piece of
+-- copy, far short of a script.
+insert into public.app_settings (key, value) values
+  ('check_rewrites_per_user_per_day', '20')
+on conflict (key) do nothing;
+-- <<< CHECK REWRITE LIMIT <<<
+
+-- ── 20260914100000_the_new_offer_skus.sql ──────────────────────────────
+-- >>> OFFER SKU DATA (mirrored verbatim in supabase/seed.sql) >>>
+
+-- ⚠ CES NOMBRES SONT LA DÉCISION, comme pour le bloc PLAN DATA au-dessus.
+-- Changer un prix est un UPDATE ici et nulle part ailleurs. Les identifiants
+-- de prix Stripe ne sont PAS ici : ils diffèrent entre le mode test et le mode
+-- live, donc ils viennent de l'environnement (cf. ENV_REQUIRED.md).
+--
+-- `sort_order` reprend à 10 : l'offre précédente occupe 0 à 3, et intercaler
+-- aurait renuméroté des lignes que personne n'a demandé à déplacer.
+insert into public.plans
+  (tier, label, price_cents, kind, billing_period, per_seat, included_seats,
+   directions_limit, regenerations_limit, image_budget_cents, sort_order)
+values
+  -- Le livrable de tête de l'offre solo.
+  ('foundation', 'The Foundation', 39000, 'kit', 'once', false, null,
+   3, 6, 400, 10),
+
+  -- L'offre cabinet. Cinq cliniciennes comprises ; la sixième est un `seat`.
+  ('roster', 'The Roster', 69000, 'kit', 'once', false, 5,
+   3, 12, 600, 11),
+
+  -- ⚠ L'ACTUEL LIVRABLE DE TÊTE, DEVENU ACCESSOIRE. Il porte une allocation
+  -- parce qu'il en a besoin : produire logo, couleurs et typographie est une
+  -- vraie génération, avec ses reprises. Ce qui change est son prix et sa
+  -- place dans l'offre, pas ce qu'il fait.
+  ('identity_addon', 'Visual identity', 8900, 'addon', 'once', false, null,
+   3, 3, 200, 12),
+
+  -- ⚠ PAS D'ALLOCATION, ET C'EST VOULU. Ce qu'une clinicienne de plus reçoit
+  -- — son pack complet — est déclenché par son arrivée dans le cabinet, pas
+  -- par cette ligne de catalogue. Tant que ce déclenchement n'est pas écrit,
+  -- l'absence d'allocation fait échouer fermé plutôt que d'ouvrir une
+  -- génération que personne n'a branchée.
+  ('roster_seat', 'Additional clinician', 12000, 'seat', 'once', true, null,
+   null, null, 0, 13),
+
+  -- Les deux loyers. Ils ne produisent pas de kit : pas d'allocation.
+  ('fill_solo', 'The Fill', 5900, 'subscription', 'month', false, null,
+   null, null, 0, 14),
+  ('fill_practice', 'The Fill (practice)', 6900, 'subscription', 'month', true, null,
+   null, null, 0, 15)
+on conflict (tier) do update set
+  label               = excluded.label,
+  price_cents         = excluded.price_cents,
+  kind                = excluded.kind,
+  billing_period      = excluded.billing_period,
+  per_seat            = excluded.per_seat,
+  included_seats      = excluded.included_seats,
+  directions_limit    = excluded.directions_limit,
+  regenerations_limit = excluded.regenerations_limit,
+  image_budget_cents  = excluded.image_budget_cents,
+  sort_order          = excluded.sort_order;
+
+-- <<< OFFER SKU DATA <<<
+
+-- ── 20260914120000_platform_qualification.sql ──────────────────────────
+-- >>> SITE PLATFORM DATA (mirrored verbatim in supabase/seed.sql) >>>
+
+-- ⚠ CES TROIS STATUTS SONT LA DÉCISION, et `squarespace` est celui qui bougera.
+-- Le jour où la question est tranchée, c'est UN UPDATE sur une ligne.
+insert into public.site_platforms (id, label, status, notice, sort_order) values
+  ('wordpress', 'WordPress', 'accepted', null, 1),
+
+  ('squarespace', 'Squarespace', 'conditional',
+   'We are still confirming what we can publish to Squarespace on your behalf. You can sign up, and we will tell you before you pay if anything has to be done by hand.',
+   2),
+
+  -- Les plateformes qu'on rencontre et qu'on ne sait pas atteindre. Nommées
+  -- une par une plutôt que repliées sur « autre » : une visiteuse dont la
+  -- plateforme est nommée comprend qu'on l'a envisagée.
+  ('wix', 'Wix', 'refused',
+   'We do not publish to Wix yet. Everything we write for you would still be yours to paste, but putting it in place is the part we could not do.',
+   3),
+  ('webflow', 'Webflow', 'refused',
+   'We do not publish to Webflow yet. Everything we write for you would still be yours to paste, but putting it in place is the part we could not do.',
+   4),
+  ('other', 'Something else', 'refused',
+   'We only publish to WordPress today. Everything we write for you would still be yours to paste, but putting it in place is the part we could not do.',
+   5),
+  ('none', 'I do not have a website yet', 'refused',
+   'You will need a site before we can put anything on it. WordPress is the one we publish to today.',
+   6)
+on conflict (id) do update set
+  label      = excluded.label,
+  status     = excluded.status,
+  notice     = excluded.notice,
+  sort_order = excluded.sort_order;
+
+-- <<< SITE PLATFORM DATA <<<
+
+-- ── 20260914150000_pages_are_data.sql ──────────────────────────────────
+-- >>> SITE PAGE DATA (mirrored verbatim in supabase/seed.sql) >>>
+
+-- Les quatre d'aujourd'hui, à l'identique. Ce lot OUVRE la liste ; il n'ajoute
+-- aucune page, parce qu'aucune page mensuelle n'est encore produite et qu'une
+-- clé au catalogue que rien ne remplit est une promesse vide.
+insert into public.site_pages (key, label, sort_order) values
+  ('home',     'Home',     1),
+  ('about',    'About',    2),
+  ('services', 'Services', 3),
+  ('contact',  'Contact',  4)
+on conflict (key) do update set
+  label = excluded.label, sort_order = excluded.sort_order;
+
+-- <<< SITE PAGE DATA <<<
+
+-- ── 20260914170000_the_guard_moves_into_the_write.sql ──────────────────
+-- >>> ETHICS PATTERN DATA (mirrored verbatim in supabase/seed.sql) >>>
+
+-- ⚠ TRADUITS UN À UN DEPUIS `lib/ethics/rules.ts`, pas réinventés. `\b` devient
+-- `\y`, qui est la limite de mot de PostgreSQL ; le reste de la syntaxe est
+-- commun. L'ordre est celui du fichier source, pour que les deux se relisent
+-- en vis-à-vis.
+insert into public.ethics_patterns (id, rule_id, pattern, exception_pattern, severity, sort_order) values
+  ('resolution_verb', 'proven',
+   '\y(heal|heals|healed|healing|cure|cures|cured|curing|fix|fixes|fixed|fixing|eliminate|eliminates|eliminated|eliminating|erase|erases|erasing|end|ends|ending|resolve|resolves|resolved|resolving|overcome|overcomes|overcoming|banish|banishes|banishing|remove|removes|removing|conquer|conquers|conquering|defeat|defeats)\y( +\w+){0,3} +\y(anxiety|anxieties|depression|trauma|traumas|ptsd|panic +attacks?|panic|ocd|grief|addiction|addictions|burnout|stress|insomnia|adhd|phobias?|shame|codependency|overwhelm)\y',
+   null, 'block', 1),
+
+  ('free_you_from', 'proven',
+   '\y(free +you +from|rid +you +of|get +rid +of|take +away +your|make +(it|your +\w+) +go +away)\y',
+   null, 'block', 2),
+
+  ('is_gone', 'proven',
+   '\y(anxiety|anxieties|depression|trauma|traumas|ptsd|panic +attacks?|panic|ocd|grief|addiction|addictions|burnout|stress|insomnia|adhd|phobias?|shame|codependency|overwhelm)\y[^.!?]{0,30}\y(is|are|will +be|''?ll +be) +(gone|behind +you|history|a +thing +of +the +past|no +longer +(a +problem|an +issue))\y',
+   null, 'block', 3),
+
+  ('dated_promise', 'timeframe',
+   '\y(results?|relief|change|changes|healing|progress|improvement|breakthrough|transformation|better)\y[^.!?]{0,40}\yin +(as +little +as +|just +|only +)?[0-9]+ *(days?|weeks?|months?|sessions?)\y',
+   null, 'block', 4),
+
+  ('guarantee', 'proven', '\yguarantee(s|d|ing)?\y', null, 'block', 5),
+
+  ('clinically_proven', 'proven',
+   '\y(clinically|scientifically|medically|statistically) +proven\y|\yproven +(to\y|results?\y|method|approach|system|technique|protocol|track +record)',
+   null, 'block', 6),
+
+  ('success_rate', 'proven',
+   '\y([0-9]{1,3} *(%|percent)|[0-9]+ +out +of +[0-9]+|nine +out +of +ten) +(of +)?(my|our|her|his|their)? *(clients?|patients?)\y|\ysuccess +rate\y',
+   null, 'block', 7),
+
+  ('lasting_relief', 'proven',
+   '\y(lasting|permanent|life-?long|complete|full) +(relief|results?|recovery|healing|peace|calm|freedom)\y',
+   null, 'block', 8),
+
+  ('therapy_that_works', 'proven',
+   '\y(treatment|therapy|approach|method) +that +(actually +|really +)?(works|will +work)\y',
+   -- ⚠ L'EXCEPTION QUE POSTGRES NE SAIT PAS EXPRIMER EN LIGNE. « a therapy
+   -- that works best for you » est une phrase correcte et fréquente.
+   '\y(treatment|therapy|approach|method) +that +(actually +|really +)?(works|will +work) +(best +)?for +you\y',
+   'block', 9),
+
+  ('testimonial_word', 'client_voice', '\ytestimonials?\y', null, 'block', 10),
+
+  ('clients_say', 'client_voice',
+   '\y((my|our|her|his|their) +)?(clients?|patients?) +(often|frequently|sometimes|usually|always|regularly|routinely|consistently)? *(say|says|said|report|reports|reported|tell|tells|told|describe|describes|rave|love|feel|feels|felt)\y',
+   null, 'block', 11),
+
+  ('client_reviews', 'client_voice',
+   '\yclient +(reviews?|feedback|ratings?)\y|\ypatient +reviews?\y|\y(reviewed|rated|recommended) +by +(my|our|former|past|hundreds +of|[0-9]+) *(clients?|patients?)\y',
+   null, 'block', 12),
+
+  ('star_rating', 'client_voice',
+   '\yfive[- ]star\y|\y[0-9](\.[0-9])? *(/ *5|out +of +5) *stars?\y|[★⭐]',
+   null, 'block', 13),
+
+  ('success_story', 'client_voice',
+   '\y(success|client|patient) +stor(y|ies)\y', null, 'block', 14),
+
+  ('best_therapist', 'scarcity',
+   '(\y(best|top|leading|premier|foremost|most +trusted|top-?rated|number +one)|# *1) +(\w+ +){0,2}(therapist|therapists|counselor|counselors|counsellor|psychologist|psychologists|clinician|clinicians|clinic|provider|providers|coach|therapy)\y',
+   null, 'block', 15),
+
+  ('award_winning', 'credential',
+   '\y(award-?winning|nationally +recognized|world-?class|world-?renowned|renowned)\y',
+   null, 'warn', 16),
+
+  ('weekend_certification', 'credential',
+   '\y(weekend|two-?day|one-?day|[0-9]+-?(day|hour)) +(certification|certificate|certified|intensive)\y|\ycertified\y[^.!?]{0,40}\y(weekend|workshop|webinar|ce +course|short +course)\y',
+   null, 'block', 17),
+
+  ('you_have_condition', 'diagnosis',
+   '\yyou +(have|clearly +have|probably +have|likely +have|are +suffering +from|suffer +from) +(\w+ +){0,2}\y(anxiety|anxieties|depression|trauma|traumas|ptsd|panic +attacks?|panic|ocd|grief|addiction|addictions|burnout|stress|insomnia|adhd|phobias?|shame|codependency|overwhelm)\y',
+   null, 'block', 18),
+
+  -- ⚠ `limited spots` MANQUAIT DES DEUX CÔTÉS, et c'est ce fichier qui l'a
+  -- trouvé. `ethics_rules.scarcity.example_forbidden` vaut « Limited spots
+  -- available. » — l'exemple que le produit MONTRE à la praticienne pour lui
+  -- dire ce qui est interdit — et ni le motif TypeScript ni sa traduction ne
+  -- l'attrapaient : les deux exigeaient « only N spots left » ou « limited-TIME
+  -- offer ». Le produit affichait une règle qu'il ne faisait pas respecter.
+  -- Corrigé ici ET dans `lib/ethics/rules.ts`, ensemble.
+  ('scarcity_urgency', 'scarcity',
+   '\yonly +[0-9]+ +(spots?|slots?|places?|openings?) +(left|remaining|available)\y|\ylimited +(spots?|slots?|places?|openings?|availability|space)\y|\y(spots?|slots?|places?|openings?) +(are +)?(limited|filling +up)\y|\ylimited[- ]time +offer\y|\yact +now\y|\ydon''?t +wait\y|\ylast +chance\y|\ybook +(now +)?before +(prices|rates|spots)\y',
+   null, 'block', 19)
+on conflict (id) do update set
+  rule_id = excluded.rule_id, pattern = excluded.pattern,
+  exception_pattern = excluded.exception_pattern,
+  severity = excluded.severity, sort_order = excluded.sort_order;
+
+-- <<< ETHICS PATTERN DATA <<<
+
+-- >>> SQUARESPACE VERDICT (mirrored verbatim in supabase/seed.sql) >>>
+
+-- ⚠ UN UPDATE, PAS UN INSERT ... ON CONFLICT. La ligne existe depuis
+-- `20260914120000` et ce bloc ne fait que changer d'avis sur elle. Réécrire la
+-- ligne entière ici en ferait une seconde source pour son `label` et son
+-- `sort_order` — exactement la divergence que ce dépôt paie déjà ailleurs.
+--
+-- Le `notice` est la phrase que la visiteuse LIT. Elle est calquée sur celles
+-- de Wix et de Webflow, à un mot près : le nôtre ne dit pas « yet ». « Pas
+-- encore » serait une promesse implicite, et il n'y a rien à attendre — il n'y
+-- a pas d'API à laquelle se brancher.
+update public.site_platforms
+   set status = 'refused',
+       notice = 'We do not publish to Squarespace. Its API covers store orders and forms, not website pages, so there is no way for us to put anything on your site for you. Everything we write for you would still be yours to paste, but putting it in place is the part we could not do.'
+ where id = 'squarespace';
+
+-- <<< SQUARESPACE VERDICT <<<
+
+-- >>> SELLABILITY DATA (mirrored verbatim in supabase/seed.sql) >>>
+
+-- ⚠ NOMMÉES UNE PAR UNE, PAS `where kind <> 'kit'`. Une règle par nature
+-- ferait d'une future ligne de catalogue une chose invendable par accident, et
+-- l'inverse : `identity_addon` n'est pas un kit et SE VEND — il livre l'add-on
+-- identité à 89 $, qui existe et fonctionne. Ce ne sont pas les catégories qui
+-- sont invendables, ce sont ces trois lignes-là, chacune pour sa raison.
+update public.plans set sellable = false
+ where tier = any (array['roster_seat', 'fill_solo', 'fill_practice']);
+
+-- <<< SELLABILITY DATA <<<
+
+-- >>> PUBLISHABLE PLATFORM DATA (mirrored verbatim in supabase/seed.sql) >>>
+
+-- ⚠ LES QUATRE DE LA NOUVELLE OFFRE, NOMMÉES UNE PAR UNE. Pas
+-- `where sort_order >= 10` : une future ligne de catalogue deviendrait
+-- silencieusement conditionnée à WordPress, et `identity_addon`, qui est de la
+-- même génération, ne l'est PAS — il livre un logo et des exports, qui
+-- n'exigent aucun site.
+update public.plans set requires_publishable_platform = true
+ where tier = any (array['foundation', 'roster', 'fill_solo', 'fill_practice']);
+
+-- <<< PUBLISHABLE PLATFORM DATA <<<

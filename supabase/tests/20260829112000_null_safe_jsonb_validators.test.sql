@@ -88,7 +88,25 @@ insert into array_validators values
   -- ⚠ IT IS STILL HELD TO NEVER RETURNING NULL by section 2 below, which
   -- walks all three lists — which is the whole point of this file, and the
   -- reason naming it here is registration rather than exemption.
-  ('funnel_props_are_safe');
+  ('funnel_props_are_safe'),
+  -- 20260914140000_the_directory_profile.sql: the CHECK on
+  -- `directory_profiles.structured`. Same family as the two directly above —
+  -- an object with NO required keys, `{}` being its PASSING case, so section
+  -- 3's "remove each required key and assert refusal" would be testing
+  -- something this validator does not claim.
+  --
+  -- ⚠ WHAT IT DOES CLAIM is narrower than those two and matters more here:
+  -- every value is an ARRAY OF NON-EMPTY STRINGS. An empty string inside a
+  -- list is precisely the shape a dropped optional field takes when nobody
+  -- handled it — a therapist with no declared insurance yielding `[""]`
+  -- rather than no key — and a directory profile is an assembly of optional
+  -- fields, which is this repo's most expensive defect (README.md,
+  -- "Discipline NULL": three lines vanished from a paid deliverable). That
+  -- claim is asserted directly in the migration's own self-check, written at
+  -- the same time as this line rather than promised by it.
+  --
+  -- ⚠ IT IS STILL HELD TO NEVER RETURNING NULL by section 2 below.
+  ('directory_structured_valid');
 
 do $$
 declare

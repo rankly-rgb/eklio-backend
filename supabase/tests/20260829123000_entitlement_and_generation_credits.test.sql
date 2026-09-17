@@ -478,11 +478,34 @@ $$;
 
 -- The plans table is readable, and writable by nobody
 do $$
-declare ok boolean := false; n int;
+declare ok boolean := false; n int; n_all int;
 begin
+  /*
+   * ⚠ LU AVANT LE CHANGEMENT DE RÔLE. `postgres` contourne la RLS, donc ce
+   * compte-ci est le total réel de la table. Le relire APRÈS `set local role`
+   * donnerait le même chiffre que la ligne d'en face et l'assertion serait
+   * vraie par construction - un test qui ne peut pas échouer.
+   */
+  select count(*) into n_all from public.plans;
+
   set local role authenticated;
   set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111"}';
-  assert (select count(*) from public.plans) = 4, 'she cannot read the plans';
+  /*
+   * ⚠ THE COUNT USED TO BE HARD-CODED AT 4, and the offer of 13 September
+   * added six rows to the catalogue, so it went red on a change that was
+   * deliberate. The number was never what this line was about: the question
+   * is "may an ordinary signed-in caller READ this table", and a count of
+   * rows is a brittle way to ask it.
+   *
+   * Asking whether she sees EVERY row is strictly stronger than asking
+   * whether she sees four: it fails if `plans_select_all` is narrowed, if a
+   * row is hidden from her, and if the grant is withdrawn - and it does not
+   * fail when somebody sells something new.
+   */
+  select count(*) into n from public.plans;
+  assert n > 0, 'she cannot read the plans';
+  assert n = n_all,
+    format('a signed-in caller sees %s of the %s plans', n, n_all);
   begin
     update public.plans set regenerations_limit = 999;
     get diagnostics n = row_count; ok := (n = 0);
