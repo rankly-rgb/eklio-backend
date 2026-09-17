@@ -1,0 +1,88 @@
+# Les divergences ACCEPTÉES entre la production et un rejeu.
+#
+# `genre|identité|empreinte_production|empreinte_rejeu  # raison`
+#
+# ⚠ PAR IDENTITÉ ET PAR EMPREINTE, JAMAIS PAR NOMBRE.
+#
+# « quarante-sept sont attendues » serait un angle mort : la quarante-huitième
+# rougirait, mais l'une des quarante-sept pourrait changer de contenu sans que
+# rien ne bouge. Une exception qui ne sait pas ce qu'elle exempte n'exempte pas,
+# elle aveugle.
+#
+# Chaque ligne nomme LE TRIPLET. Si la production change, si le rejeu change, ou
+# si l'objet disparaît, le triplet ne correspond plus, la divergence redevient
+# comptée, et la CI rougit. C'est le comportement qu'on veut : ces lignes disent
+# « cet écart-là, celui que nous avons lu », pas « des écarts sur ces objets ».
+#
+# ── CE QUI EST ACCEPTÉ, ET SUR QUELLE PREUVE ────────────────────────────
+#
+# Quarante-sept définitions brutes de fonction, toutes du même écart et toutes
+# dans le même sens : LA PRODUCTION EST LE CÔTÉ APPAUVRI. Ce qui les a
+# appliquées a retiré les commentaires en chemin ; le dépôt est le côté long,
+# sur les quarante-sept, sans exception.
+#
+# Le classement n'est PAS le regex de schema_fingerprint.sql, dont l'en-tête dit
+# lui-même qu'il est faux dans le sens qui fait paraître égales deux définitions
+# différentes. Il vient de `scripts/sql_tokens.py`, un vrai lexer PostgreSQL
+# dont seize sondes couvrent les trois cas que le regex rate. Verdicts, trois
+# permis et pas de quatrième : 0 identique, 47 écarts de commentaire prouvés,
+# 0 comportement différent. Le détail est dans
+# supabase/tests/helpers/function_drift_2026-09-17.md.
+#
+# Trente-huit dataient déjà de l'empreinte du 12 septembre. Trois sont arrivées
+# avec la récupération des onze. Six sont arrivées le 17 septembre quand le
+# dépôt a repris la version LONGUE des onze migrations (celle de
+# claude/foundation-lot3-wiring) : ces six fonctions y sont redéfinies, donc le
+# rejeu les produit désormais commentées alors que la production porte l'extrait.
+#
+# ⚠ CE FICHIER NE SE RÉGÉNÈRE PAS EN MASSE. Y ajouter une ligne veut dire :
+# quelqu'un a lu la divergence, l'a passée au lexer, et écrit pourquoi elle est
+# acceptable. Le régénérer d'un coup après un changement rouge reviendrait à
+# supprimer la CI en la gardant verte.
+function|brand_images_claim(p_brand_kit_id uuid, p_slot text, p_image_fingerprint text, p_cost_estimate_cents integer, p_daily_cap_cents integer, p_reclaim_after interval)|d226e001234200d00c8f8b4e1a377deb|70b948fc4761bc8fed48d7518ca83240  # commentaires retirés à l'application ; le dépôt est le côté long
+function|brand_images_enabled()|37e256566648f65bd4f5b07293bd1707|eb7ef80cb551197c0dcabfda13429ad9  # commentaires retirés à l'application ; le dépôt est le côté long
+function|brand_images_mark_failed(p_image_id uuid, p_claim_token timestamp with time zone, p_status text, p_failure_reason text)|46619b22e76133449e7f5c1117e9a650|a7de562c6d59aa2e4a4ced8c9b1d9ac6  # commentaires retirés à l'application ; le dépôt est le côté long
+function|brand_images_mark_ready(p_image_id uuid, p_claim_token timestamp with time zone, p_storage_path text, p_byte_size integer, p_cost_cents integer, p_model text, p_quality text, p_size text)|25276d898c7474ba6e7eeb7c9037f545|a862ae569617aad50237a47d10513100  # commentaires retirés à l'application ; le dépôt est le côté long
+function|brand_kit_entitled(p_brand_kit_id uuid)|2068362a398306c092ad46201111c19e|85509bd4517448fcd0f901e1648a504a  # commentaires retirés à l'application ; le dépôt est le côté long
+function|brand_kit_has_generation_credit(p_brand_kit_id uuid)|3297262e512354dd60f736dc4063d169|14f491ef202f0aa66b3202ed125fdeb0  # commentaires retirés à l'application ; le dépôt est le côté long
+function|consume_check_rewrite()|c6d003309b8dc89b66cb159c4678aa6c|cad83f7632501455e6aaadb552f2c893  # commentaires retirés à l'application ; le dépôt est le côté long
+function|consume_generation_credit(p_brand_kit_id uuid)|a3ea6fd67afa60e6c53f341391d6b94f|5e5734b0e1492501994a9de03d0548e8  # commentaires retirés à l'application ; le dépôt est le côté long
+function|direction_assets_claim(p_brand_kit_id uuid, p_direction_index integer, p_palette_hash text, p_cost_estimate_cents integer, p_daily_cap_cents integer, p_reclaim_after interval)|ff6c3d2bcc646c12d64a07cc6840a0fa|cf492d8c0fd740710e06350b7f204d5b  # commentaires retirés à l'application ; le dépôt est le côté long
+function|direction_limits()|61f2622e9b6d1fc87d83262ca532b622|d74a28f91454a677d82b979828ac4698  # commentaires retirés à l'application ; le dépôt est le côté long
+function|directory_structured_valid(p jsonb)|453229bc2cf0996a8f61637ce88f4eb8|e871ef1d7cb0a59c86c7e15077ed5bf4  # prose reprise de la version longue des onze le 17-09 ; le corps normalisé est identique
+function|enforce_direction_selection_entitlement()|e0c993f6f226de509c0a14d87035ae75|2a9e8afbcfa8c97b63061c8bd3734845  # commentaires retirés à l'application ; le dépôt est le côté long
+function|get_brand_asset_manifest(p_brand_kit_id uuid, p_current_fingerprint text)|85c972c860abf702c53caef6915842b9|cc4054da0f7a0c4c852ffb4b27ff1f7b  # commentaires retirés à l'application ; le dépôt est le côté long
+function|get_brand_images(p_brand_kit_id uuid, p_image_fingerprint text)|61cad7906032e9454de633b0f92fe54b|b3bc4596a0088ca8b5d685109c2c10d7  # commentaires retirés à l'application ; le dépôt est le côté long
+function|get_directory_profile(p_brand_kit_id uuid, p_platform text)|e5636f981fbeb8332a9c0b81b61c7b50|3275c3dd612c3681e0861ae30a7f98b5  # prose reprise de la version longue des onze le 17-09 ; le corps normalisé est identique
+function|maintain_site_spec_text_variants()|3e238e2d09353501ce1a3ad9795b287a|0d78803631665b6812aadd4da3b37d9f  # commentaires retirés à l'application ; le dépôt est le côté long
+function|nearest_color_name(p_hex text)|190ca02e1ebde2b6369e055081c6cc75|a6a7673211d99286ee4819a7fd0c84de  # commentaires retirés à l'application ; le dépôt est le côté long
+function|project_briefs_usp_options_valid(p jsonb)|4f0b8c3a91294067899eadaf96463647|8e4c0674d64f11f0db3780a4769253cc  # prose reprise de la version longue des onze le 17-09 ; le corps normalisé est identique
+function|purchase_status_events_apply()|7b40772cd98be02f7af108708896e225|870188fced24bdb54e1f4c2b0051f882  # commentaires retirés à l'application ; le dépôt est le côté long
+function|purchases_kind_matches_plan()|d451c63c6ad46395952b65b47ad0a395|bddc63bf09365cdfc3da807257e043f1  # prose reprise de la version longue des onze le 17-09 ; le corps normalisé est identique
+function|record_platform_refusal(p_platform_id text, p_project_id uuid)|4829d8d02eb36342a696697757576190|a6f0ee83cf94eab4bd29ab560812679e  # prose reprise de la version longue des onze le 17-09 ; le corps normalisé est identique
+function|section_type_fields_valid(p jsonb)|b4cf270e47810a46aa9fafc63838972f|9ef9426b9ea9b6d578bf74ee84c4e47a  # commentaires retirés à l'application ; le dépôt est le côté long
+function|seed_launch_checklist(p_brand_kit_id uuid)|3b2fbc1e9336fa7b47e804dcd9a12cc4|bcb907095bfa480dc8e8df405bcab12c  # commentaires retirés à l'application ; le dépôt est le côté long
+function|set_launch_step(p_brand_kit_id uuid, p_key text, p_status text)|343bef9246d39e34f7748e20f4c42ad5|b23dfc9df72f8e0a2d420ab993a72793  # commentaires retirés à l'application ; le dépôt est le côté long
+function|site_catalog()|11ab932e63c59ec9c9b7cea011b779fd|e3c74cf0477777939dd56619b7512644  # commentaires retirés à l'application ; le dépôt est le côté long
+function|site_output_fragments(p_target text)|f6c2db7eb8399f86883047798b3d240b|06c30efd5073d828a76bd286d0c46f7b  # commentaires retirés à l'application ; le dépôt est le côté long
+function|site_output_get(p_brand_kit_id uuid, p_target text, p_format text)|2c68140b3d25c8821b9aec412d2f27b6|c02eb0f3c86ef506bd8f732aa42e1a5f  # commentaires retirés à l'application ; le dépôt est le côté long
+function|site_output_mark_copied(p_brand_kit_id uuid)|c948803aaf7ddcb00c15be8f2bbd3d81|71f3a12246cebf1734d3e358ea06fac4  # commentaires retirés à l'application ; le dépôt est le côté long
+function|site_spec_accent_try(p_primary text, p_secondary text, p_light_neutral text, p_deg numeric, p_check_distance boolean)|9dfbca8500804501cb6e4dfc3a120456|f7737c937cae778c5c19e4fcef8fdd2d  # commentaires retirés à l'application ; le dépôt est le côté long
+function|site_spec_copy_blocks(p_spec jsonb)|52e0823ab579081e22200d64c6b8cd9d|c9a654f2c18126f26a2e35722322cc33  # commentaires retirés à l'application ; le dépôt est le côté long
+function|site_spec_credential_line(p_details jsonb, p_frag jsonb)|2991881fb3c95af72c43164aaab87de4|d114b63aa0e225c1dd6c372d30db8e98  # commentaires retirés à l'application ; le dépôt est le côté long
+function|site_spec_cta_ink(p_primary_hex text, p_dark_neutral_hex text)|249eefca73849834cfb0d41647d50e03|0c1e8e2a07afaecedd18efc19c6c6818  # commentaires retirés à l'application ; le dépôt est le côté long
+function|site_spec_derive_accent(p_primary text, p_secondary text, p_light_neutral text)|6f4701d2627d41a7c4e07aa84544be08|b514d96f57cdf81045554d848384f400  # commentaires retirés à l'application ; le dépôt est le côté long
+function|site_spec_fix_contrast(p_brand_kit_id uuid, p_pair_id text)|54dba4c6288498318024bf0458781c01|693518e77b1ae987ff9ca5a8627ca918  # commentaires retirés à l'application ; le dépôt est le côté long
+function|site_spec_hero_valid(p jsonb)|5416cf3571af40b36675958cfecc3a87|541a7f778dfc38bd7c0780264bc255d2  # commentaires retirés à l'application ; le dépôt est le côté long
+function|site_spec_hue_tolerance(p_saturation numeric)|9d911fa77257f10e19358845aba9547f|c0bfafc164bbdf6ceac1b15c56ea44a3  # commentaires retirés à l'application ; le dépôt est le côté long
+function|site_spec_identity_lines(p_spec jsonb, p_frag jsonb)|6944c517a0839a7c5f37f4a5ef4880f7|8ee70841c2b8ab3f7f0042e8248a18da  # commentaires retirés à l'application ; le dépôt est le côté long
+function|site_spec_lab(p_hex text)|6905f7839dbd8f47e103ea3467592ba6|56164e57372e2d4451c2b448a44afc3e  # commentaires retirés à l'application ; le dépôt est le côté long
+function|site_spec_output_prompt(p_spec jsonb, p_target text)|0fe8c6a54ea0ef1fef1120833c08f50d|0d1f01d968761599de8afb1ff762603a  # commentaires retirés à l'application ; le dépôt est le côté long
+function|site_spec_output_setup_sheet(p_spec jsonb, p_target text)|ace4782745cd91aa1783934a13cabdfa|8cb68708cabeeec6b79077586882af8f  # commentaires retirés à l'application ; le dépôt est le côté long
+function|site_spec_pages_valid(p jsonb)|5a14b504bcd84eea8e1835eeca6cb3ac|f86e100b86aee5180905b5d8064ff887  # prose reprise de la version longue des onze le 17-09 ; le corps normalisé est identique
+function|site_spec_preview_model(p_spec jsonb)|427450f3d6d4f265974de1bdc6624b55|35fb604d44ec058ec990e663fdd36f6b  # commentaires retirés à l'application ; le dépôt est le côté long
+function|site_spec_seed_clamped_valid(p jsonb)|9e37207a0eab0b5fa6d8b720888554cd|09da90a4dea6d31b44130049baf25af6  # commentaires retirés à l'application ; le dépôt est le côté long
+function|site_spec_seed_values(p_brand_kit_id uuid)|7a4e12f680895f336996e691463db9af|c60cb4b4bd037aafc2f4a42f2736e84e  # commentaires retirés à l'application ; le dépôt est le côté long
+function|site_spec_suggest_hex(p_move_hex text, p_fixed_hex text, p_target numeric)|ed7a9ec0cd4667798b179078c302de86|d4aff2deeca7859782c2f37474d47c43  # commentaires retirés à l'application ; le dépôt est le côté long
+function|site_spec_text_variant(p_brand_hex text, p_paper_hex text)|023810a0ea7e2af0a825961be9e4881b|dade86e04bdfe5ff27e842c73cf854ab  # commentaires retirés à l'application ; le dépôt est le côté long
+function|site_spec_voice_guide(p_spec jsonb)|a18d10f4ed6b3463e49b92f65d33ebed|c14d849ec01a61344a6689f67b08a663  # commentaires retirés à l'application ; le dépôt est le côté long

@@ -59,6 +59,19 @@ echo ""
 echo "== The SQL lexer still refuses what the regex accepts =="
 python3 scripts/sql_tokens.py --self-test
 
+# ⚠ LA MÊME QUESTION QUE LA CI, POSÉE ICI. `schema-drift.yml` compare le rejeu à
+# l'empreinte de production enregistrée ; la poser seulement en CI veut dire
+# l'apprendre après avoir poussé. Les divergences déjà lues sont exemptées par
+# triplet dans schema_drift_accepted.txt — pas par nombre.
+echo ""
+echo "== Drift against the recorded production fingerprint =="
+sudo -u postgres psql -d "$DB" -At -q -f supabase/tests/helpers/schema_fingerprint.sql \
+  | sort > /tmp/_replay_fingerprint.txt
+python3 supabase/tests/helpers/schema_drift_report.py \
+  supabase/tests/helpers/schema_fingerprint.production.txt \
+  /tmp/_replay_fingerprint.txt \
+  | grep -E '^(production|replay|== |TOTAL|  Ces)' | head -20
+
 echo ""
 echo "Migrations replayed clean. Tests: $ran run, $failed failed."
 if [ "$failed" -ne 0 ]; then

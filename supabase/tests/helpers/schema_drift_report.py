@@ -19,6 +19,7 @@ Reads two files of `kind|identity|fingerprint` lines and prints three lists:
 Usage:  schema_drift_report.py <production.txt> <replay.txt>
 Exits 1 when anything diverges. A drifted schema is a failure, not a warning.
 """
+import os
 import sys
 
 
@@ -38,8 +39,34 @@ def load(path):
     return out
 
 
+def load_accepted(path):
+    """kind|identity|prod|replay -> reason, pour les divergences déjà lues.
+
+    ⚠ LE TRIPLET, PAS L'IDENTITÉ. Exempter « cette fonction » laisserait son
+    contenu changer des deux côtés sans que rien ne rougisse. Exempter « cette
+    fonction, avec CETTE empreinte de production et CETTE empreinte de rejeu »
+    ne laisse passer que l'écart qui a été lu : dès qu'un des deux côtés bouge,
+    le triplet ne correspond plus et la divergence est comptée.
+    """
+    accepted = {}
+    if not path or not os.path.exists(path):
+        return accepted
+    with open(path, encoding="utf-8") as handle:
+        for raw in handle:
+            line = raw.split("#", 1)[0].strip()
+            if not line:
+                continue
+            parts = line.split("|")
+            if len(parts) < 4:
+                continue
+            prod_fp, replay_fp = parts[-2], parts[-1]
+            key = "|".join(parts[:-2])
+            accepted[(key, prod_fp, replay_fp)] = raw.split("#", 1)[1].strip() if "#" in raw else ""
+    return accepted
+
+
 def main():
-    if len(sys.argv) != 3:
+    if len(sys.argv) not in (3, 4):
         print(__doc__)
         return 2
 
@@ -77,8 +104,31 @@ def main():
     def is_env(key):
         return key.split("|", 1)[0].endswith(".env")
 
-    different = [k for k in different_all if not is_env(k)]
+    different_schema = [k for k in different_all if not is_env(k)]
     different_env = [k for k in different_all if is_env(k)]
+
+    # ⚠ LES DIVERGENCES DÉJÀ LUES, ET SEULEMENT CELLES-LÀ.
+    #
+    # Le fichier par défaut est schema_drift_accepted.txt, à côté de celui-ci.
+    # Une divergence n'y est reconnue que si son identité ET ses deux empreintes
+    # correspondent : c'est ce qui fait qu'une des quarante-sept qui changerait
+    # rougirait, au lieu d'être couverte par une exception qui ne sait pas ce
+    # qu'elle exempte.
+    accepted_path = (sys.argv[3] if len(sys.argv) == 4
+                     else os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                       "schema_drift_accepted.txt"))
+    accepted = load_accepted(accepted_path)
+    matched = [k for k in different_schema
+               if (k, production[k], replay[k]) in accepted]
+    different = [k for k in different_schema if k not in set(matched)]
+
+    # ⚠ ANTI-VACUITÉ, DANS L'AUTRE SENS. Une exemption qui ne correspond plus à
+    # rien est une exemption périmée : l'objet a changé, ou il a disparu. La
+    # taire laisserait le fichier grossir en silence jusqu'à ne plus décrire
+    # aucune des divergences réelles.
+    stale = [k for k in accepted
+             if k[0] not in production or k[0] not in replay
+             or production[k[0]] != k[1] or replay[k[0]] != k[2]]
 
     print(f"production objects: {len(production)}")
     print(f"replay objects:     {len(replay)}")
@@ -99,11 +149,25 @@ def main():
     section("ENVIRONMENT, NOT SCHEMA (printed, not counted -- see the .env note "
             "in schema_fingerprint.sql)", different_env,
             lambda k: f"prod={production[k][:8]} replay={replay[k][:8]}")
+    section("ALREADY READ AND ACCEPTED (identity AND both fingerprints matched "
+            "-- schema_drift_accepted.txt)", matched,
+            lambda k: accepted[(k, production[k], replay[k])])
 
-    total = len(only_production) + len(only_replay) + len(different)
+    if stale:
+        print(f"== STALE EXEMPTIONS: {len(stale)} ==")
+        print("  Ces lignes de schema_drift_accepted.txt ne correspondent plus à")
+        print("  aucune divergence réelle : l'objet a changé ou disparu. Les")
+        print("  relire, ou les retirer -- une exemption périmée cache la")
+        print("  divergence suivante.")
+        for key, prod_fp, replay_fp in sorted(stale):
+            print(f"  {key}   prod={prod_fp[:8]} replay={replay_fp[:8]}")
+        print("")
+
+    total = len(only_production) + len(only_replay) + len(different) + len(stale)
     print(f"TOTAL DIVERGENCES: {total}"
-          + (f"   (+{len(different_env)} environmental, not counted)"
-             if different_env else ""))
+          + (f"   (+{len(different_env)} environmental, "
+             f"+{len(matched)} already read, not counted)"
+             if different_env or matched else ""))
     return 1 if total else 0
 
 
