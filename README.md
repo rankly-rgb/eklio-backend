@@ -100,6 +100,100 @@ est réellement déployé.
 > correction est une nouvelle migration — jamais une modification d'une
 > ancienne.
 
+#### Le cas inverse, trouvé le 17 septembre : `apply_migration` numérote lui-même
+
+La règle ci-dessus suppose que le nom de fichier EST ce que le distant a
+enregistré. Il existe un chemin où ça n'a jamais été vrai, et il faut le
+connaître avant de relire un `git log` :
+
+| chemin d'application | version enregistrée dans `schema_migrations` |
+|---|---|
+| `supabase db push` | **le nom du fichier**, tel quel |
+| `apply_migration` (outil MCP / Management API) | **l'horodatage du serveur au moment de l'appel** — le `name` passé devient le libellé, jamais la version |
+
+Six migrations de la semaine du 15 septembre ont été appliquées par le second
+chemin. Elles étaient donc en production sous `20260915100122`,
+`20260915101137`, `20260915122121`, `20260915125159`, `20260915135138` et
+`20260915135207`, pendant que les fichiers du dépôt s'appelaient
+`20260915114500`, `20260915140000`, `20260915163000`, `20260915183000`,
+`20260915203000` et `20260915213000`. Rien n'a levé d'erreur — et un
+`supabase db push` les aurait TOUTES ré-appliquées, sondes comprises, parce
+qu'aucune de ces six versions ne figurait dans le registre distant.
+
+Les fichiers ont été renommés vers les versions enregistrées. **Ce n'est pas
+une exception à la règle, c'est son application** : la règle protège
+l'identité que le distant a enregistrée, et ici c'est le nom de fichier qui
+s'en écartait, pas l'inverse. Renommer rapproche ; ne pas renommer aurait
+laissé le piège armé.
+
+> **La conséquence pratique :** après tout `apply_migration`, relire
+> `select version, name from supabase_migrations.schema_migrations order by
+> version desc limit 10` et nommer le fichier d'après la version rendue. Ne
+> jamais choisir l'horodatage à la main en espérant qu'il colle.
+
+#### ⚠ NE JAMAIS RÉGÉNÉRER UN FICHIER DE FONCTION DEPUIS LA PRODUCTION
+
+Le 17 septembre, une fois les onze migrations récupérées et les six renommées,
+un replay complet de `supabase/migrations` coïncide avec la production sur
+**tout** : 2504 objets de chaque côté, zéro en trop d'un côté ou de l'autre,
+et le genre `function.body` identique en entier, les 258.
+
+**Sauf sur une chose, et elle décide de cette règle :** quarante et une
+définitions de fonction diffèrent, et **c'est la production qui est la version
+appauvrie**. Ce qui les a appliquées a retiré les commentaires en chemin. Le
+dépôt est le côté long, sur les quarante et une, sans exception.
+
+Le classement est prouvé, pas supposé : `scripts/sql_tokens.py` est un vrai
+lexer PostgreSQL (commentaires imbriqués, `''`, `E'\'`, dollar-quotes, corps de
+fonction ouvert) et ses seize sondes couvrent les trois cas que le regex de
+`schema_fingerprint.sql` rate. Verdict sur les 41 : **zéro identique, 41 écarts
+de commentaire, zéro comportement différent.** Le détail est dans
+`supabase/tests/helpers/function_drift_2026-09-17.md`.
+
+> **La règle :** un fichier de `supabase/migrations` ne se régénère JAMAIS
+> depuis `pg_get_functiondef()` sur la production. Ce qui y vit est ce que le
+> dépôt a de plus que la base — les raisons, les avertissements, les « pourquoi
+> pas l'autre façon ». Une régénération les effacerait toutes d'un coup, sans
+> rien casser, sans rien lever, et personne ne s'en apercevrait avant d'avoir à
+> relire une de ces fonctions.
+>
+> C'est l'inverse exact de la règle précédente, et les deux tiennent ensemble :
+> **la production est l'autorité sur ce qui EST déployé** (donc sur les numéros
+> de version, sur les effets, sur l'empreinte) ; **le dépôt est l'autorité sur
+> ce que ça VEUT DIRE.** Chaque copie va dans un seul sens. Régénérer un
+> fichier depuis la base, c'est laisser l'une des deux écraser l'autre là où
+> elle n'a rien à dire.
+
+La transcription faite dans l'autre sens reste légitime et a déjà servi deux
+fois (`20260901190000_codify_rls_auto_enable.sql` en est née) : transcrire
+depuis la production un objet que le dépôt ne décrit PAS DU TOUT comble un
+trou. Remplacer un fichier qui existe, non.
+
+#### `main` a été ré-enraciné : tout ce qui précède est l'ancien dépôt
+
+Relevé le 17 septembre, en cherchant combien de fusions restaient :
+
+| | racine de `main` | taille |
+|---|---|---|
+| `eklio-backend` | `f37753b`, **5 septembre 2026** | 50 commits |
+| `eklio-frontend` | `bc26d83`, **9 septembre 2026** | 77 commits |
+
+Les branches créées AVANT ces dates n'ont **aucun ancêtre commun** avec `main` :
+`git merge` y répond `fatal: refusing to merge unrelated histories`. Elles ne
+sont pas du travail en attente, c'est le dépôt d'avant. Sur 39 branches non
+fusionnées, **33 sont dans ce cas** ; les six autres portaient du travail réel
+et ont été fusionnées le 17 septembre.
+
+> **La conséquence pratique :** `git branch -r --no-merged origin/main` n'est PAS
+> une liste de fusions en retard sur ce dépôt. Avant de conclure quoi que ce
+> soit d'une branche non fusionnée, lire `git merge-base origin/main <branche>` :
+> vide, c'est l'ancien dépôt.
+>
+> ⚠ Et ne pas lire un `2>/dev/null` comme un succès. Le premier relevé annonçait
+> « 0 conflit » sur cinq de ces branches : `stderr` était redirigé, et le refus
+> de git se lisait comme une fusion propre. C'est le défaut que tout ce README
+> décrit, produit dans l'outil chargé de le mesurer.
+
 ## Répartition des responsabilités
 
 Ce repo possède : les tables, colonnes, contraintes, policies RLS, triggers,

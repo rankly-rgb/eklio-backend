@@ -1,0 +1,55 @@
+# Les onze migrations du 14 septembre — ce qu'elles EXÉCUTENT, prouvé au lexer.
+#
+# `md5_tokens_ran  md5_tokens_file  tokens  md5_octets_ran  fichier`
+#
+# ⚠ POURQUOI PAS UN md5 D'OCTETS. Les onze ont été appliquées en production par
+# `apply_migration`, sous forme d'EXTRAIT : la prose avait été retirée en
+# chemin. Les fichiers complets dont ces extraits venaient existaient, sur
+# `claude/foundation-lot3-wiring`, et c'est cette version-là que le dépôt porte
+# désormais — parce que le dépôt est l'autorité sur ce que le code VEUT DIRE
+# (README, « ne jamais régénérer un fichier de fonction depuis la production »).
+#
+# Un md5 d'octets dirait donc « différent » sur dix fichiers sur onze, et ne
+# distinguerait pas un commentaire ajouté d'une clause WHERE retirée. Ce
+# manifeste compare les FLUX DE TOKENS produits par `scripts/sql_tokens.py` —
+# un vrai lexer PostgreSQL, commentaires jetés, littéraux gardés verbatim,
+# dollar-quotes ouvertes parce que dans un fichier de migration un `do $$` est
+# du code. Deux fichiers de même flux exécutent la même chose. Ce n'est pas
+# « se ressemble » : c'est une égalité, ou un écart nommé.
+#
+#   md5_tokens_ran   le flux de l'extrait que la production a enregistré
+#   md5_tokens_file  le flux du fichier que le dépôt porte aujourd'hui
+#
+# Les deux sont égaux sur DIX des onze. La onzième est nommée plus bas.
+#
+# ⚠ LE SEUL ÉCART TOLÉRÉ, ET IL EST BORNÉ :
+#   20260914073802_a_purchase_that_is_not_a_tier.sql — 5 tokens
+#   `:= gen_random_uuid()` sur la déclaration de `v_org`, que le `select …
+#   into v_org` deux lignes plus bas écrase avant toute lecture. Un
+#   initialiseur mort. Le diff complet de tokens tient en ces cinq-là, il a été
+#   relevé, et `verify-recovered-migrations.sh` refuse tout AUTRE écart.
+#
+# ⚠ DEUX FICHIERS GARDENT L'EXTRAIT, PAS LA VERSION LONGUE :
+#   …084054_the_guard_moves_into_the_write — la version longue portait une
+#     sonde de 693 tokens qui n'a JAMAIS tourné en production. Une sonde de
+#     migration ne se rejoue pas après coup ; elle est devenue
+#     supabase/tests/20260914084054_ethics_guard_bites.test.sql, qui la pose
+#     contre la base telle qu'elle est.
+#   …134552_eligibility_is_not_refusal — la version longue portait trois
+#     messages d'exception plus explicites. On n'édite pas un fichier appliqué :
+#     ils reviennent par une migration neuve.
+#
+# md5_octets_ran reste là, informatif : c'est le md5 de l'extrait tel que
+# `schema_migrations.statements` le porte, et il vaut encore pour les deux
+# fichiers ci-dessus.
+5c74a36782c157d7359a6fe4ef9c0754  5c74a36782c157d7359a6fe4ef9c0754    1576  54f92c9d1e34d4a32e51cbbf45916f70  20260914072327_the_new_offer_skus.sql
+bef07c174311ba875aaea9bbdaaaed03  3d98fcad19d3620e1d42b81c61c459e2     858  e042c7dadb548f79204ca26f8bfcf28b  20260914073802_a_purchase_that_is_not_a_tier.sql
+cfe82d4c22d91f7d94877c27d4249241  cfe82d4c22d91f7d94877c27d4249241    1266  08dd5ebe16dc2ba818382ccc56a8836c  20260914074549_platform_qualification.sql
+8c53373cf0cd97aa3dddc27066e6d5ca  8c53373cf0cd97aa3dddc27066e6d5ca     689  520b93dcd6e2fdf3abb8fc3eed5399f2  20260914075810_positioning_in_her_patients_words.sql
+b0aee291135038c6d741cfc37876ba02  b0aee291135038c6d741cfc37876ba02    1378  7da9f90b61805ebd3af345d6a7003506  20260914080527_the_directory_profile.sql
+a64b213ead14d43179b75bf3ad2a840a  a64b213ead14d43179b75bf3ad2a840a    1159  c448564e5b2ce430cf25dab45cabe4c9  20260914081457_pages_are_data.sql
+bcb0ab833a63efe0325d031b784f8393  bcb0ab833a63efe0325d031b784f8393     579  7388fb587b7aafdc8112248c9c5d18de  20260914082152_the_google_listing.sql
+d2071b468acab0a660c2854596890f6d  d2071b468acab0a660c2854596890f6d    1558  929edb18a649f0e9d5b92017ed4dcdec  20260914084054_the_guard_moves_into_the_write.sql
+484ba550faa235e562db507df40dee22  484ba550faa235e562db507df40dee22      17  ed4e277ca3c2845576b8d3d225d07c5d  20260914091227_the_squarespace_answer.sql
+6fdf70bb2821242f81e18de18b462de5  6fdf70bb2821242f81e18de18b462de5     133  17f7b91f3a7020c5dc16a0dd927d1ff5  20260914091622_a_sku_that_cannot_be_delivered_cannot_be_sold.sql
+9a497f2a56899958ac9e8c5902648e9c  9a497f2a56899958ac9e8c5902648e9c     180  6c75cb62eb05e2a918b490884415d3bb  20260914134552_eligibility_is_not_refusal.sql

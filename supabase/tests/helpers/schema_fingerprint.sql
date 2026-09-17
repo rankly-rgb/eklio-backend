@@ -102,17 +102,72 @@ function_bodies as (
 -- compare unequal if dumped raw. aclexplode + sort is the comparable form.
 -- The grantor is dropped: it is the owner on both sides and carries no meaning
 -- here.
+--
+-- ⚠⚠ AND THEY ARE SPLIT IN TWO, WHICH IS THE POINT OF THIS SECTION.
+--
+-- Dumped whole, this row reported SIXTY-FIVE tables in disagreement between
+-- production and a local replay — every table there is. None of the sixty-five
+-- was real. Two causes, both environmental, both found on 17 September and
+-- written down here so the next reader does not spend a morning on them:
+--
+--   1. `MAINTAIN` is a privilege that PostgreSQL 17 added and 16 does not
+--      have. Production runs 17; the local replay ran 16.13. Every ACL in
+--      production therefore carries one privilege the replay cannot express.
+--
+--   2. Supabase's own bootstrap runs `alter default privileges ... grant all
+--      on tables to anon, authenticated, service_role`, and ALL includes
+--      REFERENCES, TRIGGER and TRUNCATE. `scripts/local-verify-stub-schema.sql`
+--      grants a narrower set, because those three decide nothing here.
+--
+-- Restricted to the four privileges that DECIDE something — who may read, add,
+-- change or remove a row — the two sides were identical on all 62 shared
+-- tables, same count, same hash. So `grant.table` now carries exactly those
+-- four, and everything else moves to `grant.table.env`, which the drift report
+-- prints and does not count.
+--
+-- This is not tidying. A report that cries wolf sixty-five times is a report
+-- nobody reads a second time, and the three genuine differences this file was
+-- built to surface were sitting underneath that pile.
 table_grants as (
   select 'grant.table', c.relname::text,
          md5(coalesce((
            select string_agg(g.grantee_name || ':' || g.priv, ',' order by g.grantee_name, g.priv)
              from (select coalesce(r.rolname, 'PUBLIC') as grantee_name, a.privilege_type as priv
                      from aclexplode(c.relacl) a
-                     left join pg_roles r on r.oid = a.grantee) g
+                     left join pg_roles r on r.oid = a.grantee
+                    where a.privilege_type in ('SELECT', 'INSERT', 'UPDATE', 'DELETE')) g
          ), 'NO-ACL'))
     from pg_class c join pg_namespace n on n.oid = c.relnamespace
    where n.nspname = 'public' and c.relkind = 'r'
 ),
+-- The rest of the table ACL: REFERENCES, TRIGGER, TRUNCATE, and MAINTAIN where
+-- the server is new enough to have it. Kept rather than dropped — a privilege
+-- silently discarded is a privilege nobody can audit — but reported apart.
+table_grants_env as (
+  select 'grant.table.env', c.relname::text,
+         md5(coalesce((
+           select string_agg(g.grantee_name || ':' || g.priv, ',' order by g.grantee_name, g.priv)
+             from (select coalesce(r.rolname, 'PUBLIC') as grantee_name, a.privilege_type as priv
+                     from aclexplode(c.relacl) a
+                     left join pg_roles r on r.oid = a.grantee
+                    where a.privilege_type not in ('SELECT', 'INSERT', 'UPDATE', 'DELETE')) g
+         ), 'NONE'))
+    from pg_class c join pg_namespace n on n.oid = c.relnamespace
+   where n.nspname = 'public' and c.relkind = 'r'
+),
+-- ⚠ SAME SPLIT, DIFFERENT AXIS. Function ACLs only ever carry EXECUTE, so
+-- there is no privilege to filter; what differed was the GRANTEE. Production
+-- grants EXECUTE to `supabase_admin` on the 31 functions that belong to
+-- extensions (pg_trgm), and that role does not exist in a local replay at all.
+-- Thirty-one more false differences, from a role no migration in this
+-- repository ever mentions.
+--
+-- Grantees that exist only on the hosted platform are therefore reported in
+-- `grant.function.env`. Everything a migration can actually grant — PUBLIC,
+-- anon, authenticated, service_role, postgres — stays in `grant.function`,
+-- where the README's "anon receives EXECUTE on every function created" is
+-- still visible. With supabase_admin set aside, the two sides agreed on all
+-- 211 functions neither the eleven recovered migrations nor this week touched.
 function_grants as (
   select 'grant.function',
          p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')',
@@ -120,13 +175,33 @@ function_grants as (
            select string_agg(g.grantee_name || ':' || g.priv, ',' order by g.grantee_name, g.priv)
              from (select coalesce(r.rolname, 'PUBLIC') as grantee_name, a.privilege_type as priv
                      from aclexplode(p.proacl) a
-                     left join pg_roles r on r.oid = a.grantee) g
+                     left join pg_roles r on r.oid = a.grantee
+                    where coalesce(r.rolname, 'PUBLIC') not in (
+                      'supabase_admin', 'supabase_auth_admin', 'supabase_storage_admin',
+                      'supabase_read_only_user', 'supabase_realtime_admin',
+                      'dashboard_user', 'authenticator', 'pgbouncer')) g
          ),
          -- ⚠ A NULL proacl IS NOT "NO GRANTS". In PostgreSQL it means the
          -- default, and the default for a function is EXECUTE to PUBLIC. The
          -- two must not fingerprint the same, or the whole function-surface
          -- question becomes invisible to this file.
          'DEFAULT=EXECUTE-TO-PUBLIC'))
+    from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+   where n.nspname = 'public'
+),
+function_grants_env as (
+  select 'grant.function.env',
+         p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')',
+         md5(coalesce((
+           select string_agg(g.grantee_name || ':' || g.priv, ',' order by g.grantee_name, g.priv)
+             from (select coalesce(r.rolname, 'PUBLIC') as grantee_name, a.privilege_type as priv
+                     from aclexplode(p.proacl) a
+                     left join pg_roles r on r.oid = a.grantee
+                    where coalesce(r.rolname, 'PUBLIC') in (
+                      'supabase_admin', 'supabase_auth_admin', 'supabase_storage_admin',
+                      'supabase_read_only_user', 'supabase_realtime_admin',
+                      'dashboard_user', 'authenticator', 'pgbouncer')) g
+         ), 'NONE'))
     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
    where n.nspname = 'public'
 ),
@@ -147,7 +222,9 @@ everything as (
   union all select * from functions
   union all select * from function_bodies
   union all select * from table_grants
+  union all select * from table_grants_env
   union all select * from function_grants
+  union all select * from function_grants_env
   union all select * from columns
 )
 select kind || '|' || identity || '|' || detail

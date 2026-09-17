@@ -145,7 +145,22 @@ create temp table never_tenanted(t text primary key);
 insert into never_tenanted values
   -- Reference data: the vocabularies.
   ('asset_catalog'), ('builder_targets'), ('client_persona_cards'), ('color_names'),
-  ('content_registers'), ('ethics_rules'), ('gain_cards'), ('license_types'),
+  ('content_registers'), ('degrees'), ('ethics_rules'), ('gain_cards'), ('license_types'),
+  /*
+   * `degrees` — les diplômes. Une université les délivre, aucun board ne les
+   * accorde ni ne les retire : c'est du vocabulaire, pas la donnée d'une
+   * cliente. Elle est séparée de `license_types` parce qu'un diplôme
+   * n'autorise à exercer nulle part, et c'est cette séparation qui permet à la
+   * garde déontologique d'accepter « PsyD » en refusant « psychologist ».
+   */
+  /*
+   * `license_type_states` — QUELLE juridiction délivre QUEL titre. Du
+   * vocabulaire, au même titre que `license_types` dont elle est l'annexe :
+   * elle décrit les États-Unis, pas une cliente. Lui donner un
+   * organization_id prétendrait qu'une praticienne possède la nomenclature de
+   * son board.
+   */
+  ('license_type_states'),
   ('modality_cards'), ('modality_prominence_options'), ('not_a_fit_cards'),
   ('palette_families'), ('plans'), ('primary_actions'), ('problem_cards'),
   ('section_types'), ('session_style_cards'), ('site_goals'),

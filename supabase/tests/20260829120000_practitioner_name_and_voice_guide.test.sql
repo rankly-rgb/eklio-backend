@@ -93,10 +93,24 @@ begin
   perform public.site_spec_set_target(kit, 'lovable');
   t := public.site_spec_get(kit)->'output'->>'text';
 
-  -- ⚠ NOTHING DANGLES. Not ", LCSW", not an empty label.
-  assert position('License: LCSW' in t) > 0,
+  /*
+   * ⚠ NOTHING DANGLES — c'est ÇA que ce test garde, et ça n'a pas changé.
+   *
+   * Ce qui a changé est CE QU'ON IMPRIME : plus `license_types.label` (la
+   * poignée interne, « PSYCH » aujourd'hui pour le psychologue) mais le sigle
+   * de SON État s'il est vérifié, sinon l'intitulé complet. Aucune ligne
+   * n'étant vérifiée, c'est l'intitulé.
+   *
+   * ⚠ ET « License: Licensed Clinical Social Worker » EST REDONDANT. C'est
+   * laid et ce n'est pas faux ; le préfixe vient du fragment
+   * `identity.label_license`, qui n'est pas le sujet de ce lot. La redondance
+   * disparaît d'elle-même dès qu'un État est vérifié : la ligne redevient
+   * « License: LCSW ».
+   */
+  assert position('License: Licensed Clinical Social Worker' in t) > 0,
          'with no name, the licence line must read exactly as it did before';
-  assert position(', LCSW' in t) = 0, 'an empty name left a dangling comma';
+  assert position(', Licensed Clinical Social Worker' in t) = 0,
+         'an empty name left a dangling comma';
   assert position('Licensed practitioner' in t) = 0,
          'the sheet claims a licensed practitioner it cannot name';
 end
@@ -111,7 +125,17 @@ $$;
 do $$
 declare
   kit  uuid := '33333333-3333-3333-3333-333333333333';
-  line text := 'Nora Whitfield, LCSW #LC61234';
+  /*
+   * ⚠ LE CREDENTIAL N'EST PLUS LE SIGLE NATIONAL. Cette ligne composait
+   * « Nora Whitfield, LCSW #LC61234 » depuis `license_types.label`, qui a
+   * cessé d'être un credential (20260915125159). Le spec sème désormais le
+   * sigle de SON État s'il est vérifié, sinon l'intitulé complet — et aucune
+   * ligne n'est vérifiée, donc c'est l'intitulé.
+   *
+   * Ce que ce test garde est INCHANGÉ : les trois parties se composent, et
+   * aucune ne pendouille.
+   */
+  line text := 'Nora Whitfield, Licensed Clinical Social Worker #LC61234';
   t    text;
   sheet jsonb;
 begin

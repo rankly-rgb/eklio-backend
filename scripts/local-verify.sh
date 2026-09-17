@@ -52,6 +52,14 @@ echo "== Seed mirrors =="
 bash supabase/tests/helpers/check_seed_mirrors.sh
 
 echo ""
+echo "== Recovered migrations still byte-identical to production =="
+bash scripts/verify-recovered-migrations.sh
+
+echo ""
+echo "== The SQL lexer still refuses what the regex accepts =="
+python3 scripts/sql_tokens.py --self-test
+
+echo ""
 echo "Migrations replayed clean. Tests: $ran run, $failed failed."
 if [ "$failed" -ne 0 ]; then
   exit 1

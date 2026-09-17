@@ -79,26 +79,36 @@ create table if not exists auth.users (
 );
 grant select on auth.users to anon, authenticated, service_role;
 
--- The real Supabase implementation: reads the `sub` claim PostgREST sets
--- from the caller's JWT via `request.jwt.claims`. Tests simulate a caller
--- with `set local role authenticated; set local request.jwt.claims =
--- '{"sub":"<uuid>"}';` — this function is what makes that simulation mean
--- anything.
--- ⚠ COPIED VERBATIM FROM THE LIVE PROJECT (`pg_get_functiondef` against
--- fobgdsupyfslxbswfuay, 2026-09-14), not written from memory. The version
--- this replaces was a paraphrase, and the paraphrase was wrong in a way that
--- only showed up in the second transaction of a test file:
+-- Reads the `sub` claim PostgREST sets from the caller's JWT via
+-- `request.jwt.claims`. Tests simulate a caller with `set local role
+-- authenticated; set local request.jwt.claims = '{"sub":"<uuid>"}';` — these
+-- functions are what make that simulation mean anything.
 --
---   nullif(current_setting('request.jwt.claims', true)::jsonb ->> 'sub', '')
---        -- guards the EXTRACTED sub, not the SETTING
+-- ⚠ COPIED VERBATIM FROM PRODUCTION (`pg_get_functiondef` on project
+-- fobgdsupyfslxbswfuay, auth.uid / auth.role / auth.jwt), NOT REWRITTEN FROM
+-- MEMORY. The first version here was a paraphrase, and the paraphrase was
+-- wrong in a way that took a day to find:
 --
--- A custom GUC that has been `set local` once reverts, at rollback, to the
--- empty string rather than to NULL. `''::jsonb` then raises `invalid input
--- syntax for type json`, and the raise happens INSIDE whatever policy or
--- trigger asked the question. Live, `nullif(setting, '')` absorbs it and the
--- answer is NULL — which is why the suite was red locally and green in the
--- product. A harness that is more brittle than the thing it stands in for
--- reports defects that do not exist, and this one did.
+--   paraphrase : nullif(current_setting('request.jwt.claims', true)::jsonb ->> 'sub', '')
+--   production : nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub'
+--
+-- The `nullif` sits BEFORE the cast in production and AFTER it in the
+-- paraphrase. That is not a stylistic difference. A custom GUC that was only
+-- ever set with `set local` inside a transaction does not go back to unset
+-- when that transaction rolls back — it stays defined, with the EMPTY STRING
+-- as its value. Production reads that empty string, nullifs it, and returns
+-- NULL: an anonymous caller. The paraphrase cast '' to jsonb and raised
+-- `invalid input syntax for type json`, so every later test in the same psql
+-- session that touched an RLS policy or a trigger calling auth.uid() died —
+-- on a defect that exists nowhere but in this file.
+--
+-- That is the defect this whole repository keeps repeating: a copy written
+-- beside the source instead of taken from it. Do not paraphrase these three.
+--
+-- Et la consequence, que l'autre moitie de cette reparation a nommee : un
+-- harnais plus fragile que la chose qu'il remplace signale des defauts qui
+-- n'existent pas, et celui-ci l'a fait -- la suite etait rouge en local et
+-- verte dans le produit.
 create or replace function auth.uid()
 returns uuid
 language sql stable
@@ -119,6 +129,17 @@ as $$
     nullif(current_setting('request.jwt.claim.role', true), ''),
     (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'role')
   )::text
+$$;
+
+create or replace function auth.jwt()
+returns jsonb
+language sql stable
+as $$
+  select
+    coalesce(
+        nullif(current_setting('request.jwt.claim', true), ''),
+        nullif(current_setting('request.jwt.claims', true), '')
+    )::jsonb
 $$;
 
 -- ── storage schema ──────────────────────────────────────────────────────
@@ -180,15 +201,15 @@ grant select on all tables in schema auth, storage to anon, authenticated, servi
 -- does not.) gen_random_uuid() is core since PG13, needs nothing.
 create extension if not exists pg_trgm;
 
--- ⚠ `extensions`, and it is NOT cosmetic. Supabase installs pgcrypto into a
--- schema called `extensions`, and `20260911195907_the_invitation.sql` calls
--- `extensions.digest(...)` and `extensions.gen_random_bytes(...)` by that
--- fully-qualified name — because the functions it lives in are
--- `SECURITY DEFINER … SET search_path TO ''`, where an unqualified name
--- resolves to nothing. A stock apt install puts pgcrypto in `public`, so the
--- replay died on `schema "extensions" does not exist` at the FIRST migration
--- that needed it: found by running the replay and reading the error, the way
--- this file's header says to.
+-- Supabase installs its extensions into a schema literally named
+-- `extensions`, and this repo's migrations call through it by that name —
+-- `extensions.digest(...)` in `anon_token_hash()`
+-- (20260910192157_anonymous_briefs.sql), in `accept_invitation()`
+-- (20260911195907_the_invitation.sql) and in the tests that mint token
+-- hashes. A stock apt install has no such schema, so the replay died on the
+-- first migration to use it with `schema "extensions" does not exist`.
+-- Added the same way as everything else here: by reading the actual error.
+-- Ajoute comme tout le reste de ce fichier : en lisant l'erreur reelle.
 create schema if not exists extensions;
 grant usage on schema extensions to anon, authenticated, service_role;
 create extension if not exists pgcrypto with schema extensions;

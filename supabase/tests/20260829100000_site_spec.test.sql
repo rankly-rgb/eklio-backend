@@ -112,7 +112,18 @@ begin
          'the About text comes from the direction';
 
   assert s.practice_details->>'practice_name' = 'Elm & Ember Therapy', 'from the brief';
-  assert s.practice_details->>'license_label' = 'LCSW',                'from the brief';
+  /*
+   * ⚠ LES MOTS EN TOUTES LETTRES, PLUS LA POIGNÉE. Ce test attendait « LCSW »,
+   * la valeur de `license_types.label` — qui a cessé d'être un credential
+   * (20260915125159) : « LP » s'est révélé faux dans quatre États sur cinq et
+   * la poignée du psychologue vaut « PSYCH ».
+   *
+   * Ce qui est semé maintenant est le sigle de SON État s'il est VÉRIFIÉ, et
+   * sinon l'intitulé complet, vrai dans les cinquante. Aucune ligne n'étant
+   * vérifiée, c'est l'intitulé — et ce test suit la vérité, il ne la fige pas.
+   */
+  assert s.practice_details->>'license_label' = 'Licensed Clinical Social Worker',
+         'from the brief';
   assert s.practice_details->>'city'          = 'Portland',            'from the brief';
   assert s.practice_details->'license_number' = 'null'::jsonb,
          'Eklio must never invent a license number';
