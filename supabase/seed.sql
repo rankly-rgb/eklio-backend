@@ -1151,3 +1151,54 @@ update public.license_type_states
    and license_type_states.license_type_id = v.lt;
 
 -- <<< CALIFORNIA VERIFIED PAIRS, LEP INCLUDED <<<
+
+-- >>> POSITIONING RULE EXAMPLES (mirrored verbatim in supabase/seed.sql) >>>
+
+/*
+ * ⚠ CES DEUX LIGNES SONT DES EXEMPLES DE STRUCTURE, PAS DES RÈGLES. Elles
+ * portent `is_example = true`, leur libellé commence par « EXAMPLE », et elles
+ * sont là pour UNE raison : qu'on puisse voir la mécanique tourner avant que
+ * les vraies règles soient écrites. Elles ne sont pas le fruit d'une décision
+ * produit et personne ne doit les lire comme telles.
+ *
+ * Les remplacer est un INSERT et un DELETE, sans déploiement.
+ */
+insert into public.positioning_rules
+  (id, short_label, description, example_weak, example_strong, sort_order, is_example) values
+  ('example_opens_on_the_writer',
+   'EXAMPLE — the opening is about you, not about her',
+   'PROVISIONAL EXAMPLE, NOT A REAL RULE. Someone scanning a directory reads two or three lines before deciding. If those lines are about your training, she has learned nothing about whether you understand what is happening to her.',
+   'I hold a PhD from Berkeley and have been licensed in California for twelve years.',
+   'The mornings are the hardest part, and you have stopped telling people how little you slept.',
+   1, true),
+  ('example_length_for_the_snippet',
+   'EXAMPLE — the opening is longer than a search result shows',
+   'PROVISIONAL EXAMPLE, NOT A REAL RULE. The bounds below are a placeholder: nobody has measured what Psychology Today actually truncates in search results. See FIRST_LINE_TARGET_CHARS in lib/check/first-line.ts.',
+   null, null, 2, true)
+on conflict (id) do update
+  set short_label   = excluded.short_label,
+      description   = excluded.description,
+      example_weak  = excluded.example_weak,
+      example_strong = excluded.example_strong,
+      sort_order    = excluded.sort_order,
+      is_example    = excluded.is_example;
+
+insert into public.positioning_patterns
+  (id, rule_id, kind, pattern, window_chars, min_chars, max_chars, severity, sort_order) values
+  /* La fenêtre : est-ce que la lectrice apparaît dans l'ouverture ? */
+  ('example_no_second_person_up_front', 'example_opens_on_the_writer',
+   'absent_in_opening', '\y(you|your|yours|you''re|you''ve)\y', 320, null, null, 'costly', 1),
+  /* La longueur, seule des cinq formes à ne porter aucun motif. */
+  ('example_opening_too_long', 'example_length_for_the_snippet',
+   'length', null, null, 40, 700, 'minor', 2)
+on conflict (id) do update
+  set rule_id      = excluded.rule_id,
+      kind         = excluded.kind,
+      pattern      = excluded.pattern,
+      window_chars = excluded.window_chars,
+      min_chars    = excluded.min_chars,
+      max_chars    = excluded.max_chars,
+      severity     = excluded.severity,
+      sort_order   = excluded.sort_order;
+
+-- <<< POSITIONING RULE EXAMPLES <<<

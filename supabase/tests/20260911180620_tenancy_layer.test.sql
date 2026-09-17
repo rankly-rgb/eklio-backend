@@ -198,6 +198,19 @@ insert into never_tenanted values
    */
   ('ethics_patterns'),
   /*
+   * `positioning_rules` / `positioning_patterns` — the second family of
+   * findings: not "fix this", but "this is why nobody writes to you". Same
+   * answer as the ethics pair one line up, for the same reason: what makes a
+   * directory profile land is not a thing one practice may know and another may
+   * not. A tenancy column here would mean selling a better diagnostic to
+   * whoever pays more, which is not a product Eklio is offering.
+   *
+   * ⚠ AND THEY ARE READ WITH NO SESSION AT ALL. The free tier has no account,
+   * so `anon` holds SELECT on both -- which is exactly why they must carry
+   * nothing that belongs to anyone.
+   */
+  ('positioning_rules'), ('positioning_patterns'),
+  /*
    * `sellability_decisions` — WHY a plan is open or closed, who decided, when,
    * and the snapshot of the measurable causes at that moment. A tenancy column
    * here would mean The Foundation could be closed for one practice and open
