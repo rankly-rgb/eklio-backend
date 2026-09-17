@@ -1,7 +1,7 @@
 -- ============================================================================
 -- Un État dont les couples ne sont pas vérifiés n'est pas vendable
 -- ============================================================================
--- `20260915114500` a posé `license_type_states` et le trigger qui refuse un
+-- `20260915100122` a posé `license_type_states` et le trigger qui refuse un
 -- titre que l'État ne délivre pas. Elle a aussi écrit, en toutes lettres, que
 -- SES 290 LIGNES NE SONT VÉRIFIÉES PAR PERSONNE : `verified_at` est NULL
 -- partout, et la matrice est la meilleure connaissance disponible, pas une

@@ -100,6 +100,37 @@ est réellement déployé.
 > correction est une nouvelle migration — jamais une modification d'une
 > ancienne.
 
+#### Le cas inverse, trouvé le 17 septembre : `apply_migration` numérote lui-même
+
+La règle ci-dessus suppose que le nom de fichier EST ce que le distant a
+enregistré. Il existe un chemin où ça n'a jamais été vrai, et il faut le
+connaître avant de relire un `git log` :
+
+| chemin d'application | version enregistrée dans `schema_migrations` |
+|---|---|
+| `supabase db push` | **le nom du fichier**, tel quel |
+| `apply_migration` (outil MCP / Management API) | **l'horodatage du serveur au moment de l'appel** — le `name` passé devient le libellé, jamais la version |
+
+Six migrations de la semaine du 15 septembre ont été appliquées par le second
+chemin. Elles étaient donc en production sous `20260915100122`,
+`20260915101137`, `20260915122121`, `20260915125159`, `20260915135138` et
+`20260915135207`, pendant que les fichiers du dépôt s'appelaient
+`20260915114500`, `20260915140000`, `20260915163000`, `20260915183000`,
+`20260915203000` et `20260915213000`. Rien n'a levé d'erreur — et un
+`supabase db push` les aurait TOUTES ré-appliquées, sondes comprises, parce
+qu'aucune de ces six versions ne figurait dans le registre distant.
+
+Les fichiers ont été renommés vers les versions enregistrées. **Ce n'est pas
+une exception à la règle, c'est son application** : la règle protège
+l'identité que le distant a enregistrée, et ici c'est le nom de fichier qui
+s'en écartait, pas l'inverse. Renommer rapproche ; ne pas renommer aurait
+laissé le piège armé.
+
+> **La conséquence pratique :** après tout `apply_migration`, relire
+> `select version, name from supabase_migrations.schema_migrations order by
+> version desc limit 10` et nommer le fichier d'après la version rendue. Ne
+> jamais choisir l'horodatage à la main en espérant qu'il colle.
+
 ## Répartition des responsabilités
 
 Ce repo possède : les tables, colonnes, contraintes, policies RLS, triggers,

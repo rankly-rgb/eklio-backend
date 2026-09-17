@@ -1,5 +1,5 @@
 -- ============================================================================
--- Tests — 20260915183000_the_abbreviation_belongs_to_the_pair.sql
+-- Tests — 20260915125159_the_abbreviation_belongs_to_the_pair.sql
 -- ============================================================================
 -- La vérification a tranché « LP » : faux dans quatre États sur cinq. Le sigle
 -- appartient donc au COUPLE (titre, État), et il peut être ABSENT — ce qui

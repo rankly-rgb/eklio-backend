@@ -1,7 +1,7 @@
 -- ============================================================================
 -- Le spec de site cesse d'imprimer la poignée interne
 -- ============================================================================
--- `20260915183000` a fait de `license_types.label` une POIGNÉE INTERNE : « LP »
+-- `20260915125159` a fait de `license_types.label` une POIGNÉE INTERNE : « LP »
 -- s'est révélé faux dans quatre États sur cinq, la poignée du psychologue vaut
 -- « PSYCH », et rien de ce qu'une cliente lit ne doit en venir.
 --
@@ -152,7 +152,7 @@ begin
                                    where p.id = v_project)),
       /*
        * ⚠ CE N'EST PLUS `lt.label`. Cette colonne a cessé d'être un credential
-       * (20260915183000) : « LP » était faux dans quatre États sur cinq, et la
+       * (20260915125159) : « LP » était faux dans quatre États sur cinq, et la
        * poignée vaut « PSYCH » aujourd'hui — ce qu'aucune cliente ne doit lire.
        *
        * Ce qui s'imprime est le sigle de SON État, et seulement s'il a été

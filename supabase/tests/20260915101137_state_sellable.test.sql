@@ -1,5 +1,5 @@
 -- ============================================================================
--- Tests — 20260915140000_an_unverified_state_is_not_sellable.sql
+-- Tests — 20260915101137_an_unverified_state_is_not_sellable.sql
 -- ============================================================================
 -- La migration précédente a écrit « cette matrice n'est pas vérifiée, à relire
 -- avant la mise en vente ». Un commentaire ne vérifie rien. Celle-ci en fait

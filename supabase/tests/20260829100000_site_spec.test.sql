@@ -115,7 +115,7 @@ begin
   /*
    * ⚠ LES MOTS EN TOUTES LETTRES, PLUS LA POIGNÉE. Ce test attendait « LCSW »,
    * la valeur de `license_types.label` — qui a cessé d'être un credential
-   * (20260915183000) : « LP » s'est révélé faux dans quatre États sur cinq et
+   * (20260915125159) : « LP » s'est révélé faux dans quatre États sur cinq et
    * la poignée du psychologue vaut « PSYCH ».
    *
    * Ce qui est semé maintenant est le sigle de SON État s'il est VÉRIFIÉ, et

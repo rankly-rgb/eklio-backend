@@ -128,7 +128,7 @@ declare
   /*
    * ⚠ LE CREDENTIAL N'EST PLUS LE SIGLE NATIONAL. Cette ligne composait
    * « Nora Whitfield, LCSW #LC61234 » depuis `license_types.label`, qui a
-   * cessé d'être un credential (20260915183000). Le spec sème désormais le
+   * cessé d'être un credential (20260915125159). Le spec sème désormais le
    * sigle de SON État s'il est vérifié, sinon l'intitulé complet — et aucune
    * ligne n'est vérifiée, donc c'est l'intitulé.
    *

@@ -1,7 +1,7 @@
 -- ============================================================================
 -- Le sigle appartient au couple, pas au catalogue — et il peut être ABSENT
 -- ============================================================================
--- `20260915163000` a posé `licensed_psychologist` avec le libellé « LP », en
+-- `20260915122121` a posé `licensed_psychologist` avec le libellé « LP », en
 -- écrivant que c'était un placeholder. La vérification l'a tranché : « LP » est
 -- FAUX dans quatre États sur cinq.
 --

@@ -79,23 +79,62 @@ create table if not exists auth.users (
 );
 grant select on auth.users to anon, authenticated, service_role;
 
--- The real Supabase implementation: reads the `sub` claim PostgREST sets
--- from the caller's JWT via `request.jwt.claims`. Tests simulate a caller
--- with `set local role authenticated; set local request.jwt.claims =
--- '{"sub":"<uuid>"}';` — this function is what makes that simulation mean
--- anything.
+-- Reads the `sub` claim PostgREST sets from the caller's JWT via
+-- `request.jwt.claims`. Tests simulate a caller with `set local role
+-- authenticated; set local request.jwt.claims = '{"sub":"<uuid>"}';` — these
+-- functions are what make that simulation mean anything.
+--
+-- ⚠ COPIED VERBATIM FROM PRODUCTION (`pg_get_functiondef` on project
+-- fobgdsupyfslxbswfuay, auth.uid / auth.role / auth.jwt), NOT REWRITTEN FROM
+-- MEMORY. The first version here was a paraphrase, and the paraphrase was
+-- wrong in a way that took a day to find:
+--
+--   paraphrase : nullif(current_setting('request.jwt.claims', true)::jsonb ->> 'sub', '')
+--   production : nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub'
+--
+-- The `nullif` sits BEFORE the cast in production and AFTER it in the
+-- paraphrase. That is not a stylistic difference. A custom GUC that was only
+-- ever set with `set local` inside a transaction does not go back to unset
+-- when that transaction rolls back — it stays defined, with the EMPTY STRING
+-- as its value. Production reads that empty string, nullifs it, and returns
+-- NULL: an anonymous caller. The paraphrase cast '' to jsonb and raised
+-- `invalid input syntax for type json`, so every later test in the same psql
+-- session that touched an RLS policy or a trigger calling auth.uid() died —
+-- on a defect that exists nowhere but in this file.
+--
+-- That is the defect this whole repository keeps repeating: a copy written
+-- beside the source instead of taken from it. Do not paraphrase these three.
 create or replace function auth.uid()
 returns uuid
 language sql stable
 as $$
-  select nullif(current_setting('request.jwt.claims', true)::jsonb ->> 'sub', '')::uuid
+  select
+  coalesce(
+    nullif(current_setting('request.jwt.claim.sub', true), ''),
+    (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')
+  )::uuid
 $$;
 
 create or replace function auth.role()
 returns text
 language sql stable
 as $$
-  select nullif(current_setting('request.jwt.claims', true)::jsonb ->> 'role', '')::text
+  select
+  coalesce(
+    nullif(current_setting('request.jwt.claim.role', true), ''),
+    (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'role')
+  )::text
+$$;
+
+create or replace function auth.jwt()
+returns jsonb
+language sql stable
+as $$
+  select
+    coalesce(
+        nullif(current_setting('request.jwt.claim', true), ''),
+        nullif(current_setting('request.jwt.claims', true), '')
+    )::jsonb
 $$;
 
 -- ── storage schema ──────────────────────────────────────────────────────

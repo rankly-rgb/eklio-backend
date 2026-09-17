@@ -1,5 +1,5 @@
 -- ============================================================================
--- Tests — 20260915114500_a_title_a_state_does_not_issue.sql
+-- Tests — 20260915100122_a_title_a_state_does_not_issue.sql
 -- ============================================================================
 -- LA SONDE DEMANDÉE : un brief avec État = OR et titre = LMHC doit passer au
 -- rouge. Pas « la fonction rend faux » — une ÉCRITURE, refusée, par le chemin
