@@ -197,6 +197,16 @@ insert into never_tenanted values
    * Its sibling `ethics_rules` is already on this list, two lines up.
    */
   ('ethics_patterns'),
+  /*
+   * `sellability_decisions` — WHY a plan is open or closed, who decided, when,
+   * and the snapshot of the measurable causes at that moment. A tenancy column
+   * here would mean The Foundation could be closed for one practice and open
+   * for the next, which is not what closing a plan means: it is a decision
+   * about the PRODUCT, taken once, by us. It is also the one table on this list
+   * that is read by a TEST rather than by the app -- RLS is on with no policy
+   * at all, so no browser role reaches it even if someone grants a SELECT.
+   */
+  ('sellability_decisions'),
   -- Eklio's own instruments. Never a customer's data.
   ('anon_generation_counters'), ('app_settings'), ('brand_image_daily_spend'),
   ('direction_asset_daily_spend'), ('funnel_events'), ('funnel_steps'),

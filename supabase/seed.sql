@@ -1111,3 +1111,43 @@ update public.plans set sellable = false
  where tier = any (array['foundation', 'roster']);
 
 -- <<< FOUNDATION AND ROSTER CLOSED <<<
+
+-- >>> CALIFORNIA VERIFIED PAIRS, LEP INCLUDED (mirrored verbatim in supabase/seed.sql) >>>
+
+insert into public.license_types (id, label, description, sort_order, active) values
+  ('lep', 'LEP', 'Licensed Educational Psychologist', 11, true)
+on conflict (id) do update
+  set label = excluded.label,
+      description = excluded.description;
+
+insert into public.license_type_states (license_type_id, state_code) values
+  ('lep', 'CA')
+on conflict do nothing;
+
+update public.license_type_states
+   set verified_at  = date '2026-09-17',
+       verified_by  = 'nainarahal@gmail.com (relevé machine, pages du board lues le 2026-09-17, non relu par un humain)',
+       abbreviation = v.abbrev,
+       source_url   = v.url,
+       note         = v.note
+  from (values
+    ('lcsw', 'LCSW',
+     'https://www.bbs.ca.gov/applicants/lcsw.html',
+     'Board of Behavioral Sciences. Page : « Licensed Clinical Social Worker (LCSW) Applicants ».'),
+    ('lmft', 'LMFT',
+     'https://www.bbs.ca.gov/applicants/lmft.html',
+     'Board of Behavioral Sciences. Page : « Licensed Marriage and Family Therapist (LMFT) Applicants ».'),
+    ('lpcc', 'LPCC',
+     'https://www.bbs.ca.gov/applicants/lpcc.html',
+     'Board of Behavioral Sciences. Page : « Licensed Professional Clinical Counselor (LPCC) applicants ».'),
+    ('lep', 'LEP',
+     'https://www.bbs.ca.gov/applicants/lep.html',
+     'Board of Behavioral Sciences. Page : « Information for Licensed Educational Psychologist (LEP) Applicants ». Aucune inscription pré-licence pour ce titre.'),
+    ('licensed_psychologist', null,
+     'https://www.psychology.ca.gov/applicants/psychologist.shtml',
+     'Board of Psychology (PAS le BBS). La page nomme la licence « Psychologist », sans préfixe « Licensed » et sans aucun sigle. Ni « LP » ni « PSY » : « PSY » est un préfixe de numéro de licence, pas une abréviation du titre. NULL est le fait relevé.')
+  ) as v(lt, abbrev, url, note)
+ where license_type_states.state_code      = 'CA'
+   and license_type_states.license_type_id = v.lt;
+
+-- <<< CALIFORNIA VERIFIED PAIRS, LEP INCLUDED <<<

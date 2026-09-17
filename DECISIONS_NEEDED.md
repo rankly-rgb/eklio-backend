@@ -468,7 +468,32 @@ livrable vendu. Aujourd'hui `plans.sellable = false` sur les deux abonnements, d
 
 # Ce que le RELEVÉ DE LA CALIFORNIE a ouvert
 
-## 20. ⚠ LEP — la quatrième licence du BBS, et le catalogue ne la porte pas
+## 20. ✅ TRANCHÉE LE 17 SEPTEMBRE — LEP est au catalogue
+
+**Réponse : ajoutée.** `20260917164228_lep_the_fourth_bbs_licence` pose
+`lep | LEP | Licensed Educational Psychologist` au catalogue et le couple
+`(lep, CA)` à la matrice, relevé sur
+<https://www.bbs.ca.gov/applicants/lep.html> — « Information for Licensed
+Educational Psychologist (LEP) Applicants », aucune inscription pré-licence.
+Même provenance et mêmes réserves que les quatre autres : relevé machine,
+pages non relues par un humain, et non atteignables depuis l'environnement
+qui a écrit la migration.
+
+**Fermée maintenant** parce que la Californie est le seul État ouvert, donc le
+seul endroit où le trou est réel — ailleurs `state_is_sellable` refuse déjà
+tout.
+
+**Une seule juridiction posée.** D'autres États délivrent un équivalent sous
+d'autres noms ; les ajouter de mémoire referait l'erreur que ce lot répare.
+
+⚠ **Le piège rencontré en la fermant**, écrit pour le prochain : ajouter un
+titre à un État VÉRIFIÉ le REFERME, puisque `state_is_sellable` exige que
+*toutes* ses lignes portent `verified_at`. Le relevé de LEP est donc dans la
+même migration que son insertion, et un garde-fou le prouve.
+
+<details><summary>La question telle qu'elle était posée</summary>
+
+### ⚠ LEP — la quatrième licence du BBS, et le catalogue ne la porte pas
 
 **Ce qui est en place aujourd'hui.** La Californie est le premier État vendable
 (`20260917160202`). Ses quatre couples sont vérifiés : `lcsw`, `lmft`, `lpcc`,
@@ -507,7 +532,40 @@ faux, et c'est la seule option qui coûte à quelqu'un d'autre que nous.
 
 ---
 
-## 21. Le psychologue californien s'imprime « Licensed Psychologist », la page dit « Psychologist »
+</details>
+
+---
+
+## 21. ✅ TRANCHÉE LE 17 SEPTEMBRE — la description nationale reste « Licensed Psychologist »
+
+**Réponse : on garde le préfixe. Et c'est la FLORIDE qui tranche, pas la
+Californie.**
+
+**Florida Statutes §490.012(2)(b) EXIGE les mots « licensed psychologist » en
+toutes lettres sur toute publicité.** Or `license_types.description` est
+précisément ce qui s'imprime quand `title_abbreviation()` rend NULL — soit en
+Californie, à New York, en Pennsylvanie, et en Floride justement. Retirer
+« Licensed » pour coller à un intitulé de page californien rendrait la seule
+chaîne que la Floride impose littéralement inutilisable là-bas.
+
+Le « Psychologist » de la page californienne est un **intitulé de page**, pas un
+titre réglementaire. Une psychologue licenciée en Californie *est* une licensed
+psychologist : la description n'y est pas fausse, seulement plus longue que le
+titre de la page. L'écart est mince d'un côté et interdit de l'autre — il n'y a
+pas de symétrie à arbitrer.
+
+**La raison vit à côté de la décision** : le commentaire de colonne de
+`license_types.description` la porte, avec sa date et sa citation
+(`20260917164505_florida_settles_the_national_description`).
+
+**Ce qui la renverserait** : un État qui INTERDIRAIT « Licensed ». On n'en
+connaît aucun. Le jour où il s'en trouve un, la formulation devient une
+propriété du couple — comme le sigle avant elle — et il faut une colonne, pas
+un compromis sur la chaîne nationale.
+
+<details><summary>La question telle qu'elle était posée</summary>
+
+### Le psychologue californien s'imprime « Licensed Psychologist », la page dit « Psychologist »
 
 **Ce qui est en place aujourd'hui.** `license_type_states.abbreviation` est NULL
 pour `licensed_psychologist` + CA — un **fait** relevé, pas une ignorance : la
@@ -527,3 +585,33 @@ qu'elle ne colle pas au mot près à chaque board — position défendable, et l
 moins coûteuse. Soit la formulation est elle aussi une propriété du couple, et
 il faut une colonne de plus. **Ne pas trancher revient à choisir la première
 sans l'avoir dite** — c'est pour ça que cette entrée existe.
+
+</details>
+
+---
+
+# Ce que la DÉCISION DU 17 SEPTEMBRE a ouvert
+
+## 22. Trois fermetures n'ont pas encore de décision datée
+
+**Ce qui est en place aujourd'hui.** `20260917164434` crée
+`public.sellability_decisions` : une fermeture y porte sa date, son
+propriétaire, sa raison, ses conditions de réouverture, et la **photo de ses
+causes mesurables** au moment de la décision. Le test de vendabilité compare le
+monde à cette photo — vert tant que rien n'a bougé, rouge au prochain
+changement de cause. `foundation` et `roster` y sont, décidés le 17 septembre.
+
+**Ce qui manque.** Trois lignes restent fermées **sans** décision enregistrée :
+`fill_practice`, `fill_solo`, `roster_seat`. Leurs raisons vivent dans le
+commentaire de `plans.sellable`, qui nomme leurs lots propriétaires (L18, L20,
+L21) — mais un commentaire n'a ni date, ni photo, ni condition de réouverture.
+C'est l'état d'où `foundation` et `roster` viennent de sortir.
+
+**Ce n'est pas un trou béant** : le test déclare ces trois-là nommément, et une
+**quatrième** fermeture sans décision le fait échouer. Personne ne peut plus en
+ajouter une en silence.
+
+**Ce qu'il faut décider.** Leur donner une décision datée chacune, ou assumer
+que le commentaire suffit pour elles. Je ne l'ai pas fait de moi-même :
+inventer une date et une raison à la place de leur propriétaire, c'est
+fabriquer le registre que ce mécanisme existe pour rendre honnête.
