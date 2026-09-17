@@ -88,7 +88,21 @@ insert into array_validators values
   -- ⚠ IT IS STILL HELD TO NEVER RETURNING NULL by section 2 below, which
   -- walks all three lists — which is the whole point of this file, and the
   -- reason naming it here is registration rather than exemption.
-  ('funnel_props_are_safe');
+  ('funnel_props_are_safe'),
+  -- 20260914080527_the_directory_profile.sql: the CHECK on
+  -- `directory_profiles.structured`. Third of the same family: an object whose
+  -- keys are ALL OPTIONAL — a profile that declares no insurance is a valid
+  -- profile, not a broken one, so `{}` is its PASSING case and section 3's
+  -- "remove each required key and assert refusal" would test a claim it does
+  -- not make. What it does claim is that every VALUE is an array of non-empty
+  -- strings, because an empty string inside a list is the shape a dropped
+  -- optional field takes when nobody handled it — and that is asserted
+  -- directly, in the guard block of the migration itself, on the four cases
+  -- that matter (no field, a real list, an empty label, a bare string).
+  --
+  -- ⚠ ET ELLE NE PEUT PAS RENDRE NULL : son corps est un `coalesce(..., false)`
+  -- posé exprès, et la section 2 ci-dessous le vérifie sur les trois listes.
+  ('directory_structured_valid');
 
 do $$
 declare

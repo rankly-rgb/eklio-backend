@@ -56,8 +56,29 @@ def main():
 
     only_production = sorted(set(production) - set(replay))
     only_replay = sorted(set(replay) - set(production))
-    different = sorted(k for k in set(production) & set(replay)
-                       if production[k] != replay[k])
+    different_all = sorted(k for k in set(production) & set(replay)
+                           if production[k] != replay[k])
+
+    # ⚠ THE `.env` KINDS ARE THE SERVER, NOT THE SCHEMA.
+    #
+    # `grant.table.env` and `grant.function.env` carry the parts of an ACL that
+    # no migration in this repository grants and that differ between a hosted
+    # PostgreSQL 17 and a local 16: the MAINTAIN privilege, the REFERENCES /
+    # TRIGGER / TRUNCATE that Supabase's default privileges hand out, and the
+    # EXECUTE that `supabase_admin` holds on extension functions. Before the
+    # split they produced 96 differences, every one of them false, and they
+    # buried the three that were real.
+    #
+    # They are PRINTED — a privilege nobody can see is a privilege nobody can
+    # audit — and they do not count towards the exit status. An object that
+    # exists on one side only still fails, through its own non-.env rows: this
+    # softens the READING of a shared object's ACL, never the question of
+    # whether the object is there.
+    def is_env(key):
+        return key.split("|", 1)[0].endswith(".env")
+
+    different = [k for k in different_all if not is_env(k)]
+    different_env = [k for k in different_all if is_env(k)]
 
     print(f"production objects: {len(production)}")
     print(f"replay objects:     {len(replay)}")
@@ -75,9 +96,14 @@ def main():
     section("ONLY IN THE REPLAY (the database does not have it)", only_replay)
     section("DIFFERENT", different,
             lambda k: f"prod={production[k][:8]} replay={replay[k][:8]}")
+    section("ENVIRONMENT, NOT SCHEMA (printed, not counted -- see the .env note "
+            "in schema_fingerprint.sql)", different_env,
+            lambda k: f"prod={production[k][:8]} replay={replay[k][:8]}")
 
     total = len(only_production) + len(only_replay) + len(different)
-    print(f"TOTAL DIVERGENCES: {total}")
+    print(f"TOTAL DIVERGENCES: {total}"
+          + (f"   (+{len(different_env)} environmental, not counted)"
+             if different_env else ""))
     return 1 if total else 0
 
 

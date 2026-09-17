@@ -166,6 +166,29 @@ insert into never_tenanted values
   ('section_types'), ('session_style_cards'), ('site_goals'),
   ('site_output_templates'), ('specialties'), ('tone_cards'), ('type_pairings'),
   ('banned_phrases'), ('usp_stopwords'),
+  /*
+   * `site_platforms` — QUELLES plateformes de site Eklio publie, et ce qu'on
+   * dit à celle dont la plateforme n'en est pas. Du vocabulaire : la réponse
+   * est la même pour toutes les clientes, et elle décrit ce que NOUS savons
+   * faire. Elle est en table plutôt qu'en constante de code précisément pour
+   * que « Squarespace, finalement non » coûte un UPDATE et pas un déploiement.
+   */
+  ('site_platforms'),
+  /*
+   * `site_pages` — les clés de page qu'une spec de site peut porter. Annexe de
+   * `section_types`, même nature : le catalogue des pages possibles, pas les
+   * pages de quelqu'un. Les pages d'une cliente vivent dans `site_specs.pages`,
+   * qui est rattachée à son kit.
+   */
+  ('site_pages'),
+  /*
+   * `ethics_patterns` — les motifs déontologiques, en données. Sœur de
+   * `ethics_rules` (les six règles en toutes lettres) et de `banned_phrases`
+   * (les formulations littérales), toutes deux déjà ici. Ce que les boards
+   * interdisent ne se négocie pas par cliente ; une praticienne qui pourrait
+   * retirer un motif de sa propre ligne serait le contraire d'une garde.
+   */
+  ('ethics_patterns'),
   -- Eklio's own instruments. Never a customer's data.
   ('anon_generation_counters'), ('app_settings'), ('brand_image_daily_spend'),
   ('direction_asset_daily_spend'), ('funnel_events'), ('funnel_steps'),

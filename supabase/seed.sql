@@ -803,6 +803,134 @@ insert into public.app_settings (key, value) values
 on conflict (key) do nothing;
 -- <<< CHECK REWRITE LIMIT <<<
 
+-- >>> OFFER SKU DATA (mirrored verbatim in supabase/seed.sql) >>>
+insert into public.plans
+  (tier, label, price_cents, kind, billing_period, per_seat, included_seats,
+   directions_limit, regenerations_limit, image_budget_cents, sort_order)
+values
+  ('foundation', 'The Foundation', 39000, 'kit', 'once', false, null,
+   3, 6, 400, 10),
+  ('roster', 'The Roster', 69000, 'kit', 'once', false, 5,
+   3, 12, 600, 11),
+  ('identity_addon', 'Visual identity', 8900, 'addon', 'once', false, null,
+   3, 3, 200, 12),
+  ('roster_seat', 'Additional clinician', 12000, 'seat', 'once', true, null,
+   null, null, 0, 13),
+  ('fill_solo', 'The Fill', 5900, 'subscription', 'month', false, null,
+   null, null, 0, 14),
+  ('fill_practice', 'The Fill (practice)', 6900, 'subscription', 'month', true, null,
+   null, null, 0, 15)
+on conflict (tier) do update set
+  label               = excluded.label,
+  price_cents         = excluded.price_cents,
+  kind                = excluded.kind,
+  billing_period      = excluded.billing_period,
+  per_seat            = excluded.per_seat,
+  included_seats      = excluded.included_seats,
+  directions_limit    = excluded.directions_limit,
+  regenerations_limit = excluded.regenerations_limit,
+  image_budget_cents  = excluded.image_budget_cents,
+  sort_order          = excluded.sort_order;
+-- <<< OFFER SKU DATA <<<
+
+
+-- >>> SITE PLATFORM DATA (mirrored verbatim in supabase/seed.sql) >>>
+insert into public.site_platforms (id, label, status, notice, sort_order) values
+  ('wordpress', 'WordPress', 'accepted', null, 1),
+  ('squarespace', 'Squarespace', 'conditional',
+   'We are still confirming what we can publish to Squarespace on your behalf. You can sign up, and we will tell you before you pay if anything has to be done by hand.',
+   2),
+  ('wix', 'Wix', 'refused',
+   'We do not publish to Wix yet. Everything we write for you would still be yours to paste, but putting it in place is the part we could not do.',
+   3),
+  ('webflow', 'Webflow', 'refused',
+   'We do not publish to Webflow yet. Everything we write for you would still be yours to paste, but putting it in place is the part we could not do.',
+   4),
+  ('other', 'Something else', 'refused',
+   'We only publish to WordPress today. Everything we write for you would still be yours to paste, but putting it in place is the part we could not do.',
+   5),
+  ('none', 'I do not have a website yet', 'refused',
+   'You will need a site before we can put anything on it. WordPress is the one we publish to today.',
+   6)
+on conflict (id) do update set
+  label = excluded.label, status = excluded.status,
+  notice = excluded.notice, sort_order = excluded.sort_order;
+-- <<< SITE PLATFORM DATA <<<
+
+
+-- >>> SITE PAGE DATA (mirrored verbatim in supabase/seed.sql) >>>
+insert into public.site_pages (key, label, sort_order) values
+  ('home',     'Home',     1),
+  ('about',    'About',    2),
+  ('services', 'Services', 3),
+  ('contact',  'Contact',  4)
+on conflict (key) do update set
+  label = excluded.label, sort_order = excluded.sort_order;
+-- <<< SITE PAGE DATA <<<
+
+
+-- >>> ETHICS PATTERN DATA (mirrored verbatim in supabase/seed.sql) >>>
+insert into public.ethics_patterns (id, rule_id, pattern, exception_pattern, severity, sort_order) values
+  ('resolution_verb', 'proven',
+   '\y(heal|heals|healed|healing|cure|cures|cured|curing|fix|fixes|fixed|fixing|eliminate|eliminates|eliminated|eliminating|erase|erases|erasing|end|ends|ending|resolve|resolves|resolved|resolving|overcome|overcomes|overcoming|banish|banishes|banishing|remove|removes|removing|conquer|conquers|conquering|defeat|defeats)\y( +\w+){0,3} +\y(anxiety|anxieties|depression|trauma|traumas|ptsd|panic +attacks?|panic|ocd|grief|addiction|addictions|burnout|stress|insomnia|adhd|phobias?|shame|codependency|overwhelm)\y',
+   null, 'block', 1),
+  ('free_you_from', 'proven',
+   '\y(free +you +from|rid +you +of|get +rid +of|take +away +your|make +(it|your +\w+) +go +away)\y',
+   null, 'block', 2),
+  ('is_gone', 'proven',
+   '\y(anxiety|anxieties|depression|trauma|traumas|ptsd|panic +attacks?|panic|ocd|grief|addiction|addictions|burnout|stress|insomnia|adhd|phobias?|shame|codependency|overwhelm)\y[^.!?]{0,30}\y(is|are|will +be|''?ll +be) +(gone|behind +you|history|a +thing +of +the +past|no +longer +(a +problem|an +issue))\y',
+   null, 'block', 3),
+  ('dated_promise', 'timeframe',
+   '\y(results?|relief|change|changes|healing|progress|improvement|breakthrough|transformation|better)\y[^.!?]{0,40}\yin +(as +little +as +|just +|only +)?[0-9]+ *(days?|weeks?|months?|sessions?)\y',
+   null, 'block', 4),
+  ('guarantee', 'proven', '\yguarantee(s|d|ing)?\y', null, 'block', 5),
+  ('clinically_proven', 'proven',
+   '\y(clinically|scientifically|medically|statistically) +proven\y|\yproven +(to\y|results?\y|method|approach|system|technique|protocol|track +record)',
+   null, 'block', 6),
+  ('success_rate', 'proven',
+   '\y([0-9]{1,3} *(%|percent)|[0-9]+ +out +of +[0-9]+|nine +out +of +ten) +(of +)?(my|our|her|his|their)? *(clients?|patients?)\y|\ysuccess +rate\y',
+   null, 'block', 7),
+  ('lasting_relief', 'proven',
+   '\y(lasting|permanent|life-?long|complete|full) +(relief|results?|recovery|healing|peace|calm|freedom)\y',
+   null, 'block', 8),
+  ('therapy_that_works', 'proven',
+   '\y(treatment|therapy|approach|method) +that +(actually +|really +)?(works|will +work)\y',
+   '\y(treatment|therapy|approach|method) +that +(actually +|really +)?(works|will +work) +(best +)?for +you\y',
+   'block', 9),
+  ('testimonial_word', 'client_voice', '\ytestimonials?\y', null, 'block', 10),
+  ('clients_say', 'client_voice',
+   '\y((my|our|her|his|their) +)?(clients?|patients?) +(often|frequently|sometimes|usually|always|regularly|routinely|consistently)? *(say|says|said|report|reports|reported|tell|tells|told|describe|describes|rave|love|feel|feels|felt)\y',
+   null, 'block', 11),
+  ('client_reviews', 'client_voice',
+   '\yclient +(reviews?|feedback|ratings?)\y|\ypatient +reviews?\y|\y(reviewed|rated|recommended) +by +(my|our|former|past|hundreds +of|[0-9]+) *(clients?|patients?)\y',
+   null, 'block', 12),
+  ('star_rating', 'client_voice',
+   '\yfive[- ]star\y|\y[0-9](\.[0-9])? *(/ *5|out +of +5) *stars?\y|[★⭐]',
+   null, 'block', 13),
+  ('success_story', 'client_voice',
+   '\y(success|client|patient) +stor(y|ies)\y', null, 'block', 14),
+  ('best_therapist', 'scarcity',
+   '(\y(best|top|leading|premier|foremost|most +trusted|top-?rated|number +one)|# *1) +(\w+ +){0,2}(therapist|therapists|counselor|counselors|counsellor|psychologist|psychologists|clinician|clinicians|clinic|provider|providers|coach|therapy)\y',
+   null, 'block', 15),
+  ('award_winning', 'credential',
+   '\y(award-?winning|nationally +recognized|world-?class|world-?renowned|renowned)\y',
+   null, 'warn', 16),
+  ('weekend_certification', 'credential',
+   '\y(weekend|two-?day|one-?day|[0-9]+-?(day|hour)) +(certification|certificate|certified|intensive)\y|\ycertified\y[^.!?]{0,40}\y(weekend|workshop|webinar|ce +course|short +course)\y',
+   null, 'block', 17),
+  ('you_have_condition', 'diagnosis',
+   '\yyou +(have|clearly +have|probably +have|likely +have|are +suffering +from|suffer +from) +(\w+ +){0,2}\y(anxiety|anxieties|depression|trauma|traumas|ptsd|panic +attacks?|panic|ocd|grief|addiction|addictions|burnout|stress|insomnia|adhd|phobias?|shame|codependency|overwhelm)\y',
+   null, 'block', 18),
+  ('scarcity_urgency', 'scarcity',
+   '\yonly +[0-9]+ +(spots?|slots?|places?|openings?) +(left|remaining|available)\y|\ylimited +(spots?|slots?|places?|openings?|availability|space)\y|\y(spots?|slots?|places?|openings?) +(are +)?(limited|filling +up)\y|\ylimited[- ]time +offer\y|\yact +now\y|\ydon''?t +wait\y|\ylast +chance\y|\ybook +(now +)?before +(prices|rates|spots)\y',
+   null, 'block', 19)
+on conflict (id) do update set
+  rule_id = excluded.rule_id, pattern = excluded.pattern,
+  exception_pattern = excluded.exception_pattern,
+  severity = excluded.severity, sort_order = excluded.sort_order;
+-- <<< ETHICS PATTERN DATA <<<
+
+
 -- >>> DEGREE AND PRACTICE TITLE DATA (mirrored verbatim in supabase/seed.sql) >>>
 
 -- ⚠ CE BLOC CORRIGE `CATALOG DATA`, ET DOIT DONC ÊTRE REJOUÉ APRÈS LUI.
@@ -871,3 +999,29 @@ delete from public.license_type_states
  where license_type_id = 'lmsw' and state_code = 'PA';
 
 -- <<< LSW CATALOG ROW <<<
+
+-- >>> SQUARESPACE ANSWER (mirrored verbatim in supabase/seed.sql) >>>
+
+update public.site_platforms
+   set status = 'refused',
+       notice = 'We do not publish to Squarespace. Its API covers store orders and forms, not website pages, so there is no way for us to put anything on your site for you. Everything we write for you would still be yours to paste, but putting it in place is the part we could not do.'
+ where id = 'squarespace';
+
+-- <<< SQUARESPACE ANSWER <<<
+
+
+-- >>> SKU SELLABILITY (mirrored verbatim in supabase/seed.sql) >>>
+
+update public.plans set sellable = false
+ where tier = any (array['roster_seat', 'fill_solo', 'fill_practice']);
+
+-- <<< SKU SELLABILITY <<<
+
+
+-- >>> PLATFORM ELIGIBILITY (mirrored verbatim in supabase/seed.sql) >>>
+
+update public.plans set requires_publishable_platform = true
+ where tier = any (array['foundation', 'roster', 'fill_solo', 'fill_practice']);
+
+-- <<< PLATFORM ELIGIBILITY <<<
+

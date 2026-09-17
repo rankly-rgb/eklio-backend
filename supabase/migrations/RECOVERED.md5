@@ -1,0 +1,29 @@
+# What production recorded, for the eleven migrations recovered on 17 September.
+#
+# `md5  bytes  characters  filename` of the statement stored in
+# supabase_migrations.schema_migrations.statements on project fobgdsupyfslxbswfuay
+# -- NOT of the file. The file carries one extra trailing newline, because a text
+# file ends in one and a stored statement does not.
+#
+# ⚠ BYTES AND CHARACTERS ARE BOTH HERE, AND THEY DIFFER ON NINE OF THE ELEVEN.
+# Postgres `length()` counts CHARACTERS; `wc -c` counts BYTES; these files are
+# commented in French and every accent is two bytes. Recording only the number
+# production reported made the first version of the checker fail all nine, which
+# is the friendly version of this mistake -- the unfriendly version is a check
+# that passes on a file it never really compared.
+#
+# scripts/verify-recovered-migrations.sh checks it. It exists so that "these
+# eleven files are exactly what ran" stays a fact rather than a memory: the
+# eleven were never committed, were applied through apply_migration, and this
+# hash is the only thing standing between them and a well-meaning tidy-up.
+54f92c9d1e34d4a32e51cbbf45916f70  10677  10658  20260914072327_the_new_offer_skus.sql
+e042c7dadb548f79204ca26f8bfcf28b  6131  6118  20260914073802_a_purchase_that_is_not_a_tier.sql
+08dd5ebe16dc2ba818382ccc56a8836c  10526  10496  20260914074549_platform_qualification.sql
+520b93dcd6e2fdf3abb8fc3eed5399f2  4394  4385  20260914075810_positioning_in_her_patients_words.sql
+7da9f90b61805ebd3af345d6a7003506  10367  10354  20260914080527_the_directory_profile.sql
+c448564e5b2ce430cf25dab45cabe4c9  7314  7304  20260914081457_pages_are_data.sql
+7388fb587b7aafdc8112248c9c5d18de  4371  4369  20260914082152_the_google_listing.sql
+929edb18a649f0e9d5b92017ed4dcdec  13533  13529  20260914084054_the_guard_moves_into_the_write.sql
+ed4e277ca3c2845576b8d3d225d07c5d  368  368  20260914091227_the_squarespace_answer.sql
+17f7b91f3a7020c5dc16a0dd927d1ff5  1547  1547  20260914091622_a_sku_that_cannot_be_delivered_cannot_be_sold.sql
+6c75cb62eb05e2a918b490884415d3bb  1736  1730  20260914134552_eligibility_is_not_refusal.sql

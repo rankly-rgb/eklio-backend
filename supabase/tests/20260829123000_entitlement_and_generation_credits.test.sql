@@ -478,11 +478,28 @@ $$;
 
 -- The plans table is readable, and writable by nobody
 do $$
-declare ok boolean := false; n int;
+declare ok boolean := false; n int; v_all int;
 begin
+  select count(*) into v_all from public.plans;   -- hors rôle : la vérité
   set local role authenticated;
   set local request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111"}';
-  assert (select count(*) from public.plans) = 4, 'she cannot read the plans';
+  /*
+   * ⚠ DÉRIVÉ, PAS UN NOMBRE. Cette ligne disait « = 4 », et l'offre du
+   * 13 septembre en a porté le catalogue à dix : le test a viré au rouge sur
+   * un changement parfaitement légitime, et la seule question qu'il pose —
+   * « les policies lui laissent-elles voir le catalogue ? » — n'a jamais
+   * dépendu de sa taille.
+   *
+   * On compare donc ce qu'elle voit à ce qu'il y a. La garde mord toujours
+   * (une policy qui cacherait une ligne fait chuter le compte), et elle ne
+   * mord plus sur l'ajout d'un SKU. `v_all` est lu HORS de son rôle, juste
+   * avant, pour que les deux comptes ne soient pas le même filtre lu deux
+   * fois.
+   */
+  assert (select count(*) from public.plans) = v_all,
+    format('elle voit %s lignes de plans sur %s : une policy en cache',
+           (select count(*) from public.plans), v_all);
+  assert v_all > 0, 'le catalogue des plans est vide : la garde ne vérifie rien';
   begin
     update public.plans set regenerations_limit = 999;
     get diagnostics n = row_count; ok := (n = 0);
