@@ -463,3 +463,67 @@ liste d'exemptions est une liste qu'on allonge au lieu de corriger.
 
 `lib/content/` deviendra un candidat le jour où The Fill sera vendable — il porte alors un
 livrable vendu. Aujourd'hui `plans.sellable = false` sur les deux abonnements, donc non.
+
+---
+
+# Ce que le RELEVÉ DE LA CALIFORNIE a ouvert
+
+## 20. ⚠ LEP — la quatrième licence du BBS, et le catalogue ne la porte pas
+
+**Ce qui est en place aujourd'hui.** La Californie est le premier État vendable
+(`20260917160202`). Ses quatre couples sont vérifiés : `lcsw`, `lmft`, `lpcc`,
+`licensed_psychologist`.
+
+**Le problème.** Le Board of Behavioral Sciences énumère **quatre** licences —
+LMFT, **LEP (Licensed Educational Psychologist)**, LCSW, LPCC. Le catalogue n'en
+porte que trois : `lep` n'existe pas dans `license_types`, donc pas davantage
+dans `license_type_states`.
+
+**La conséquence, en clair : une praticienne LEP californienne n'a aucun titre
+correct à choisir à l'écran 1.** Elle a trois issues, et les trois sont mauvaises :
+
+- elle choisit un titre qu'elle ne détient pas — et le produit imprime un
+  credential faux sur une page publique, ce qui est exactement le défaut que
+  toute la matrice existe pour empêcher ;
+- elle ne trouve rien et s'en va ;
+- elle choisit `licensed_psychologist`, qui est le titre d'un **autre board** et
+  d'un autre périmètre d'exercice. C'est la pire des trois : c'est plausible à
+  l'œil et faux en droit.
+
+⚠ **Et la garde ne rattrape pas ce cas.** `state_is_sellable('CA')` est
+désormais VRAI : la Californie est ouverte. Le trigger
+`project_briefs_license_state_gate` refuse un titre que l'État ne délivre pas —
+mais LEP n'étant pas dans le catalogue, il n'y a rien à refuser. **L'absence ne
+déclenche aucune garde.** C'est le défaut permissif habituel de ce dépôt, sous
+sa forme la plus discrète : pas une règle fausse, un trou.
+
+**Ce qu'il faut décider.** Ajouter `lep` au catalogue et à la matrice CA (une
+ligne de chaque, plus le relevé de sa page), ou l'assumer hors périmètre et
+l'écrire — mais alors le dire à l'écran, pas seulement ici.
+
+**Coût de chaque option** : ajouter ≈ une migration de dix lignes plus un relevé.
+Assumer hors périmètre ≈ une phrase à l'écran 1. Ne rien faire ≈ le credential
+faux, et c'est la seule option qui coûte à quelqu'un d'autre que nous.
+
+---
+
+## 21. Le psychologue californien s'imprime « Licensed Psychologist », la page dit « Psychologist »
+
+**Ce qui est en place aujourd'hui.** `license_type_states.abbreviation` est NULL
+pour `licensed_psychologist` + CA — un **fait** relevé, pas une ignorance : la
+page du Board of Psychology ne porte aucun sigle. `title_abbreviation()` rend
+donc NULL, et l'appelant retombe sur `license_types.description`, qui vaut
+**« Licensed Psychologist »**.
+
+**Le point.** La page nomme la licence **« Psychologist »**, sans le préfixe
+« Licensed ». L'écart est mince et n'est probablement pas une faute — une
+psychologue licenciée en Californie *est* une licensed psychologist. Mais
+`description` est une colonne **nationale** : elle vaut pour les cinquante États,
+et c'est elle qui s'imprime partout où le sigle est absent (CA, NY, PA, et FL qui
+exige les mots en toutes lettres).
+
+**Ce qu'il faut décider.** Soit `description` reste nationale et on accepte
+qu'elle ne colle pas au mot près à chaque board — position défendable, et la
+moins coûteuse. Soit la formulation est elle aussi une propriété du couple, et
+il faut une colonne de plus. **Ne pas trancher revient à choisir la première
+sans l'avoir dite** — c'est pour ça que cette entrée existe.
