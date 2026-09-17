@@ -194,6 +194,68 @@ et ont été fusionnées le 17 septembre.
 > de git se lisait comme une fusion propre. C'est le défaut que tout ce README
 > décrit, produit dans l'outil chargé de le mesurer.
 
+#### ⛔ QUATRE MIGRATIONS PÉRIMÉES — NE JAMAIS LES APPLIQUER
+
+Sur `claude/bold-bohr-o9kv30` (dépôt backend), quatre fichiers datés du
+13 septembre 2026 :
+
+```
+20260913090500_the_practitioner_has_a_name.sql
+20260913090900_sections_long_enough_to_be_read.sql
+20260913091300_two_section_types_and_a_page_for_the_approaches.sql
+20260913091700_the_home_page_the_product_describes.sql
+```
+
+Aucune n'est au registre de la production. Leur propre commit les annonce
+« WRITTEN AND NOT VERIFIED ». Après vérification, le 17 septembre, elles ne sont
+pas *non vérifiées* — elles sont **fausses**, pour trois raisons indépendantes,
+et c'est le fait qu'elles soient indépendantes qui compte : en réparer une
+laisserait les autres.
+
+**1. Le rejeu échoue.**
+
+```
+20260913090900_sections_long_enough_to_be_read.sql
+ERROR:  new row for relation "section_types" violates check constraint
+        "section_types_fields_check"
+```
+
+**2. Elles précèdent 21 migrations déjà appliquées.** Le CLI Supabase refuse
+normalement d'insérer une migration antérieure à la dernière appliquée sur le
+distant. Forcées avec `--include-all`, elles s'appliqueraient **en queue**, après
+tout ce qui porte un horodatage plus grand.
+
+**3. ⚠ `20260913090500` remettrait la POIGNÉE sur une page publique.** Elle
+réécrit `site_spec_seed_values` avec :
+
+```sql
+'license_label', (select lt.label from public.license_types lt …)
+```
+
+C'est exactement le défaut que `20260915135138_the_site_spec_stops_printing_the_handle`
+a réparé. Mesuré sur la base :
+
+| | aujourd'hui | après ces quatre |
+|---|---|---|
+| LCSW en Californie | `Licensed Clinical Social Worker` | `LCSW` |
+| Psychologue | `Licensed Psychologist` | **`PSYCH`** |
+
+`PSYCH` est une poignée interne, posée le 15 septembre précisément parce qu'elle
+ne ressemble au sigle d'aucun board. Elle atterrirait sur le site d'une
+praticienne, sous son nom, devant son board.
+
+> **⚠ ET LE PIÈGE EST ASYMÉTRIQUE — c'est la raison d'être de ce bloc.**
+> En rejeu local, l'ordre des FICHIERS fait que `20260915135138` repasse après
+> et corrige : le rejeu paraît acceptable. En production, `db push` applique par
+> ordre parmi les NON APPLIQUÉES, donc en queue, et **plus rien ne les
+> rattrape**. Le local dirait vert là où la production casserait.
+>
+> **La règle : ces quatre versions ne s'appliquent jamais.** Ce qu'elles
+> voulaient faire — le nom de la praticienne, des sections assez longues pour
+> être lues, deux types de section et une page par approche — reste à faire, et
+> se refera dans des migrations neuves, horodatées après la dernière appliquée,
+> qui ne toucheront pas à `license_label`.
+
 ## Répartition des responsabilités
 
 Ce repo possède : les tables, colonnes, contraintes, policies RLS, triggers,
