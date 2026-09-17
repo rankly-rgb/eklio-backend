@@ -46,6 +46,15 @@
 # Canonical hash (order-independent, collation-immune):
 #   md5(concat of sorted md5-per-line) = 729abe1eae8eff05a6b15931212a10e4
 #
+# ⚠ THE LEDGER NOW COINCIDES WITH THE REPOSITORY, 131 VERSIONS ON BOTH SIDES,
+# same list (md5 of the sorted versions: f785880e226b2def4c4e8a0772d3f171).
+# Two of them, 20260901190000 and 20260902090000, were applied by hand around
+# 1-2 September and never entered the ledger; they were recorded on 17 September
+# once their effects had been PROVEN present (the ensure_rls event trigger is
+# live, and grant.function matches a full replay bit for bit). Each carries the
+# repository copy as its statement, with a header saying so -- the text that
+# actually ran was never captured, and the row does not pretend otherwise.
+#
 # ⚠ THE `.env` KINDS ARE THE SERVER, NOT THE SCHEMA — see the long note in
 # schema_fingerprint.sql. They carry the MAINTAIN privilege (PostgreSQL 17 only),
 # the REFERENCES/TRIGGER/TRUNCATE that Supabase's default privileges hand out,

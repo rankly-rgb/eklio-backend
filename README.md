@@ -131,6 +131,44 @@ laissé le piège armé.
 > version desc limit 10` et nommer le fichier d'après la version rendue. Ne
 > jamais choisir l'horodatage à la main en espérant qu'il colle.
 
+#### ⚠ NE JAMAIS RÉGÉNÉRER UN FICHIER DE FONCTION DEPUIS LA PRODUCTION
+
+Le 17 septembre, une fois les onze migrations récupérées et les six renommées,
+un replay complet de `supabase/migrations` coïncide avec la production sur
+**tout** : 2504 objets de chaque côté, zéro en trop d'un côté ou de l'autre,
+et le genre `function.body` identique en entier, les 258.
+
+**Sauf sur une chose, et elle décide de cette règle :** quarante et une
+définitions de fonction diffèrent, et **c'est la production qui est la version
+appauvrie**. Ce qui les a appliquées a retiré les commentaires en chemin. Le
+dépôt est le côté long, sur les quarante et une, sans exception.
+
+Le classement est prouvé, pas supposé : `scripts/sql_tokens.py` est un vrai
+lexer PostgreSQL (commentaires imbriqués, `''`, `E'\'`, dollar-quotes, corps de
+fonction ouvert) et ses seize sondes couvrent les trois cas que le regex de
+`schema_fingerprint.sql` rate. Verdict sur les 41 : **zéro identique, 41 écarts
+de commentaire, zéro comportement différent.** Le détail est dans
+`supabase/tests/helpers/function_drift_2026-09-17.md`.
+
+> **La règle :** un fichier de `supabase/migrations` ne se régénère JAMAIS
+> depuis `pg_get_functiondef()` sur la production. Ce qui y vit est ce que le
+> dépôt a de plus que la base — les raisons, les avertissements, les « pourquoi
+> pas l'autre façon ». Une régénération les effacerait toutes d'un coup, sans
+> rien casser, sans rien lever, et personne ne s'en apercevrait avant d'avoir à
+> relire une de ces fonctions.
+>
+> C'est l'inverse exact de la règle précédente, et les deux tiennent ensemble :
+> **la production est l'autorité sur ce qui EST déployé** (donc sur les numéros
+> de version, sur les effets, sur l'empreinte) ; **le dépôt est l'autorité sur
+> ce que ça VEUT DIRE.** Chaque copie va dans un seul sens. Régénérer un
+> fichier depuis la base, c'est laisser l'une des deux écraser l'autre là où
+> elle n'a rien à dire.
+
+La transcription faite dans l'autre sens reste légitime et a déjà servi deux
+fois (`20260901190000_codify_rls_auto_enable.sql` en est née) : transcrire
+depuis la production un objet que le dépôt ne décrit PAS DU TOUT comble un
+trou. Remplacer un fichier qui existe, non.
+
 ## Répartition des responsabilités
 
 Ce repo possède : les tables, colonnes, contraintes, policies RLS, triggers,
