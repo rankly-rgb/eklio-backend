@@ -59,8 +59,13 @@ begin
     select rl.id, rl.example_weak, rl.example_strong
       from public.positioning_rules rl
      where rl.active and rl.example_weak is not null and rl.example_strong is not null
-       -- L'écart connu : l'exemple dit « Sarah », le motif exige un pronom.
-       and rl.id <> 'written_in_third_person'
+     /*
+      * ⚠ PLUS AUCUNE EXCEPTION. `written_in_third_person` en était exclue au
+      * lot précédent — son exemple disait « Sarah », son motif exigeait un
+      * pronom. La règle est passée en `present_without` le 18 septembre et son
+      * exemple déclenche enfin son propre motif : elle rentre dans la boucle
+      * comme les autres, et l'exception a disparu plutôt que d'être reconduite.
+      */
      order by rl.sort_order
   loop
     if not pg_temp.mord(r.id, r.example_weak) then
@@ -82,17 +87,47 @@ end $$;
 do $$
 begin
   /*
-   * ⚠ L'ÉCART CONNU, SONDÉ DANS LES DEUX SENS. Le motif exige un pronom, donc
-   * il mord sur « She is a licensed… » et se tait sur « Sarah is a licensed… ».
-   * Le second est la forme la plus courante dans un vrai profil : la règle ne
-   * la voit pas, et cette sonde est ce qui empêche de l'oublier.
+   * ⚠ `written_in_third_person` EST PASSÉE EN `present_without`, et la sonde la
+   * plus importante de tout ce fichier est celle du SILENCE.
+   *
+   * Le motif attrape désormais le pronom ET le prénom — `[A-Z][a-z]+` couvre
+   * les deux. Mais une associée texane DOIT écrire « supervised by (nom) » :
+   * 22 TAC 681.91(m). Un produit qui reproche à quelqu'un de respecter la loi
+   * n'a aucune raison d'exister, donc la mention de supervision fait taire la
+   * règle, et c'est vérifié ici dans les deux formulations.
    */
   assert pg_temp.mord('written_in_third_person', 'She is a licensed marriage and family therapist.'),
-    'written_in_third_person ne mord pas sur un pronom — le motif est cassé';
-  assert not pg_temp.mord('written_in_third_person',
+    'troisième personne: le motif ne voit plus le PRONOM';
+  assert pg_temp.mord('written_in_third_person',
     'Sarah is a licensed marriage and family therapist who has been practicing since 2014.'),
-    'written_in_third_person mord désormais sur un prénom : l''écart connu est réparé, '
-    'retirez l''exception de ce fichier et de la migration.';
+    'troisième personne: le motif ne voit pas le PRÉNOM — l''écart de la v1 est revenu';
+
+  assert not pg_temp.mord('written_in_third_person',
+    'Chen is a licensed professional counselor, supervised by Dana Ruiz, LPC-S.'),
+    'troisième personne: une associée texane qui obéit à 22 TAC 681.91(m) reçoit un reproche';
+  assert not pg_temp.mord('written_in_third_person',
+    'Chen is a licensed professional counselor under the supervision of Dana Ruiz.'),
+    'troisième personne: la seconde formulation de la supervision ne fait pas taire la règle';
+
+  /*
+   * ⚠ LA LIMITE CONNUE, SONDÉE POUR QU'ELLE RESTE CONNUE. Un prénom accentué
+   * n'est pas vu : `\y` coupe le mot à l'accent, donc « José » se lit « Jos »
+   * et l'espace attendue n'arrive jamais. C'est écrit dans la description de la
+   * règle ; cette sonde est ce qui le dira le jour où quelqu'un croit l'avoir
+   * réparé sans le vouloir.
+   */
+  assert not pg_temp.mord('written_in_third_person', 'José is a licensed therapist.'),
+    'troisième personne: un prénom accentué est désormais vu — mettez à jour la description';
+
+  /*
+   * ⚠ ET LA MAJUSCULE N'EST PAS CONTRAINTE, parce que la comparaison est
+   * insensible à la casse des deux côtés. Ce n'est pas un défaut de la
+   * traduction — PostgreSQL et JavaScript sont d'accord — mais c'est une
+   * propriété de la règle qu'il vaut mieux voir écrite qu'apprendre en
+   * production.
+   */
+  assert pg_temp.mord('written_in_third_person', 'sarah is a licensed therapist.'),
+    'troisième personne: la casse est devenue contraignante — le comportement a changé';
 
   /* `no_next_step` est une ABSENCE : elle n'a pas d'example_weak, et ne peut pas en avoir. */
   assert pg_temp.mord('no_next_step',

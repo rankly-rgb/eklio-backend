@@ -1333,3 +1333,17 @@ insert into public.app_settings (key, value) values
 on conflict (key) do update set value = excluded.value;
 
 -- <<< FIRST LINE FINDINGS SHOWN <<<
+
+-- >>> THIRD PERSON BECOMES PRESENT WITHOUT (mirrored verbatim in supabase/seed.sql) >>>
+
+update public.positioning_patterns
+   set kind              = 'present_without',
+       pattern           = '\y[A-Z][a-z]+ (is|has|holds) (a |an )?(licensed|certified|board-certified|master)',
+       secondary_pattern = '\y(supervised by|under the supervision of)\y'
+ where id = 'written_in_third_person';
+
+update public.positioning_rules
+   set description = 'Third person reads like an entry someone else filed. The first contact a client has with you is this text — first person is the difference between a directory listing and a person speaking. KNOWN LIMIT, not an oversight: the pattern matches an unaccented first name, so José, Chloé and Zoë are missed. It also stays silent when the text says "supervised by" or "under the supervision of" — a Texas associate is REQUIRED to write it (22 TAC 681.91(m)), and reproaching someone for obeying the law is the one thing this product must never do.'
+ where id = 'written_in_third_person';
+
+-- <<< THIRD PERSON BECOMES PRESENT WITHOUT <<<
