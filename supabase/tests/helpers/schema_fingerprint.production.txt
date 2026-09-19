@@ -1300,6 +1300,7 @@ function.body|user_uploads_error(p_code text)|8ec391baf3709ebefbf3c312e950cd0e
 function.body|user_uploads_quota_error(p_brand_kit_id uuid, p_byte_size integer, p_replacing uuid)|0e9ae0c440f9baa2ab8f2df5cb764556
 function.body|user_uploads_setting_int(p_key text, p_fallback integer)|d9801df51d03c5c8b3ed4eb971e60739
 function.body|usp_banned_phrases_check(p_text text)|955bb2c47395448ef5c9702b54538388
+function.body|usp_banned_phrases_list()|85465527f50b790dc0360b6a1a060448
 function.body|usp_check_distinct(p_scope_key text, p_statement text, p_exclude_brief uuid)|c7d00d8ca64c3b4cb6b5aa0c95859ebb
 function.body|usp_fingerprint_confirm(p_brief_id uuid, p_statement text)|3570b9fcf094d17dff499ef7150efc86
 function.body|usp_normalize(p_text text)|6e0a320bbc6ba80b2550b8bbc2c27b72
@@ -1558,6 +1559,7 @@ function|user_uploads_error(p_code text)|4d57b61057bdc276c632b9ad6a151f12
 function|user_uploads_quota_error(p_brand_kit_id uuid, p_byte_size integer, p_replacing uuid)|dac6cc2f0ec34fa9ff1556c7e698d86f
 function|user_uploads_setting_int(p_key text, p_fallback integer)|d7c1be7b9b09140df3d8b1384853f813
 function|usp_banned_phrases_check(p_text text)|a577cc61c5f7165c978652b3fc27b3f6
+function|usp_banned_phrases_list()|d0d80e2231f1fe258f185b2d91097b5a
 function|usp_check_distinct(p_scope_key text, p_statement text, p_exclude_brief uuid)|57b61b4a689a5cf06427bdd13eff72e3
 function|usp_fingerprint_confirm(p_brief_id uuid, p_statement text)|4456ae555cecde118b4a90eeba84d157
 function|usp_normalize(p_text text)|b8bcfa072b424841338c2668b17b2bcd
@@ -1816,6 +1818,7 @@ grant.function.env|user_uploads_error(p_code text)|b50339a10e1de285ac99d4c3990b8
 grant.function.env|user_uploads_quota_error(p_brand_kit_id uuid, p_byte_size integer, p_replacing uuid)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|user_uploads_setting_int(p_key text, p_fallback integer)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|usp_banned_phrases_check(p_text text)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|usp_banned_phrases_list()|97139627c126d86a74d8ab820ad756d6
 grant.function.env|usp_check_distinct(p_scope_key text, p_statement text, p_exclude_brief uuid)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|usp_fingerprint_confirm(p_brief_id uuid, p_statement text)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|usp_normalize(p_text text)|b50339a10e1de285ac99d4c3990b8693
@@ -2074,6 +2077,7 @@ grant.function|user_uploads_error(p_code text)|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|user_uploads_quota_error(p_brand_kit_id uuid, p_byte_size integer, p_replacing uuid)|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|user_uploads_setting_int(p_key text, p_fallback integer)|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|usp_banned_phrases_check(p_text text)|8dd1771e78316f3d93a564b7d81a4c88
+grant.function|usp_banned_phrases_list()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|usp_check_distinct(p_scope_key text, p_statement text, p_exclude_brief uuid)|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|usp_fingerprint_confirm(p_brief_id uuid, p_statement text)|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|usp_normalize(p_text text)|59a9d60d2ccf51b0c7c03f225c171a7d
