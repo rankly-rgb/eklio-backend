@@ -88,33 +88,61 @@ end $$;
 do $$
 begin
   /*
-   * ⚠ `written_in_third_person` EST ANCRÉE, ET LA SONDE LA PLUS IMPORTANTE DE
-   * TOUT CE FICHIER EST CELLE DU SILENCE.
+   * ⚠ `written_in_third_person` EST ANCRÉE À QUARANTE CARACTÈRES, et la sonde
+   * la plus importante de tout ce fichier est celle du SILENCE.
    *
    * Ce n'est pas la casse qui distingue la troisième personne — la comparaison
    * est insensible à la casse des deux côtés, donc `[A-Z][a-z]+` ne contrai-
    * gnait rien. C'est la POSITION : un profil écrit à la troisième personne
    * s'ouvre sur le nom, tandis que « my colleague is a licensed therapist »
-   * au milieu d'un texte est une incise. D'où l'ancre `^[^.!?]{0,40}`.
+   * au milieu d'un texte est une incise.
+   *
+   * ⚠ ET C'EST LA FENÊTRE QUI PORTE LA POSITION, PAS LA FRONTIÈRE DE PHRASE.
+   * La classe fut d'abord `[^.!?]` ; le point s'y fermait sur « Ph.D. » et la
+   * règle ratait alors son cas PRINCIPAL. Une règle qui rate son cas principal
+   * est pire qu'absente : on croit qu'elle a regardé.
    *
    * Et une associée texane DOIT écrire « supervised by (nom) » : 22 TAC
    * 681.91(m). Un produit qui reproche à quelqu'un de respecter la loi n'a
    * aucune raison d'exister, donc la mention de supervision fait taire la
-   * règle — dans les TROIS formulations, la dernière comprise.
+   * règle — mais SEULE la mention, pas le mot `supervision` où qu'il soit.
    */
+  assert pg_temp.mord('written_in_third_person', 'Sarah Chen, Ph.D., is a licensed psychologist.'),
+    'troisième personne: le titre à points fait de nouveau taire la règle — c''est la cliente type';
+  assert pg_temp.mord('written_in_third_person',
+    'Sarah Chen, LCSW, is a licensed clinical social worker.'),
+    'troisième personne: une ouverture nom + credential ne mord plus';
   assert pg_temp.mord('written_in_third_person', 'She is a licensed marriage and family therapist.'),
     'troisième personne: le motif ne voit plus le PRONOM en ouverture';
   assert pg_temp.mord('written_in_third_person',
     'Sarah is a licensed marriage and family therapist who has been practicing since 2014.'),
     'troisième personne: le motif ne voit pas le PRÉNOM — l''écart de la v1 est revenu';
-  assert pg_temp.mord('written_in_third_person',
-    'Sarah Chen, LCSW, is a licensed clinical social worker in Sacramento.'),
-    'troisième personne: une ouverture nom + credential ne mord plus';
 
   /*
-   * ⚠ CE QUE L'ANCRE ACHÈTE, ET C'EST LA RAISON DE LA VERSION FINALE : une
-   * incise au MILIEU d'un texte écrit à la première personne se tait. La
-   * version d'hier mordait ici, et c'était le faux positif à éliminer.
+   * ⚠⚠ LE PROFIL D'UNE SUPERVISEUSE N'EST PAS CELUI D'UNE SUPERVISÉE, et le
+   * taire était la même famille de dégât que le cas texan pris par l'autre
+   * bout : ne rien dire à quelqu'un dont le texte est correct. Le motif
+   * secondaire ne nomme donc plus le mot `supervision` seul.
+   */
+  assert pg_temp.mord('written_in_third_person',
+    'Sarah Chen, LCSW, is a licensed clinical social worker. I provide clinical supervision to associates.'),
+    'troisième personne: le profil d''une SUPERVISEUSE est de nouveau tu';
+
+  /*
+   * ⚠ LE COLLAGE MULTILIGNE, ET LA RAISON DE `[^!?]` PLUTÔT QUE `.`. Une
+   * classe négative contient le saut de ligne dans LES DEUX moteurs ; le point
+   * ne le contient qu'en POSIX. Avec `.`, PostgreSQL mordrait ici et
+   * JavaScript se tairait — la base dirait autre chose que l'écran. C'est
+   * mesuré, et cette sonde est ce qui le dira si quelqu'un simplifie la classe.
+   */
+  assert pg_temp.mord('written_in_third_person',
+    E'Sarah Chen\nPh.D.\nis a licensed psychologist in Sacramento.'),
+    'troisième personne: un collage multiligne n''est plus vu — la classe a-t-elle été simplifiée en « . » ?';
+
+  /*
+   * ⚠ CE QUE L'ANCRE ACHÈTE : une incise au MILIEU d'un texte écrit à la
+   * première personne se tait, parce que le verbe tombe au-delà des quarante
+   * caractères.
    */
   assert not pg_temp.mord('written_in_third_person',
     'The mornings are the hardest part of your day. My colleague is a licensed therapist.'),
@@ -130,23 +158,19 @@ begin
     'troisième personne: la seconde formulation de la supervision ne fait pas taire la règle';
   assert not pg_temp.mord('written_in_third_person', 'My supervisor is a licensed psychologist.'),
     'troisième personne: la mention texane écrite à l''envers ne fait pas taire la règle';
+  assert not pg_temp.mord('written_in_third_person',
+    'Chen is a licensed professional counselor. Her supervisor''s name is Dana Ruiz.'),
+    'troisième personne: le possessif « supervisor''s » ne fait pas taire la règle';
 
   /*
-   * ⚠ LES DEUX LIMITES CONNUES, SONDÉES POUR QU'ELLES RESTENT CONNUES. Elles
-   * sont écrites dans la description de la règle ; ces deux sondes sont ce qui
-   * le dira le jour où quelqu'un les répare — ou les aggrave — sans le vouloir.
-   *
-   * 1. Un titre à points ferme `[^.!?]` avant le verbe.
-   * 2. `supervision` seul fait taire la règle sur le profil d'une SUPERVISEUSE,
-   *    qui n'est pas une associée supervisée. C'est le prix, payé exprès, de
-   *    l'élargissement qui attrape « My supervisor is… ».
+   * ⚠ LA SEULE LIMITE QUI RESTE, SONDÉE POUR QU'ELLE RESTE CONNUE : un en-tête
+   * long repousse le verbe au-delà de la fenêtre. Les deux limites écrites le
+   * matin même — le titre à points, le profil de superviseuse — n'existent
+   * plus et ont été retirées de la description plutôt que reconduites.
    */
   assert not pg_temp.mord('written_in_third_person',
-    'Sarah Chen, Ph.D., is a licensed psychologist.'),
-    'troisième personne: le titre à points ne ferme plus la fenêtre — mettez à jour la description';
-  assert not pg_temp.mord('written_in_third_person',
-    'Sarah Chen, LCSW, is a licensed clinical social worker. I provide clinical supervision to associates.'),
-    'troisième personne: le profil d''une superviseuse n''est plus tu — mettez à jour la description';
+    E'Sarah Chen, Ph.D., LMFT\n1234 Alder Street, Suite 200\nis a licensed psychologist.'),
+    'troisième personne: la fenêtre de 40 caractères a changé de taille — relisez la description';
 
   /*
    * ⚠ ET CE QUE L'ANCRE N'ACHÈTE PAS, écrit plutôt que découvert : elle sépare
@@ -158,10 +182,8 @@ begin
     'troisième personne: l''ancre s''est mise à distinguer les personnes — le comportement a changé';
 
   /*
-   * ⚠ LA MAJUSCULE N'EST TOUJOURS PAS CONTRAINTE, et le prénom accentué EST vu
-   * — la forme ancrée n'a plus besoin de `[A-Z][a-z]+`. La limite « José,
-   * Chloé, Zoë sont ratés » était vraie hier et ne l'est plus ; elle a été
-   * retirée de la description, et c'est ici que ça se vérifie.
+   * ⚠ LA MAJUSCULE N'EST PAS CONTRAINTE, et le prénom accentué EST vu — la
+   * forme ancrée n'a plus besoin de `[A-Z][a-z]+`.
    */
   assert pg_temp.mord('written_in_third_person', 'sarah is a licensed therapist.'),
     'troisième personne: la casse est devenue contraignante — le comportement a changé';

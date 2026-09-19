@@ -1362,3 +1362,16 @@ update public.positioning_rules
  where id = 'written_in_third_person';
 
 -- <<< THIRD PERSON IS ANCHORED, NOT CAPITALISED <<<
+
+-- >>> THE WINDOW DOES THE WORK (mirrored verbatim in supabase/seed.sql) >>>
+
+update public.positioning_patterns
+   set pattern           = '^[^!?]{0,40}\y(is|has|holds) (a |an )?(licensed|certified|board-certified|master)',
+       secondary_pattern = '\y(supervised by|under the supervision of|my supervisor|supervisor''s)\y'
+ where id = 'written_in_third_person';
+
+update public.positioning_rules
+   set description = 'Third person reads like an entry someone else filed. The first contact a client has with you is this text — first person is the difference between a directory listing and a person speaking. The pattern is ANCHORED to the first 40 characters, because a profile written in the third person opens on the name, while "my colleague is a licensed therapist" mid-text is an aside. The window, not sentence punctuation, does that work: "Sarah Chen, Ph.D., is a licensed psychologist" is caught, dots and all. It stays silent only on the supervision line itself — "supervised by", "under the supervision of", "my supervisor", "supervisor''s" — because a Texas associate is REQUIRED to write it (22 TAC 681.91(m)), and reproaching someone for obeying the law is the one thing this product must never do. A supervisor''s own profile is NOT silenced. KNOWN LIMIT, measured, not an oversight: a long header before the verb pushes it past the 40-character window, so a pasted name-address-phone block ahead of the first sentence goes unnoticed.'
+ where id = 'written_in_third_person';
+
+-- <<< THE WINDOW DOES THE WORK <<<
