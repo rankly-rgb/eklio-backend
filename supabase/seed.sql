@@ -1347,3 +1347,18 @@ update public.positioning_rules
  where id = 'written_in_third_person';
 
 -- <<< THIRD PERSON BECOMES PRESENT WITHOUT <<<
+
+-- >>> THIRD PERSON IS ANCHORED, NOT CAPITALISED (mirrored verbatim in supabase/seed.sql) >>>
+
+update public.positioning_patterns
+   set kind              = 'present_without',
+       pattern           = '^[^.!?]{0,40}\y(is|has|holds) (a |an )?(licensed|certified|board-certified|master)',
+       secondary_pattern = '\y(supervised by|under the supervision of|supervisor|supervision)\y',
+       severity          = 'minor'
+ where id = 'written_in_third_person';
+
+update public.positioning_rules
+   set description = 'Third person reads like an entry someone else filed. The first contact a client has with you is this text — first person is the difference between a directory listing and a person speaking. The pattern is ANCHORED: it looks at the opening only, because a profile written in the third person opens on the name, while "my colleague is a licensed therapist" mid-text is an aside. TWO KNOWN LIMITS, both measured, neither an oversight: (1) a title containing dots closes the window early, so "Sarah Chen, Ph.D., is a licensed psychologist" is missed; (2) it stays silent on any text containing "supervised by", "under the supervision of", "supervisor" or "supervision" — which also silences a supervisor''s own profile. That second cost is paid on purpose: a Texas associate is REQUIRED to write the supervision line (22 TAC 681.91(m)), and reproaching someone for obeying the law is the one thing this product must never do.'
+ where id = 'written_in_third_person';
+
+-- <<< THIRD PERSON IS ANCHORED, NOT CAPITALISED <<<

@@ -62,9 +62,10 @@ begin
      /*
       * ⚠ PLUS AUCUNE EXCEPTION. `written_in_third_person` en était exclue au
       * lot précédent — son exemple disait « Sarah », son motif exigeait un
-      * pronom. La règle est passée en `present_without` le 18 septembre et son
-      * exemple déclenche enfin son propre motif : elle rentre dans la boucle
-      * comme les autres, et l'exception a disparu plutôt que d'être reconduite.
+      * pronom. La règle est passée en `present_without` le 18 septembre, puis
+      * ancrée le 19, et son exemple déclenche enfin son propre motif : elle
+      * rentre dans la boucle comme les autres, et l'exception a disparu plutôt
+      * que d'être reconduite.
       */
      order by rl.sort_order
   loop
@@ -87,20 +88,39 @@ end $$;
 do $$
 begin
   /*
-   * ⚠ `written_in_third_person` EST PASSÉE EN `present_without`, et la sonde la
-   * plus importante de tout ce fichier est celle du SILENCE.
+   * ⚠ `written_in_third_person` EST ANCRÉE, ET LA SONDE LA PLUS IMPORTANTE DE
+   * TOUT CE FICHIER EST CELLE DU SILENCE.
    *
-   * Le motif attrape désormais le pronom ET le prénom — `[A-Z][a-z]+` couvre
-   * les deux. Mais une associée texane DOIT écrire « supervised by (nom) » :
-   * 22 TAC 681.91(m). Un produit qui reproche à quelqu'un de respecter la loi
-   * n'a aucune raison d'exister, donc la mention de supervision fait taire la
-   * règle, et c'est vérifié ici dans les deux formulations.
+   * Ce n'est pas la casse qui distingue la troisième personne — la comparaison
+   * est insensible à la casse des deux côtés, donc `[A-Z][a-z]+` ne contrai-
+   * gnait rien. C'est la POSITION : un profil écrit à la troisième personne
+   * s'ouvre sur le nom, tandis que « my colleague is a licensed therapist »
+   * au milieu d'un texte est une incise. D'où l'ancre `^[^.!?]{0,40}`.
+   *
+   * Et une associée texane DOIT écrire « supervised by (nom) » : 22 TAC
+   * 681.91(m). Un produit qui reproche à quelqu'un de respecter la loi n'a
+   * aucune raison d'exister, donc la mention de supervision fait taire la
+   * règle — dans les TROIS formulations, la dernière comprise.
    */
   assert pg_temp.mord('written_in_third_person', 'She is a licensed marriage and family therapist.'),
-    'troisième personne: le motif ne voit plus le PRONOM';
+    'troisième personne: le motif ne voit plus le PRONOM en ouverture';
   assert pg_temp.mord('written_in_third_person',
     'Sarah is a licensed marriage and family therapist who has been practicing since 2014.'),
     'troisième personne: le motif ne voit pas le PRÉNOM — l''écart de la v1 est revenu';
+  assert pg_temp.mord('written_in_third_person',
+    'Sarah Chen, LCSW, is a licensed clinical social worker in Sacramento.'),
+    'troisième personne: une ouverture nom + credential ne mord plus';
+
+  /*
+   * ⚠ CE QUE L'ANCRE ACHÈTE, ET C'EST LA RAISON DE LA VERSION FINALE : une
+   * incise au MILIEU d'un texte écrit à la première personne se tait. La
+   * version d'hier mordait ici, et c'était le faux positif à éliminer.
+   */
+  assert not pg_temp.mord('written_in_third_person',
+    'The mornings are the hardest part of your day. My colleague is a licensed therapist.'),
+    'troisième personne: une incise au milieu d''un texte en « je » reçoit un reproche';
+  assert not pg_temp.mord('written_in_third_person', 'I am a licensed therapist in Denver.'),
+    'troisième personne: la première personne reçoit un reproche';
 
   assert not pg_temp.mord('written_in_third_person',
     'Chen is a licensed professional counselor, supervised by Dana Ruiz, LPC-S.'),
@@ -108,26 +128,45 @@ begin
   assert not pg_temp.mord('written_in_third_person',
     'Chen is a licensed professional counselor under the supervision of Dana Ruiz.'),
     'troisième personne: la seconde formulation de la supervision ne fait pas taire la règle';
+  assert not pg_temp.mord('written_in_third_person', 'My supervisor is a licensed psychologist.'),
+    'troisième personne: la mention texane écrite à l''envers ne fait pas taire la règle';
 
   /*
-   * ⚠ LA LIMITE CONNUE, SONDÉE POUR QU'ELLE RESTE CONNUE. Un prénom accentué
-   * n'est pas vu : `\y` coupe le mot à l'accent, donc « José » se lit « Jos »
-   * et l'espace attendue n'arrive jamais. C'est écrit dans la description de la
-   * règle ; cette sonde est ce qui le dira le jour où quelqu'un croit l'avoir
-   * réparé sans le vouloir.
+   * ⚠ LES DEUX LIMITES CONNUES, SONDÉES POUR QU'ELLES RESTENT CONNUES. Elles
+   * sont écrites dans la description de la règle ; ces deux sondes sont ce qui
+   * le dira le jour où quelqu'un les répare — ou les aggrave — sans le vouloir.
+   *
+   * 1. Un titre à points ferme `[^.!?]` avant le verbe.
+   * 2. `supervision` seul fait taire la règle sur le profil d'une SUPERVISEUSE,
+   *    qui n'est pas une associée supervisée. C'est le prix, payé exprès, de
+   *    l'élargissement qui attrape « My supervisor is… ».
    */
-  assert not pg_temp.mord('written_in_third_person', 'José is a licensed therapist.'),
-    'troisième personne: un prénom accentué est désormais vu — mettez à jour la description';
+  assert not pg_temp.mord('written_in_third_person',
+    'Sarah Chen, Ph.D., is a licensed psychologist.'),
+    'troisième personne: le titre à points ne ferme plus la fenêtre — mettez à jour la description';
+  assert not pg_temp.mord('written_in_third_person',
+    'Sarah Chen, LCSW, is a licensed clinical social worker. I provide clinical supervision to associates.'),
+    'troisième personne: le profil d''une superviseuse n''est plus tu — mettez à jour la description';
 
   /*
-   * ⚠ ET LA MAJUSCULE N'EST PAS CONTRAINTE, parce que la comparaison est
-   * insensible à la casse des deux côtés. Ce n'est pas un défaut de la
-   * traduction — PostgreSQL et JavaScript sont d'accord — mais c'est une
-   * propriété de la règle qu'il vaut mieux voir écrite qu'apprendre en
-   * production.
+   * ⚠ ET CE QUE L'ANCRE N'ACHÈTE PAS, écrit plutôt que découvert : elle sépare
+   * des POSITIONS, pas des personnes. La même incise, quand elle OUVRE le
+   * texte, mord. Un vrai profil n'ouvre pas ainsi, donc le coût est faible —
+   * mais la règle n'est pas « une incise se tait ».
+   */
+  assert pg_temp.mord('written_in_third_person', 'My colleague is a licensed therapist.'),
+    'troisième personne: l''ancre s''est mise à distinguer les personnes — le comportement a changé';
+
+  /*
+   * ⚠ LA MAJUSCULE N'EST TOUJOURS PAS CONTRAINTE, et le prénom accentué EST vu
+   * — la forme ancrée n'a plus besoin de `[A-Z][a-z]+`. La limite « José,
+   * Chloé, Zoë sont ratés » était vraie hier et ne l'est plus ; elle a été
+   * retirée de la description, et c'est ici que ça se vérifie.
    */
   assert pg_temp.mord('written_in_third_person', 'sarah is a licensed therapist.'),
     'troisième personne: la casse est devenue contraignante — le comportement a changé';
+  assert pg_temp.mord('written_in_third_person', 'José is a licensed therapist.'),
+    'troisième personne: un prénom accentué est de nouveau raté — la limite retirée est revenue';
 
   /* `no_next_step` est une ABSENCE : elle n'a pas d'example_weak, et ne peut pas en avoir. */
   assert pg_temp.mord('no_next_step',
