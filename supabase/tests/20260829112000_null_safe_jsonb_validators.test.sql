@@ -22,6 +22,10 @@ create temporary table validator_registry (fn text primary key, wellformed jsonb
 -- Validators with a REQUIRED key set. For these, every degenerate input and
 -- every single-key omission must be refused.
 insert into validator_registry values
+  -- 20260920150000_content_archetypes.sql: one diagram item. Required keys
+  -- `label` and `gloss`, so it belongs here rather than in the two lists
+  -- below: removing either must refuse, and section 3 proves it does.
+  ('content_item_valid', '{"label":"Two words","gloss":"a gloss of six words here"}'),
   ('brand_kit_palette_valid',
    '{"primary":"#3B2C3A","secondary":"#4A5361","light":"#F3EDE4","dark":"#241B23","paper":"#FAF7F2"}'),
   ('brand_kit_hero_valid',

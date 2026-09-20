@@ -208,6 +208,33 @@ insert into never_tenanted values
    */
   ('credit_quotas'),
   /*
+   * ── LA BANQUE DE SUJETS ET LA VEILLE ───────────────────────────────────
+   *
+   * `content_archetypes` — les onze formes de composition. Du vocabulaire, au
+   * même titre que `content_registers` juste au-dessus : le moteur de rendu les
+   * implémente toutes, pour tout le monde.
+   *
+   * `content_segments` et `content_topics` — ⚠ LE POINT QUI COMPTE : un sujet
+   * est du STOCK, pas la donnée de quelqu'un. Ce qui appartient à un kit est la
+   * ligne de `topic_assignments`, qui l'atteint par `brand_kits → projects` et
+   * n'est donc pas dans cette liste.
+   *
+   * Leur donner un propriétaire casserait la seule chose qu'elles servent à
+   * tenir : la fenêtre anti-collision inter-praticiennes (90 jours par (État,
+   * modalité)) a besoin que « le même sujet » soit UNE LIGNE partagée. Avec une
+   * copie privée par kit, deux praticiennes du même État recevraient le même
+   * diagramme sans qu'aucune requête puisse s'en apercevoir.
+   *
+   * `insight_sources`, `insight_runs`, `insight_cards` — LES INSTRUMENTS
+   * D'EKLIO, au sens exact de l'en-tête de cette liste. Un seul pipeline de
+   * veille tourne pour tout le parc, une fois par semaine ; les deux dernières
+   * n'ont d'ailleurs aucune policy du tout et sont révoquées à `authenticated`.
+   * Un organization_id sur `insight_runs` prétendrait qu'un cabinet a sa propre
+   * veille, ce qui est précisément le coût qu'on refuse de payer.
+   */
+  ('content_archetypes'), ('content_segments'), ('content_topics'),
+  ('insight_sources'), ('insight_runs'), ('insight_cards'),
+  /*
    * `site_platforms` — which website platforms Eklio will publish to. The same
    * for everybody, owned by nobody, and READ BEFORE THERE IS ANYBODY: the
    * qualification happens at signup, so an anonymous visitor with no project
