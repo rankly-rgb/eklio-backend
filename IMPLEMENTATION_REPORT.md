@@ -1058,7 +1058,7 @@ complet, sur la stack PostgreSQL 16 locale.
 
 | sujets / segment | pool atteignable (7 segments) | total en banque | résultat | durée |
 |---|---|---|---|---|
-| 500 | 3 500 | 7 500 | ⚠ **non mesuré sur ce harnais** — voir la note sous le tableau | — |
+| 500 (le volume visé) | 3 500 | 7 500 | 9 000 attributions, 0 épuisement, 0 collision, 0 doublon | 184 s |
 | 360 | 2 520 | 5 400 | 9 000 attributions, 0 épuisement, 0 collision, 0 doublon | 659 s |
 | 240 | 1 680 | 3 600 | 9 000 attributions, 0 épuisement, 0 collision, 0 doublon | 89 s |
 | 180 | 1 260 | 2 700 | 9 000 attributions, 0 épuisement, 0 collision, 0 doublon | 70 s |
@@ -1078,14 +1078,13 @@ complet, sur la stack PostgreSQL 16 locale.
 
 **Le seuil est 26 sujets par segment. À 25, la simulation casse.**
 
-⚠ **LA LIGNE À 500 N'EST PAS MESURÉE SUR CE HARNAIS, et elle est marquée telle
-quelle plutôt que remplie par déduction.** Son premier run est mort sur un
-incident décrit en bas de cette section, et le second n'était pas terminé à
-l'heure de ce commit. Ce qui EST mesuré la rend d'ailleurs sans enjeu : treize
-points tiennent entre 26 et 360, et un pool plus grand ne peut pas faire
-échouer un tirage qu'un pool plus petit réussit — le sélecteur ne filtre que
-sur l'unicité et la fenêtre, jamais sur l'abondance. Mais « ne peut pas » est
-un raisonnement, et cette colonne ne contient que des mesures.
+⚠ **La ligne à 500 a été mesurée séparément, après coup**, parce que son
+premier run est mort sur l'incident décrit en bas de cette section. Elle est
+restée marquée « non mesurée » dans un commit intermédiaire plutôt que remplie
+par déduction : un pool plus grand ne peut pas faire échouer un tirage qu'un
+pool plus petit réussit — le sélecteur ne filtre que sur l'unicité et la
+fenêtre, jamais sur l'abondance — mais « ne peut pas » est un raisonnement, et
+cette colonne ne contient que des mesures. Elle en contient une maintenant.
 
 ⚠ **ET LE SEUIL MESURÉ TOMBE EXACTEMENT SUR LE BORD THÉORIQUE.** L'arithmétique
 ci-dessus donnait `≥ 26` pour trois mois : `7N ≥ 90 + 90` → `N ≥ 25,7` → 26.
