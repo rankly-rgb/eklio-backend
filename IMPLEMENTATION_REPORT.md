@@ -362,7 +362,7 @@ cache, les vingt-neuf suivantes le lisent.
 |---|---|---|
 | 1 | les tests existants restent au vert | **3765 au vert**, 157 fichiers, 0 échec. ⚠ Le prompt annonçait 601 ; la base était de **2923** (`DIAGNOSTIC.md` §0.3). Les 842 de plus sont ceux de ce chantier. |
 | 2 | les suites du moteur sur 11 × 3 × 3 | **775 au vert** sur `lib/compose/` : collision (309), planchers, déterminisme, budget, dépassement, registre. |
-| 3 | le CI rejoue les migrations depuis zéro | **143 migrations rejouées, 91 fichiers de tests SQL, 0 échec** sur la stack PostgreSQL 16 locale. La dérive contre l'empreinte enregistrée est `ONLY IN PRODUCTION: 0`, `DIFFERENT: 0`, et 478 objets que le rejeu produit en plus — la forme attendue. ⚠ `local-verify.sh` sort en 1 pour une raison qui n'est pas celle-là : voir `FOLLOWUP.md` F3. |
+| 3 | le CI rejoue les migrations depuis zéro | **143 migrations rejouées, 91 fichiers de tests SQL, 0 échec** sur la stack PostgreSQL 16 locale. ⚠ Chiffres d'AVANT la SUITE ; après elle, **146 et 95** — voir §10.10. La dérive contre l'empreinte enregistrée est `ONLY IN PRODUCTION: 0`, `DIFFERENT: 0`, et 478 objets que le rejeu produit en plus — la forme attendue. ⚠ `local-verify.sh` sort en 1 pour une raison qui n'est pas celle-là : voir `FOLLOWUP.md` F3. |
 | 4 | simulation anti-collision 100 × 12 | **passe** — §6.1 |
 | 5 | preuve de déduplication | **passe**, dans le garde-fou de `20260920160100` |
 | 6 | preuve de coût | **passe**, §5 |
@@ -1167,6 +1167,43 @@ un octet UTF-8 coupé en deux. Ne pas toucher un script pendant qu'il tourne.
 | frontend | `lib/compose/__tests__/negatives.test.ts` | les cas négatifs de §10.5, **13 tests** |
 | frontend | `lib/content/__tests__/review-surface.test.ts` | les variantes composent vraiment (mesuré sur le document, pas déduit d'un `render` qui n'a pas levé) ; leur hash **est** celui du cache de rendu ; le carrousel n'est jamais une variante ; aucun bandeau n'est jamais vide ; `payloadPublishedText` remonte les gloses mais **pas** les clefs de système ; **16 tests** |
 
-**Total après la SUITE : 3 852 tests frontend au vert, 160 fichiers, 0 échec**
+**Total après la SUITE : 3 864 tests frontend au vert, 161 fichiers, 0 échec**
 **[chemin de production]**. Et côté base : **146 migrations rejouées depuis
-zéro, 94 fichiers de tests SQL, 0 échec** **[chemin de production]**.
+zéro, 95 fichiers de tests SQL, 0 échec** **[chemin de production]**, sur la
+stack PostgreSQL 16 locale.
+
+### 10.10 LA DÉRIVE DE SCHÉMA APRÈS LA SUITE
+
+Le rejeu final se compare à l'empreinte de production enregistrée
+(`schema_fingerprint.production.txt`). Ce qu'il dit **[chemin de production]** :
+
+```
+production objects: 2504
+replay objects:     3019
+== ONLY IN PRODUCTION (the migrations do not produce it): 0 ==
+== DIFFERENT: 4 ==
+```
+
+⚠ **`ONLY IN PRODUCTION: 0` est la ligne qui compte.** Elle dit que le rejeu
+produit tout ce que la production a. Les 515 objets en plus sont ce que ce
+chantier ajoute.
+
+⚠ **Et les 4 « DIFFERENT » sont exactement les deux fonctions que la SUITE a
+réécrites**, chacune comptée deux fois (sa signature et son corps) :
+
+```
+function.body|content_item_json(p_id uuid)
+function.body|update_content_item(p_id uuid, p_patch jsonb)
+function|content_item_json(p_id uuid)
+function|update_content_item(p_id uuid, p_patch jsonb)
+```
+
+C'est la forme attendue : `20260921110000` leur a ajouté `compose_archetype`,
+donc le rejeu en produit une version plus récente que celle de production.
+Aucune autre fonction n'a bougé. Le rapport précédent annonçait
+`DIFFERENT: 0` — il était juste **avant** la SUITE, et ce 4 est la trace exacte
+de ce qu'elle a changé, pas une surprise.
+
+⚠ **L'empreinte de production sera à réenregistrer** le jour où ces migrations
+seront appliquées. Tant qu'elles ne le sont pas, ces 4 doivent rester 4 : s'ils
+deviennent 5, quelque chose a été redéfini sans qu'on le dise.
