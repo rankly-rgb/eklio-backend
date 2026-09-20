@@ -123,7 +123,34 @@ select t,
  */
 create temp table per_person_by_decision(t text primary key);
 insert into per_person_by_decision values
-  ('check_rewrite_usage'), ('subscriptions'), ('comp_grants');
+  ('check_rewrite_usage'), ('subscriptions'), ('comp_grants'),
+  /*
+   * ── `credit_ledger` et `credit_balances` — LA DÉCISION SUIT L'ARGENT ────
+   *
+   * Toutes les autres tables de Content sont clefées sur `brand_kit_id`, et
+   * celles-ci ne le sont pas. Ce n'est pas une inattention, c'est la même
+   * décision que `subscriptions` juste au-dessus, prise pour la même raison :
+   *
+   *   Monthly Presence s'achète UNE FOIS PAR PERSONNE.
+   *   `subscriptions.user_id` est `not null unique` — un abonnement par
+   *   compte, jamais un par kit.
+   *
+   * Un compteur de régénérations remis à zéro par kit se multiplierait donc
+   * par le nombre de kits qu'elle possède, et `countUnpaidProjects` lui en
+   * laisse trois. Dix régénérations par mois deviendraient trente pour un
+   * seul abonnement, sans que personne l'ait décidé.
+   *
+   * Le contenu, lui, reste par kit : une caption appartient à une marque. Le
+   * pont entre les deux est `brand_kits → projects.user_id`, la jointure que
+   * chaque policy de Content fait déjà.
+   *
+   * ⚠ CE QUE ÇA COÛTE DANS UN CABINET À DEUX. Le même que `subscriptions`
+   * coûte aujourd'hui, et pas un de plus : l'abonnement et son allocation
+   * appartiennent à la personne qui l'a pris. Le jour où un cabinet achète des
+   * sièges, c'est `subscriptions` qui devra répondre en premier, et ces deux
+   * tables-ci la suivront — jamais l'inverse.
+   */
+  ('credit_ledger'), ('credit_balances');
 
 /*
  * ── LIST 3: NEVER TENANTED ──────────────────────────────────────────────────
@@ -166,6 +193,20 @@ insert into never_tenanted values
   ('section_types'), ('session_style_cards'), ('site_goals'),
   ('site_output_templates'), ('specialties'), ('tone_cards'), ('type_pairings'),
   ('banned_phrases'), ('usp_stopwords'),
+  /*
+   * `credit_quotas` — combien d'actes de chaque sorte un PLAN donne par mois.
+   * Du vocabulaire tarifaire : les huit lignes décrivent l'offre, pas une
+   * cliente. Le fait qui appartient à quelqu'un est `credit_balances`, qui
+   * porte un `user_id` et est clefée dessus.
+   *
+   * ⚠ ET ELLE EST LUE PAR TOUT LE MONDE, VOLONTAIREMENT. Le compteur de
+   * crédits (`credit_meter`) doit pouvoir dire « swaps illimités » à qui n'a
+   * encore rien dépensé, donc avant qu'aucune ligne de solde n'existe. Lui
+   * donner un propriétaire prétendrait que le plafond d'une praticienne diffère
+   * de celui d'une autre à plan égal — ce qui n'est pas l'offre, et ce qui
+   * ferait du barème une donnée à tenir par compte.
+   */
+  ('credit_quotas'),
   /*
    * `site_platforms` — which website platforms Eklio will publish to. The same
    * for everybody, owned by nobody, and READ BEFORE THERE IS ANYBODY: the
