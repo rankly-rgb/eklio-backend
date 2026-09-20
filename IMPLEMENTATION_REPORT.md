@@ -329,7 +329,7 @@ cache, les vingt-neuf suivantes le lisent.
 |---|---|---|
 | 1 | les tests existants restent au vert | **3765 au vert**, 157 fichiers, 0 échec. ⚠ Le prompt annonçait 601 ; la base était de **2923** (`DIAGNOSTIC.md` §0.3). Les 842 de plus sont ceux de ce chantier. |
 | 2 | les suites du moteur sur 11 × 3 × 3 | **775 au vert** sur `lib/compose/` : collision (309), planchers, déterminisme, budget, dépassement, registre. |
-| 3 | le CI rejoue les migrations depuis zéro | **143 migrations rejouées, 91 fichiers de tests SQL, 0 échec** sur la stack PostgreSQL 16 locale. |
+| 3 | le CI rejoue les migrations depuis zéro | **143 migrations rejouées, 91 fichiers de tests SQL, 0 échec** sur la stack PostgreSQL 16 locale. La dérive contre l'empreinte enregistrée est `ONLY IN PRODUCTION: 0`, `DIFFERENT: 0`, et 478 objets que le rejeu produit en plus — la forme attendue. ⚠ `local-verify.sh` sort en 1 pour une raison qui n'est pas celle-là : voir `FOLLOWUP.md` F3. |
 | 4 | simulation anti-collision 100 × 12 | **passe** — §6.1 |
 | 5 | preuve de déduplication | **passe**, dans le garde-fou de `20260920160100` |
 | 6 | preuve de coût | **passe**, §5 |
