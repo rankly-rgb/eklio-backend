@@ -235,6 +235,19 @@ insert into never_tenanted values
   ('content_archetypes'), ('content_segments'), ('content_topics'),
   ('insight_sources'), ('insight_runs'), ('insight_cards'),
   /*
+   * `illustration_library` et `background_library` — les MATÉRIAUX du moteur
+   * de composition. Les mêmes objets monoline et les mêmes fonds neutres sont
+   * disponibles pour tout le monde ; ce qui appartient à un kit est le fait
+   * d'en avoir REÇU un, et c'est `background_assignments` qui le porte — par
+   * `brand_kits → projects`, donc pas dans cette liste.
+   *
+   * ⚠ ET LA FENÊTRE ANTI-COLLISION EXIGE QU'ELLES SOIENT PARTAGÉES, pour la
+   * raison exacte de `content_topics` ci-dessus : « le même fond » doit être
+   * une ligne pour que deux praticiennes du même État puissent se la voir
+   * refuser. Avec une copie par kit, la question ne se poserait même pas.
+   */
+  ('illustration_library'), ('background_library'),
+  /*
    * `site_platforms` — which website platforms Eklio will publish to. The same
    * for everybody, owned by nobody, and READ BEFORE THERE IS ANYBODY: the
    * qualification happens at signup, so an anonymous visitor with no project
