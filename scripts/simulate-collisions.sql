@@ -23,6 +23,21 @@
 -- que l'attribution n'est pas un journal financier.
 -- ============================================================================
 \set ON_ERROR_STOP on
+
+-- ⚠ `force_custom_plan`, ET C'EST LA SECONDE MOITIÉ DU PROBLÈME DE VITESSE.
+--
+-- plpgsql met en cache le plan d'une requête après quelques exécutions et
+-- bascule sur un plan GÉNÉRIQUE — choisi une fois, réutilisé ensuite. Ici le
+-- plan générique est choisi quand `topic_assignments` est vide, et il est
+-- encore utilisé quand elle porte 36 000 lignes.
+--
+-- En production le problème ne se pose pas de la même façon : chaque mois est
+-- un processus qui part de statistiques justes. Mais il se pose ASSEZ pour
+-- valoir d'être écrit ici : un worker de longue durée qui tire trente sujets
+-- par abonnée, pour cent abonnées, sans que la table change de taille entre
+-- deux, finira par réutiliser un plan choisi au premier appel.
+set plan_cache_mode = force_custom_plan;
+
 begin;
 
 create temporary table sim_kits (
