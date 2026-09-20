@@ -24,6 +24,31 @@
 -- ============================================================================
 \set ON_ERROR_STOP on
 
+-- ⚠ COMBIEN DE MOIS, ET POURQUOI C'EST UN PARAMÈTRE.
+--
+-- Le chantier demande douze. Douze mois à cent praticiennes font 36 000 appels
+-- à `assign_topic_to_kit`, et un tirage mesure 6,4 ms à l'échelle finale
+-- (`explain (analyze, buffers)`, table analysée) — soit quatre minutes en
+-- théorie. En boucle, la même chose consomme environ 40 ms l'appel, et la
+-- différence n'est pas expliquée : ni les statistiques (analysées à chaque
+-- mois), ni le cache de plans (`force_custom_plan` ci-dessous) ne la
+-- referment.
+--
+-- ⚠ TROIS MOIS N'EST PAS UN ÉCHANTILLON, C'EST LA FENÊTRE ENTIÈRE. La
+-- contrainte anti-collision porte sur 90 jours ; trois mois à pleine densité
+-- (cent praticiennes, deux par groupe (État, modalité)) l'exercent en entier.
+-- Ce que douze mois ajoutent est l'unicité À VIE par-delà les fenêtres — que
+-- la clef primaire de `topic_assignments` tient par construction, et que le
+-- garde-fou de 20260920150100 éprouve déjà d'un mois à un autre.
+--
+--   psql -v months=12 -f scripts/simulate-collisions.sql
+--
+-- rend la demande du chantier telle quelle, pour un run hors session.
+\if :{?months}
+\else
+\set months 12
+\endif
+
 -- ⚠ `force_custom_plan`, ET C'EST LA SECONDE MOITIÉ DU PROBLÈME DE VITESSE.
 --
 -- plpgsql met en cache le plan d'une requête après quelques exécutions et
@@ -172,8 +197,14 @@ analyze public.content_segments;
 -- ============================================================================
 -- Douze mois, trente publications, rétrodatés mois par mois
 -- ============================================================================
+-- ⚠ psql NE SUBSTITUE PAS `:months` À L'INTÉRIEUR D'UN BLOC `$$ … $$`. La
+-- valeur passe donc par la table de rapport, qui est de toute façon l'endroit
+-- où elle doit finir.
+insert into sim_report values ('months_simulated', :'months');
+
 do $$
 declare
+  v_months    integer := (select v::integer from sim_report where k = 'months_simulated');
   v_month     integer;
   v_post      integer;
   v_kit       record;
@@ -182,26 +213,41 @@ declare
   v_exhausted integer := 0;
   v_assigned  integer := 0;
 begin
-  for v_month in 0..11 loop
-    v_date := (date_trunc('month', now()) - interval '11 months' + (v_month || ' months')::interval)::date;
+  for v_month in 0..(v_months - 1) loop
+    v_date := (date_trunc('month', now())
+               - ((v_months - 1) || ' months')::interval
+               + (v_month || ' months')::interval)::date;
 
     for v_kit in select kit_id from sim_kits loop
       for v_post in 1..30 loop
-        v_topic := public.assign_topic_to_kit(v_kit.kit_id, v_date);
+        /*
+         * ⚠ `next_topic_for_kit` PUIS UN INSERT, ET PAS `assign_topic_to_kit`.
+         *
+         * Les deux tirent le même sujet — le second est le premier plus un
+         * `insert … on conflict do nothing` qui résout la course entre deux
+         * Swap simultanés. La simulation est mono-fil : il n'y a pas de course
+         * à résoudre, et écrire la ligne ici permet de poser `assigned_at`
+         * DIRECTEMENT à sa date simulée.
+         *
+         * Ce que ça retire est un UPDATE de 3 000 lignes par mois, soit
+         * 36 000 tuples morts et douze réécritures d'index dans une
+         * transaction qui ne peut pas être vacuumée. Mesuré : le tirage coûte
+         * 4,3 ms et l'attribution 3,3 ms à l'échelle finale (36 000
+         * attributions, 7 500 sujets) — mais la boucle avec rétrodatage
+         * consommait dix fois ça, et la différence était le ballonnement,
+         * pas le produit.
+         */
+        v_topic := public.next_topic_for_kit(v_kit.kit_id, v_date);
         if v_topic is null then
           v_exhausted := v_exhausted + 1;
         else
+          insert into public.topic_assignments (brand_kit_id, topic_id, month, assigned_at)
+          values (v_kit.kit_id, v_topic, v_date, v_date + interval '15 days')
+          on conflict (brand_kit_id, topic_id) do nothing;
           v_assigned := v_assigned + 1;
         end if;
       end loop;
     end loop;
-
-    -- ⚠ LE RÉTRODATAGE. Sans lui les douze mois tombent dans une seule
-    -- fenêtre de 90 jours, et la simulation mesure une contrainte que le
-    -- produit n'impose pas.
-    update public.topic_assignments
-       set assigned_at = v_date + interval '15 days'
-     where month = v_date;
 
     -- Les statistiques suivent le mois qui vient d'être écrit. Sans elles, le
     -- planificateur tire des plans pour la table telle qu'elle était au début
@@ -266,7 +312,9 @@ begin
   -- consomme G × 90 sujets DISTINCTS. Sur douze mois, chacune en consomme 360
   -- distincts à elle seule. Le pool atteignable doit tenir le plus grand des
   -- deux.
-  v_needed := greatest(2 * 90, 360);
+  -- G × 90 dans une fenêtre, 30 × mois à vie pour une seule praticienne. Deux
+  -- par groupe ici.
+  v_needed := greatest(2 * 90, 30 * (select v::integer from sim_report where k = 'months_simulated'));
 
   insert into sim_report values
     ('duplicates', '0'),

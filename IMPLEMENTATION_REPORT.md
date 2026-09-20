@@ -26,13 +26,13 @@ est en §7, nommément, sans arrondi.
 | 4.5 — éthique sur les labels | **oui** | `feat(pipeline): the ethics guard reaches the diagram labels` |
 | 4.2–4.4 — cron, veille, visuels | **partiel** | §7.1 |
 | 5 — interface | **partiel** | §7.2 |
-| 6 — vérification | **oui, avec un écart** | §6 |
+| 6 — vérification | **oui, les six** | §6 |
 
 ---
 
 ## 1. MIGRATIONS CRÉÉES
 
-Sept, toutes rejouées depuis zéro sur la stack locale. Aucun fichier déjà
+Dix, toutes rejouées depuis zéro sur la stack locale (143 fichiers au total). Aucun fichier déjà
 poussé n'a été renommé ni édité — la correction de `next_topic_for_kit` (§4.2)
 est une migration neuve, pas une réécriture de la sienne.
 
@@ -47,9 +47,10 @@ est une migration neuve, pas une réécriture de la sienne.
 | `20260920160000` | `a_diagram_label_is_published_text` |
 | `20260920160100` | `render_dedup_and_cost_report` |
 | `20260920170000` | `the_collision_window_is_computed_once` |
+| `20260920180000` | `a_cte_referenced_once_is_inlined` |
 
-Neuf, pas sept — la sixième et la neuvième sont nées de ce que les
-vérifications ont trouvé.
+Dix, pas sept — les quatre dernières sont nées de ce que les vérifications ont
+trouvé, et les deux dernières de la même mesure prise deux fois.
 
 ### 1.1 Tables neuves, et leur tenancy
 
@@ -176,7 +177,8 @@ soit importé d'ailleurs, et ce test a refusé la première position du fichier.
 
 ## 4. CE QUE LES VÉRIFICATIONS ONT TROUVÉ
 
-Onze défauts, tous trouvés par une garde ou une suite, aucun par relecture.
+Douze défauts, tous trouvés par une garde, une suite ou une mesure — aucun par
+relecture.
 Ils sont listés parce que la liste est le rapport : un chantier où rien n'a été
 trouvé est un chantier qui n'a rien vérifié.
 
@@ -211,7 +213,7 @@ trouvé est un chantier qui n'a rien vérifié.
 10. **`ethics_blocks` rend le passage fautif, pas un booléen** — lu comme un
     booléen il refusait bien la ligne, mais avec un message inactionnable.
 
-### 4.2 ⚠ Le onzième, trouvé par la simulation et par rien d'autre
+### 4.2 ⚠ Les onzième et douzième, trouvés par la simulation et par rien d'autre
 
 `next_topic_for_kit` exprimait la fenêtre de 90 jours comme un `not exists`
 **corrélé** : une sous-requête à quatre tables **par sujet candidat**. Correct,
@@ -226,13 +228,38 @@ premières abonnées et aurait cessé d'y tenir à mesure que la banque
 grandissait — c'est-à-dire que le mois se serait mis à échouer un jour, sans
 qu'aucun changement de code ne l'explique.
 
-`20260920170000` calcule la fenêtre **une fois par appel**, dans un CTE. La
-sémantique est inchangée au token près, et le garde-fou garde ça plutôt que la
-vitesse : une optimisation qui change aussi le classement n'est pas une
-optimisation.
+`20260920170000` a déplacé la fenêtre dans un CTE — **et n'a rien changé.**
 
-**Mesuré après** : 6,1 ms par tirage sur 7 500 sujets et 9 000 attributions en
-fenêtre (`explain (analyze, buffers)`, table analysée).
+⚠ **Depuis PostgreSQL 12, un CTE référencé une seule fois est INLINÉ.** Le
+planificateur le recopie là où il est lu et pousse la corrélation dedans :
+`blocked`, lu une fois dans un `not exists` corrélé sur `t.id`, redevenait mot
+pour mot la sous-requête que la migration croyait avoir retirée.
+
+La mesure le disait et je ne l'ai pas lue tout de suite : le coût par
+attribution **croissait avec la table** — 6 ms à vide, 60 ms à 9 000
+attributions, 127 ms à 18 000. Un coût constant aurait été le signe que le CTE
+tenait ; un coût qui suit la taille de la table est le signe qu'on la rescanne à
+chaque candidat.
+
+`20260920180000` ajoute `as materialized`. Un mot, et c'est tout l'écart entre
+les deux formes.
+
+**Ce que ça apprend sur la première correction** : elle était juste sur le fond
+et sans effet dans les faits, et son garde-fou ne pouvait pas le voir — il
+éprouve la SÉMANTIQUE, qui n'avait pas changé. Seule une mesure à l'échelle
+pouvait trancher. Une optimisation qu'aucune mesure n'accompagne est une
+intention.
+
+**Mesuré après**, à l'échelle finale (36 000 attributions, 7 500 sujets, table
+analysée) :
+
+| appel | coût |
+|---|---|
+| `next_topic_for_kit` | **4,3 ms** (200 tirages consécutifs en 865 ms) |
+| `assign_topic_to_kit` | **3,3 ms** (200 attributions en 662 ms) |
+
+Soit environ **0,1 s pour les trente tirages d'une abonnée**, contre les 300 s
+que Vercel accorde au cron.
 
 ### 4.3 Dans le moteur de composition
 
@@ -302,51 +329,93 @@ cache, les vingt-neuf suivantes le lisent.
 |---|---|---|
 | 1 | les tests existants restent au vert | **3765 au vert**, 157 fichiers, 0 échec. ⚠ Le prompt annonçait 601 ; la base était de **2923** (`DIAGNOSTIC.md` §0.3). Les 842 de plus sont ceux de ce chantier. |
 | 2 | les suites du moteur sur 11 × 3 × 3 | **775 au vert** sur `lib/compose/` : collision (309), planchers, déterminisme, budget, dépassement, registre. |
-| 3 | le CI rejoue les migrations depuis zéro | **142 migrations rejouées, 93 tests SQL, 0 échec** sur la stack PostgreSQL 16 locale. |
-| 4 | simulation anti-collision 100 × 12 | §6.1 — **écart, nommé** |
+| 3 | le CI rejoue les migrations depuis zéro | **143 migrations rejouées, 91 fichiers de tests SQL, 0 échec** sur la stack PostgreSQL 16 locale. |
+| 4 | simulation anti-collision 100 × 12 | **passe** — §6.1 |
 | 5 | preuve de déduplication | **passe**, dans le garde-fou de `20260920160100` |
 | 6 | preuve de coût | **passe**, §5 |
 
-### 6.1 ⚠ L'écart sur la vérification n°4
+### 6.1 La simulation anti-collision
 
-Le script `scripts/simulate-collisions.sql` est écrit, il est complet, et il
-contient les deux assertions que le chantier demande : aucune paire
-`(kit, sujet)` en double, et aucune paire de praticiennes partageant
-(État, modalité) servies du même sujet à moins de 90 jours. Il rapporte aussi
-le volume requis quoi qu'il arrive.
+`scripts/simulate-collisions.sql`, 100 praticiennes × 12 mois × 30
+publications, réparties sur 10 États × 5 modalités — **deux par groupe
+(État, modalité)**, qui est la densité que la fenêtre de 90 jours doit tenir.
 
-**Il n'a pas terminé dans le temps de cette session.** 36 000 appels, et à
-6,1 ms l'appel mesuré cela devrait faire environ quatre minutes ; la boucle en a
-consommé vingt-deux sans finir. La cause probable est le cache de plans de
-plpgsql : un plan générique choisi quand `topic_assignments` était vide est
-réutilisé pendant que la table grandit. Le correctif à essayer est
-`set plan_cache_mode = force_custom_plan` dans le script.
+```
+          métrique           | valeur
+-----------------------------+--------
+ kits                        | 100
+ months_simulated            | 12
+ segments                    | 15
+ topics                      | 7500
+ topics_per_segment          | 500
+ assigned                    | 36000
+ exhausted                   | 0
+ duplicates                  | 0
+ collisions                  | 0
+ total_assignments           | 36000
+ required_per_reachable_pool | 360
+```
 
-**Ce qui EST prouvé aujourd'hui, et par quoi :**
+**36 000 attributions. Zéro doublon. Zéro collision. Zéro épuisement.**
+Six minutes.
 
-- « jamais deux fois le même sujet, à vie », à l'échelle unitaire : garde-fou de
-  `20260920150100`, qui l'éprouve aussi **dans un autre mois** — c'est la
-  moitié de la règle qu'un test par mois raterait ;
-- la fenêtre de 90 jours entre deux praticiennes du même État et de la même
-  modalité : même garde-fou, et il éprouve les deux non-cas (autre État, autre
-  modalité) ;
-- la même fenêtre sur les fonds : garde-fou de `20260920150300` ;
-- que la banque de 500 sujets par segment se remplit et se tire : la simulation
-  a passé sa phase de construction (100 kits, 15 segments, 7 500 sujets).
+Les deux assertions sont vérifiées sur les données produites, pas supposées :
 
-**Ce qui n'est PAS prouvé** : que ces propriétés tiennent sur 36 000
-attributions. C'est une question d'échelle, et c'est exactement la question que
-cette vérification pose. Je la laisse ouverte plutôt que de la déclarer passée.
+- aucune paire `(kit, sujet)` n'apparaît deux fois — la clef primaire
+  l'interdit, et le compte est posé plutôt que déduit ;
+- aucune paire de praticiennes partageant (État, modalité) n'a reçu le même
+  sujet à moins de 90 jours — vérifié par auto-jointure sur
+  `topic_assignments`, avec les dates simulées.
 
-**Le dimensionnement requis, calculé et non mesuré :** dans une fenêtre de
-90 jours, un groupe (État, modalité) de G praticiennes consomme G × 90 sujets
-distincts ; sur douze mois chacune en consomme 360 à elle seule. Le pool
-atteignable doit donc tenir `max(G × 90, 360)`. À deux praticiennes par groupe
-— la densité que la simulation pose — cela fait **360**, et 500 par segment
-suffit. À dix par groupe il en faudrait **900**, et 500 ne suffirait plus.
-C'est le chiffre à surveiller quand le parc se concentre.
+**Le dimensionnement requis, rapporté quoi qu'il arrive.** Dans une fenêtre de
+90 jours, un groupe de G praticiennes consomme G × 90 sujets distincts ; sur
+douze mois, chacune en consomme 30 × 12 = 360 à elle seule. Le pool atteignable
+doit tenir `max(G × 90, 360)`. À deux par groupe cela fait **360**, et 500 par
+segment suffit avec de la marge. **À dix par groupe il en faudrait 900**, et
+500 ne suffirait plus — c'est le chiffre à surveiller quand le parc se
+concentre sur un État.
 
----
+### 6.2 ⚠ Ce que la simulation a coûté avant de passer
+
+Elle n'a pas terminé trois fois, et chaque échec a nommé un défaut réel. Ils
+sont listés parce que deux d'entre eux étaient dans le produit et un seul dans
+le harnais.
+
+1. **Dans le produit** : la sous-requête corrélée (§4.2). 270 millions
+   d'exécutions.
+2. **Dans le produit** : `as materialized` manquant (§4.2). La correction
+   précédente était sans effet.
+3. **Dans le harnais** : le rétrodatage. La simulation posait `assigned_at`
+   par un `update` de 3 000 lignes à la fin de chaque mois — 36 000 tuples
+   morts et douze réécritures d'index dans une transaction qui ne peut pas
+   être vacuumée. Le ballonnement multipliait par dix le coût de chaque
+   tirage.
+
+   Corrigé en appelant `next_topic_for_kit` puis en écrivant la ligne avec sa
+   date simulée, plutôt qu'`assign_topic_to_kit` puis une passe de correction.
+   Les deux tirent le même sujet ; le second ajoute la résolution de course
+   entre deux Swap simultanés, qu'une simulation mono-fil n'a pas.
+
+4. **Dans le harnais** : les statistiques. Toute la simulation vit dans une
+   transaction, donc l'autovacuum ne voit rien et le planificateur croit les
+   tables vides. `analyze` à chaque mois. C'est aussi une leçon pour le cron :
+   **une banque fraîchement remplie doit être analysée avant d'être tirée.**
+
+Le script porte `\set months` : `psql -v months=12` est le défaut, une valeur
+plus basse donne un run plus court, et trois mois restent la fenêtre entière.
+
+### 6.3 Un coût d'ingestion qui n'était pas prévu
+
+Mesuré en chemin : **écrire un sujet dans `content_topics` coûte environ
+100 ms**, parce que chaque ligne traverse les deux gardes de
+`20260920160000` — `ethics_scan` sur les motifs, puis
+`usp_banned_phrases_check` sur les trente-deux formulations.
+
+C'est le comportement voulu : la garde doit mordre, et c'est elle qui ferme le
+trou des labels de diagramme. Mais cela veut dire qu'une banque de 7 500 sujets
+met **une douzaine de minutes** à s'écrire, et que l'ingestion d'un batch de
+rédaction est bornée par la garde et non par le modèle. À dimensionner avant le
+premier remplissage réel.
 
 ## 7. CE QUI N'EST PAS LIVRÉ
 
