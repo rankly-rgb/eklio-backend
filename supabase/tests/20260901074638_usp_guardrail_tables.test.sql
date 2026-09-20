@@ -5,7 +5,16 @@ begin;
 
 do $$
 begin
-  assert (select count(*) from public.banned_phrases) = 30, 'banned_phrases must hold exactly 30 seeded rows';
+  /*
+   * ⚠ 33, ET LE NOMBRE EXACT EST LE SUJET DE CETTE ASSERTION. Trente au
+   * semis ; trois ajoutées le 20 septembre 2026 par
+   * `20260920081641_two_craft_cliches_join_the_thirty` — deux clichés de
+   * MÉTIER relevés sur le chemin réel (l'objet ménager qui tient lieu de
+   * conflit, l'arithmétique de l'heure de séance), le second en deux
+   * écritures. Le compte est épinglé plutôt que borné : un `>= 30` laisserait
+   * passer un rejeu de seed qui aurait dupliqué la liste.
+   */
+  assert (select count(*) from public.banned_phrases) = 33, 'banned_phrases must hold exactly 33 rows: 30 seeded plus the 3 craft cliches of 2026-09-20';
   assert (select count(*) from public.usp_stopwords) >= 100, 'usp_stopwords must hold the English list plus 7 domain words';
   assert (select value from public.app_settings where key = 'usp_similarity_threshold') = '0.55'::jsonb,
     'usp_similarity_threshold must default to 0.55';

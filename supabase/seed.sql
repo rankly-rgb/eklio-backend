@@ -1375,3 +1375,39 @@ update public.positioning_rules
  where id = 'written_in_third_person';
 
 -- <<< THE WINDOW DOES THE WORK <<<
+
+-- >>> THIRD PARTY SAYS (mirrored verbatim in supabase/seed.sql) >>>
+
+insert into public.ethics_patterns (id, rule_id, pattern, severity, sort_order, active)
+values (
+  'third_party_says',
+  'client_voice',
+  '\y((a|an|one|my|our|her|his|their|another|the) +)?(former +|current +|past +|longtime +|long-time +)?(colleagues?|supervisors?|mentors?|peers?|co-?workers?|professors?|instructors?|teachers?) +((have|has|had) +)?(once|often|always|recently|sometimes|frequently|usually|more +than +once)? *(said|says|say|told|tells|tell|described|describes|describe|called|calls|call|remarked|observed|joked|puts? +it)\y',
+  'block',
+  20,
+  true
+)
+on conflict (id) do update set
+  rule_id    = excluded.rule_id,
+  pattern    = excluded.pattern,
+  severity   = excluded.severity,
+  sort_order = excluded.sort_order,
+  active     = excluded.active;
+
+update public.ethics_rules
+   set short_label = 'No borrowed voices',
+       description = 'No quotes, paraphrases or reported praise attributed to anyone else — a client, a colleague, a supervisor or a mentor. "Clients often say", and equally "a colleague once described me as".'
+ where id = 'client_voice';
+
+-- <<< THIRD PARTY SAYS <<<
+
+-- >>> TWO CRAFT CLICHES (mirrored verbatim in supabase/seed.sql) >>>
+
+insert into public.banned_phrases (phrase, category, active)
+values
+  ('about the dishwasher',      'directory_cliche', true),
+  ('a hundred and sixty-eight', 'directory_cliche', true),
+  ('168 hours',                 'directory_cliche', true)
+on conflict do nothing;
+
+-- <<< TWO CRAFT CLICHES <<<

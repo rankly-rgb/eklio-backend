@@ -45,7 +45,8 @@ declare
   v_rec       record;
 begin
   /*
-   * ⚠ RECOPIÉ DE `lib/ethics/rules.ts`, LE 14 SEPTEMBRE 2026 : les dix-neuf
+   * ⚠ RECOPIÉ DE `lib/ethics/rules.ts`, LE 14 SEPTEMBRE 2026, PUIS LE 20 : les
+   * VINGT
    * entrées de `FORBIDDEN_PATTERNS`, chacune avec son `id` et son `ruleId`.
    */
   create temporary table what_the_frontend_carries (id text, rule_id text)
@@ -62,6 +63,9 @@ begin
     ('therapy_that_works',    'proven'),
     ('testimonial_word',      'client_voice'),
     ('clients_say',           'client_voice'),
+    -- Sorti du chemin réel : deux profils sur trois portaient « A colleague
+    -- once described me as… ». Un témoignage anonymisé reste un témoignage.
+    ('third_party_says',      'client_voice'),
     ('client_reviews',        'client_voice'),
     ('star_rating',           'client_voice'),
     ('success_story',         'client_voice'),
@@ -77,14 +81,14 @@ begin
   -- ethics_patterns` doublé d'un bloc recopié vide rendrait ce fichier vert
   -- au moment précis où il n'y a plus de garde du tout.
   select count(*) into v_count from what_the_frontend_carries;
-  assert v_count = 19,
-    format('Le recensement recopié porte %s entrées au lieu de 19.', v_count);
+  assert v_count = 20,
+    format('Le recensement recopié porte %s entrées au lieu de 20.', v_count);
 
   -- ── 1. Même nombre ────────────────────────────────────────────────────
   select count(*) into v_count from public.ethics_patterns;
-  assert v_count = 19,
+  assert v_count = 20,
     format(
-      'ethics_patterns porte %s motifs, FORBIDDEN_PATTERNS en porte 19. Celui '
+      'ethics_patterns porte %s motifs, FORBIDDEN_PATTERNS en porte 20. Celui '
       'qui en a un de plus attrape du texte que l''autre laisse passer : la '
       'même phrase serait bloquée ou non selon qu''elle est écrite par '
       'l''application ou par une RPC. Un motif ajouté d''un seul côté doit '
@@ -150,7 +154,7 @@ begin
       'refuserait un texte sans avoir de règle à montrer.';
   end if;
 
-  raise notice 'ethics parity: 19 motifs, mêmes identifiants, mêmes règles';
+  raise notice 'ethics parity: 20 motifs, mêmes identifiants, mêmes règles';
 end $$;
 
 rollback;
