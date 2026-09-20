@@ -27,7 +27,7 @@ ce qui manque est en §7 et §10.3, nommément, sans arrondi.
 | 4.2–4.4 — cron, veille, visuels | **partiel** | §7.1 |
 | 5 — interface | **oui** | §10.3 — complétée par la SUITE |
 | 6 — vérification | **oui, les six** | §6 |
-| SUITE — quatre décisions, quatre vérifications | **oui** | §10 |
+| SUITE — quatre décisions, quatre vérifications | **oui, les quatre et les quatre** | §10 |
 
 ⚠ **La ligne PHASE 5 a changé après la SUITE.** Elle disait « partiel, livré à
 un tiers ». Les six écrans que la DÉCISION 3 énumère sont livrés : flux de
@@ -396,7 +396,10 @@ Six minutes.
 > mais la densité qu'il mesure est plus douce qu'elle n'en a l'air : les deux
 > consœurs d'un groupe (État, modalité) y avaient des populations différentes,
 > donc des segments d'élection différents, et la contention n'apparaissait
-> qu'au débordement. La SUITE a resserré le harnais et refait la mesure.
+> qu'au débordement. La SUITE a resserré le harnais, refait la mesure, et
+> **trouvé le seuil : 26 sujets par segment. À 25, la simulation casse.** Les
+> 500 visés portent donc un facteur 19 de marge — et le chiffre qui menace
+> cette banque n'est pas le volume du parc mais sa CONCENTRATION.
 
 Les deux assertions sont vérifiées sur les données produites, pas supposées :
 
@@ -1045,46 +1048,115 @@ premiers tirages sur le segment d'élection, ce qui épuise ce segment-là bien
 avant les six autres. Le seuil mesuré doit donc être **au-dessus** de ces
 nombres, et l'écart entre les deux est ce que le balayage mesure réellement.
 
-#### Ce qui est mesuré à l'heure où ce rapport est écrit
+#### LE SEUIL MESURÉ — **26 sujets par segment**
 
-**[chemin de production — ANCIEN harnais, densité plus douce]**
+**[chemin de production — nouveau harnais, 100 praticiennes × 3 mois × 30
+publications, soit 9 000 tirages par point]**
 
-| volume par segment | mois | résultat |
+Le balayage descend jusqu'à ce que la simulation lève. Chaque ligne est un run
+complet, sur la stack PostgreSQL 16 locale.
+
+| sujets / segment | pool atteignable (7 segments) | total en banque | résultat | durée |
+|---|---|---|---|---|
+| 500 | 3 500 | 7 500 | ⚠ **non mesuré sur ce harnais** — voir la note sous le tableau | — |
+| 360 | 2 520 | 5 400 | 9 000 attributions, 0 épuisement, 0 collision, 0 doublon | 659 s |
+| 240 | 1 680 | 3 600 | 9 000 attributions, 0 épuisement, 0 collision, 0 doublon | 89 s |
+| 180 | 1 260 | 2 700 | 9 000 attributions, 0 épuisement, 0 collision, 0 doublon | 70 s |
+| 120 | 840 | 1 800 | 9 000 attributions, 0 épuisement, 0 collision, 0 doublon | 114 s |
+| 90 | 630 | 1 350 | 9 000 attributions, 0 épuisement, 0 collision, 0 doublon | 31 s |
+| 60 | 420 | 900 | 9 000 attributions, 0 épuisement, 0 collision, 0 doublon | 21 s |
+| 40 | 280 | 600 | 9 000 attributions, 0 épuisement, 0 collision, 0 doublon | 30 s |
+| 30 | 210 | 450 | 9 000 attributions, 0 épuisement, 0 collision, 0 doublon | 29 s |
+| 29 | 203 | 435 | 0 épuisement | 28 s |
+| 28 | 196 | 420 | 0 épuisement | 27 s |
+| 27 | 189 | 405 | 0 épuisement | 29 s |
+| **26** | **182** | **390** | **0 épuisement — LE DERNIER QUI TIENT** | 76 s |
+| **25** | **175** | **375** | ⚠ **ÉPUISEMENT au tirage n° 7 526, mois 3 / 3** | 8 s |
+| 24 | 168 | 360 | ⚠ épuisement au tirage n° 7 519, mois 3 / 3 | 14 s |
+| 23 | 161 | 345 | ⚠ épuisement au tirage n° 7 512, mois 3 / 3 | 18 s |
+| 20 | 140 | 300 | ⚠ épuisement au tirage n° 6 021, mois 3 / 3 | 17 s |
+
+**Le seuil est 26 sujets par segment. À 25, la simulation casse.**
+
+⚠ **LA LIGNE À 500 N'EST PAS MESURÉE SUR CE HARNAIS, et elle est marquée telle
+quelle plutôt que remplie par déduction.** Son premier run est mort sur un
+incident décrit en bas de cette section, et le second n'était pas terminé à
+l'heure de ce commit. Ce qui EST mesuré la rend d'ailleurs sans enjeu : treize
+points tiennent entre 26 et 360, et un pool plus grand ne peut pas faire
+échouer un tirage qu'un pool plus petit réussit — le sélecteur ne filtre que
+sur l'unicité et la fenêtre, jamais sur l'abondance. Mais « ne peut pas » est
+un raisonnement, et cette colonne ne contient que des mesures.
+
+⚠ **ET LE SEUIL MESURÉ TOMBE EXACTEMENT SUR LE BORD THÉORIQUE.** L'arithmétique
+ci-dessus donnait `≥ 26` pour trois mois : `7N ≥ 90 + 90` → `N ≥ 25,7` → 26.
+La mesure donne 26. Ce n'est pas une confirmation gratuite — cela veut dire que
+le tirage n'a **aucune perte** : il place les 9 000 attributions dans un pool
+qui n'a pas un sujet de marge. Un sélecteur moins bon aurait cassé bien avant
+son bord théorique, et l'écart entre les deux aurait été la mesure de sa
+maladresse. Ici l'écart est nul.
+
+⚠ **Et la dégradation est franche, pas progressive.** On ne passe pas de « ça
+va » à « ça va mal » : 26 tient parfaitement, 25 lève. Le numéro du tirage le
+dit aussi — 7 526 à N=25, 7 512 à N=23, 6 021 à N=20 : la banque tient jusqu'au
+milieu du troisième mois, puis s'arrête net. **Une banque sous-dimensionnée ne
+prévient pas.** C'est ce qui rend la marge nécessaire, et c'est pourquoi
+`bank_exhausted` remonte jusqu'à l'écran plutôt que d'être réessayé.
+
+#### Ce que ce seuil veut dire pour le dimensionnement
+
+**Les 500 que le chantier vise portent un facteur 19 de marge** sur trois mois
+(26 requis, 500 posés), et un facteur 7,7 sur douze mois (65 requis d'après
+l'arithmétique d'unicité à vie).
+
+⚠ **Le chiffre à surveiller n'est donc PAS le volume de la banque. C'est la
+CONCENTRATION du parc.** `required_per_reachable_pool` vaut
+`max(G × 90, 30 × mois)`, où **G est le nombre de praticiennes partageant
+(État, modalité)** :
+
+| G — praticiennes par groupe (État, modalité) | pool atteignable requis sur 12 mois | sujets / segment requis |
 |---|---|---|
-| 500 | 12 | 36 000 attributions, 0 épuisement, 0 collision, 0 doublon — §6.1 |
-| 500 | 3 | 9 000 attributions, 0 épuisement, 0 collision, 0 doublon |
-| **100** | 3 | **9 000 attributions, 0 épuisement, 0 collision, 0 doublon** — 341 s |
+| 2 (ce que la simulation exerce) | 360 | 52 |
+| 5 | 450 | 65 |
+| **10** | **900** | **129** |
+| 20 | 1 800 | 258 |
 
-Le point à 100 est le plus informatif des trois : il dit que le seuil de
-l'ancien harnais est **sous 100 par segment**, c'est-à-dire sous 1 500 sujets
-au total pour 100 praticiennes — très loin des 7 500 que le chantier visait.
+Une banque de 500 par segment tient jusqu'à **environ 38 praticiennes par
+groupe (État, modalité)**. C'est le parc qui se concentre sur un État qui la
+casse, pas le parc qui grandit — dix cabinets EMDR à Los Angeles coûtent plus
+cher à la banque que cent cabinets répartis sur dix États.
 
-⚠ **LE BALAYAGE SUR LE NOUVEAU HARNAIS N'EST PAS TERMINÉ À L'HEURE DE CE
-COMMIT.** Il tourne sur 500 / 360 / 240 / 180, et son premier point a été perdu
-pour une raison bête et qui mérite d'être écrite : **j'ai édité le script
-pendant que `psql` le lisait**, et le processus a reçu un octet UTF-8 coupé en
-deux (`invalid byte sequence for encoding "UTF8"`). Le fichier sur le disque
-est valide ; c'est le flux qui ne l'était pas.
+#### Ce que ce balayage NE prouve pas, et qui est dit plutôt que sous-entendu
 
-**Ce qu'il faut retenir en l'état, sans attendre le balayage :** la banque de
-500 par segment que le chantier vise porte **un ordre de grandeur de marge** au
-delà du bord théorique (65 requis contre 500 posés, à 12 mois). Le chiffre qui
-mérite d'être surveillé n'est donc pas le volume mais **la concentration** :
-`required_per_reachable_pool` vaut `max(G × 90, 30 × mois)`, et **G est le
-nombre de praticiennes partageant (État, modalité)**. À deux par groupe il faut
-360 ; **à dix par groupe il en faut 900**, et 500 ne suffit plus. C'est le parc
-qui se concentre sur un État qui casse cette banque, pas le parc qui grandit.
+- **Il porte sur trois mois, pas douze.** Trois mois sont la fenêtre
+  anti-collision entière, donc la contrainte de collision est exercée en
+  totalité. Ce que douze mois ajoutent est l'unicité À VIE par-delà les
+  fenêtres, que la clef primaire de `topic_assignments` tient par construction.
+  Le seuil de 26 est donc celui de la COLLISION ; celui de l'unicité à vie sur
+  douze mois est de 52 par l'arithmétique, et il n'a pas été mesuré.
+- **Les sujets de la simulation sont uniformes** : cinq archétypes en rotation,
+  un seul `intent`, aucun `timely`, aucune expiration. Une banque réelle a des
+  sujets qui expirent et des sujets d'actualité que le tri préfère (score +3),
+  ce qui concentre les tirages et **remonte** le seuil.
+- **Un run par point, pas une distribution.** Le tirage est déterministe à
+  données égales, donc un second run identique donnerait le même résultat ; ce
+  qui n'est pas mesuré est la sensibilité à une AUTRE répartition du parc.
 
 **Pour reproduire :**
 
 ```bash
-for n in 500 360 240 180 120 60 30; do
+for n in 500 360 240 180 120 90 60 40 30 29 28 27 26 25; do
   psql -v months=3 -v topics_per_segment=$n -f scripts/simulate-collisions.sql
 done
 ```
 
 Le premier `n` qui lève `EPUISEMENT: draw #… found no topic` est le seuil. Le
 message porte le numéro du tirage, le mois et le kit.
+
+⚠ **Un incident du balayage, écrit parce qu'il coûterait la même heure à
+quelqu'un d'autre :** le premier point à 500 est mort sur
+`invalid byte sequence for encoding "UTF8"`. Le fichier sur le disque était
+valide — **je l'éditais pendant que `psql` le lisait**, et le processus a reçu
+un octet UTF-8 coupé en deux. Ne pas toucher un script pendant qu'il tourne.
 
 ### 10.9 CE QUE LA SUITE A AJOUTÉ AUX SUITES DE TESTS
 
