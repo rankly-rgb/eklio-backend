@@ -126,3 +126,32 @@ qui sont de la configuration d'environnement.
   déjà nécessaire au produit ; elle est absente de CET environnement. Le constat est mesuré, pas
   supposé : un appel réel par le client du produit rend `AnthropicNotConfiguredError:
   ANTHROPIC_API_KEY is not set`. Aucune Foundation n'a donc été produite.
+
+---
+
+## Chantier Content — les variables de modèle *(chantier Content, 2026-09-20)*
+
+Aucune de ces cinq ne porte un SKU Stripe. Elles sont ici parce que c'est le
+fichier que quelqu'un lit avant un déploiement, et que **quatre d'entre elles
+ont un défaut qui marche** — donc une variable oubliée ne casse rien
+visiblement, elle change juste ce qui est facturé.
+
+| variable | défaut | ce qui change si elle manque |
+|---|---|---|
+| `CONTENT_COPY_MODEL` | `claude-haiku-4-5-20251001` | rien. C'est l'identifiant Claude API de Haiku 4.5, **et il est daté** ; les formes non datées (`claude-opus-5`, `claude-sonnet-5`) valent pour des modèles plus récents. La variable existe pour qu'un changement de modèle soit une variable et non un déploiement |
+| `CONTENT_IMAGE_MODEL` | `gpt-image-2.5-flare` | rien. Mettre `gpt-image-2.5-flare-2026-09-08` **épingle un snapshot** — à faire le jour où une régression de rendu doit être reproduite, pas avant |
+| `CONTENT_IMAGE_QUALITY` | `low` | rien. ⚠ `high`, `xhigh`, `max` et `auto` sont **refusés par le code** (`resolveQuality` lève), et la ligne de `custom_visual_generations` porte le même refus. Une variable mal réglée échoue au démarrage du chemin, pas à la facture |
+| `CONTENT_IMAGE_QUALITY_CEILING` | `medium` | rien, tant que `CONTENT_IMAGE_QUALITY` reste dessous. C'est le plafond de ce qu'Eklio accepte d'acheter |
+| `OPENAI_API_KEY` | **aucun** | ⚠ **le chemin visuel custom lève `ContentImageNotConfiguredError`**, distinct d'une panne de modèle, et **aucun crédit n'est réservé**. C'est la seule des cinq qui n'a pas de défaut, et c'est voulu : une clef absente doit se dire, pas se deviner |
+
+⚠ **Le modèle d'image est facturé au JETON, pas à l'image.**
+`gpt-image-2.5-flare` n'a aucune grille de prix par image : 30 $ par million de
+jetons de sortie image, vérifié le 20 septembre 2026. Le coût réel est calculé
+depuis l'objet `usage` de la réponse, jamais depuis une table. Le taux unitaire
+est **une constante commentée**, `IMAGE_OUTPUT_PER_MTOK` dans
+`eklio-frontend/lib/content/images/config.ts`, avec sa date et sa source — et
+c'est le seul endroit où il figure.
+
+⚠ **À ne pas confondre avec `lib/images/config.ts`**, qui décrit les
+photographies de marque (`gpt-image-1`, facturé à l'image, cagnotte à vie
+achetée avec le kit). Deux produits, deux modèles, deux façons de compter.

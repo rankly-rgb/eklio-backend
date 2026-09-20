@@ -232,6 +232,13 @@ insert into never_tenanted values
    * Un organization_id sur `insight_runs` prétendrait qu'un cabinet a sa propre
    * veille, ce qui est précisément le coût qu'on refuse de payer.
    */
+  /*
+   * `content_intents` — les cinq angles éditoriaux et les mots que la
+   * praticienne lit sous sa vignette. Du vocabulaire, exactement comme
+   * `content_registers` : les cinq sont les mêmes pour tout le monde, et
+   * `content_topics.intent` y pointe par clef étrangère.
+   */
+  ('content_intents'),
   ('content_archetypes'), ('content_segments'), ('content_topics'),
   ('insight_sources'), ('insight_runs'), ('insight_cards'),
   /*

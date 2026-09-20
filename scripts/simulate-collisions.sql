@@ -49,6 +49,21 @@
 \set months 12
 \endif
 
+-- ⚠ ET COMBIEN DE SUJETS PAR SEGMENT. Le chantier vise 500 ; ce paramètre
+-- existe pour répondre à une question que 500 ne répond pas : à partir de quel
+-- volume la simulation COMMENCE à échouer. C'est ce chiffre-là qui dimensionne
+-- la génération de sujets, pas celui qui passe.
+--
+--   for n in 500 240 180 120 90 60; do
+--     psql -v months=3 -v topics_per_segment=$n -f scripts/simulate-collisions.sql
+--   done
+--
+-- Le balayage est dans IMPLEMENTATION_REPORT.md, avec son seuil.
+\if :{?topics_per_segment}
+\else
+\set topics_per_segment 500
+\endif
+
 -- ⚠ `force_custom_plan`, ET C'EST LA SECONDE MOITIÉ DU PROBLÈME DE VITESSE.
 --
 -- plpgsql met en cache le plan d'une requête après quelques exécutions et
@@ -75,6 +90,8 @@ create temporary table sim_kits (
 
 create temporary table sim_report (k text primary key, v text) on commit drop;
 
+select set_config('eklio.topics_per_segment', :'topics_per_segment', false);
+
 do $$
 declare
   v_states   text[] := array['CA','TX','NY','FL','IL','PA','OH','GA','NC','MI'];
@@ -92,6 +109,10 @@ declare
   v_arch     text[] := array['single_statement','cycle','numbered_strategies',
                              'surface_and_beneath','concentric_control'];
   j          integer;
+  -- ⚠ psql ne substitue pas `:topics_per_segment` à l'intérieur d'un bloc
+  -- dollar-quoté, exactement comme `:months`. Il passe donc par un réglage de
+  -- session, posé juste avant ce bloc.
+  v_per_segment integer := current_setting('eklio.topics_per_segment')::integer;
 begin
   select array_agg(id order by sort_order) into v_mods
     from public.modality_cards where active limit 1;
@@ -109,7 +130,33 @@ begin
   for i in 1..100 loop
     v_state := v_states[1 + (i - 1) % 10];
     v_mod   := v_mods[1 + ((i - 1) / 10) % 5];
-    v_per   := v_pers[1 + (i - 1) % least(array_length(v_pers, 1), 3)];
+    /*
+     * ⚠ LA POPULATION EST DÉRIVÉE DE L'ÉTAT, POUR QUE LES DEUX CONSŒURS D'UN
+     * GROUPE (État, modalité) PARTAGENT LEUR SEGMENT D'ÉLECTION.
+     *
+     * La version précédente écrivait `v_pers[1 + (i - 1) % 3]`. Les deux
+     * membres d'un groupe sont les rangs i et i+50, et `(i-1) % 3` contre
+     * `(i+49) % 3` diffèrent toujours — 50 n'est pas multiple de 3. Les
+     * cinquante groupes avaient donc deux populations différentes.
+     *
+     * ⚠ CE N'ÉTAIT PAS UNE ASSERTION VIDE, ET IL FAUT LE DIRE PRÉCISÉMENT.
+     * `next_topic_for_kit` accepte un segment dont la modalité OU la
+     * population correspond — un OU, pas un ET. Deux consœurs de même
+     * modalité atteignaient donc déjà les trois mêmes segments de cette
+     * modalité, et pouvaient parfaitement se marcher dessus. La contrainte
+     * mordait, mais seulement dans le DÉBORDEMENT : chacune vidait d'abord
+     * son propre segment d'élection, que l'autre ne visait pas en premier.
+     *
+     * En dérivant la population de l'État, les deux tirent d'abord dans LE
+     * MÊME segment, celui que le tri préfère. La contention est frontale au
+     * lieu d'être résiduelle, et c'est ce que la fenêtre de 90 jours est
+     * censée tenir dans la vraie vie : deux thérapeutes qui se ressemblent,
+     * dans la même ville, qui publient le même mois.
+     *
+     * C'est donc un test PLUS DUR que le précédent, pas un test qui répare un
+     * précédent cassé.
+     */
+    v_per   := v_pers[1 + ((i - 1) % 10) % least(array_length(v_pers, 1), 3)];
 
     v_user := gen_random_uuid();
     v_proj := gen_random_uuid();
@@ -133,10 +180,11 @@ begin
     end loop;
   end loop;
 
-  -- ⚠ 500 SUJETS PAR SEGMENT, le volume que le chantier vise. Le script
-  -- mesure si ça suffit ; il ne l'ajuste pas pour que ça passe.
+  -- ⚠ LE VOLUME EST MESURÉ, PAS AJUSTÉ POUR QUE ÇA PASSE. La valeur par
+  -- défaut est celle que le chantier vise (500) ; `-v topics_per_segment=N`
+  -- sert à trouver le seuil en dessous duquel ça casse.
   for v_seg in select id from public.content_segments loop
-    for j in 1..500 loop
+    for j in 1..v_per_segment loop
       insert into public.content_topics
         (segment_id, archetype_key, intent, title, hook, payload, caption_seed,
          rationale_template, ethics_reviewed_at)
@@ -176,6 +224,7 @@ begin
   insert into sim_report values
     ('kits', '100'),
     ('segments', (select count(*)::text from public.content_segments)),
+    ('topics_per_segment_requested', v_per_segment::text),
     ('topics', v_topics::text);
 end $$;
 
@@ -240,6 +289,25 @@ begin
         v_topic := public.next_topic_for_kit(v_kit.kit_id, v_date);
         if v_topic is null then
           v_exhausted := v_exhausted + 1;
+          /*
+           * ⚠ ON LÈVE AU PREMIER ÉPUISEMENT, ET C'EST CE QUI REND LE BALAYAGE
+           * POSSIBLE. Continuer ne mesure rien de plus : une banque qui ne
+           * répond plus ne répondra pas davantage aux tirages suivants, et
+           * chacun d'eux coûte un parcours complet du pool pour rendre `null`.
+           * Un run à banque insuffisante passait de quelques minutes à un
+           * temps qu'on n'a pas mesuré, parce qu'on l'a interrompu.
+           *
+           * La question du balayage est « à partir de quel volume ça COMMENCE
+           * à casser », pas « combien de fois ça casse ensuite ».
+           *
+           * ⚠ ET LE CHIFFRE EST DANS LE MESSAGE, PAS DANS `sim_report`. Lever
+           * annule l'insert qui précède : une ligne posée juste avant le raise
+           * n'existerait nulle part.
+           */
+          raise exception
+            E'EPUISEMENT: draw #% (month %/%, kit %) found no topic.\n'
+            '  Not a fault of the RPC: the bank is too small for this density.',
+            v_assigned + 1, v_month + 1, v_months, v_kit.kit_id;
         else
           insert into public.topic_assignments (brand_kit_id, topic_id, month, assigned_at)
           values (v_kit.kit_id, v_topic, v_date, v_date + interval '15 days')
@@ -258,6 +326,15 @@ begin
   insert into sim_report values
     ('assigned', v_assigned::text),
     ('exhausted', v_exhausted::text);
+
+  /*
+   * La boucle lève au PREMIER épuisement, donc cette ligne ne devrait jamais
+   * partir. Elle reste parce qu'un compteur qui ne peut pas être non nul coûte
+   * une ligne, et qu'elle attrape le jour où quelqu'un retire le raise.
+   */
+  if v_exhausted > 0 then
+    raise exception 'EPUISEMENT: % draws without a topic survived the loop.', v_exhausted;
+  end if;
 end $$;
 
 

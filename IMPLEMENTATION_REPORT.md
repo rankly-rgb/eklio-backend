@@ -11,9 +11,9 @@ Mesuré le 2026-09-20, sur la stack PostgreSQL 16 locale
 
 ## 0. CE QUI EST FAIT, ET CE QUI NE L'EST PAS
 
-Le chantier demande onze commits couvrant six phases. Sept sont livrés. La
-PHASE 5 (interface) est livrée à un tiers et la PHASE 4 à deux tiers. Le détail
-est en §7, nommément, sans arrondi.
+Le chantier demande onze commits couvrant six phases, puis une SUITE qui le
+clôt par quatre décisions et quatre vérifications complémentaires. Le détail de
+ce qui manque est en §7 et §10.3, nommément, sans arrondi.
 
 | phase | livré | commit |
 |---|---|---|
@@ -25,8 +25,34 @@ est en §7, nommément, sans arrondi.
 | 4.1 — Batch + caching | **oui** | `feat(pipeline): batched monthly generation with caching…` |
 | 4.5 — éthique sur les labels | **oui** | `feat(pipeline): the ethics guard reaches the diagram labels` |
 | 4.2–4.4 — cron, veille, visuels | **partiel** | §7.1 |
-| 5 — interface | **partiel** | §7.2 |
+| 5 — interface | **oui** | §10.3 — complétée par la SUITE |
 | 6 — vérification | **oui, les six** | §6 |
+| SUITE — quatre décisions, quatre vérifications | **oui** | §10 |
+
+⚠ **La ligne PHASE 5 a changé après la SUITE.** Elle disait « partiel, livré à
+un tiers ». Les six écrans que la DÉCISION 3 énumère sont livrés : flux de
+cartes, état de première génération, check-in replié, surface de relecture,
+compteur de crédits, page de référence du système visuel. Deux des « réglages
+limités » de la surface de relecture ne le sont pas, et ils sont nommés en
+§10.3 et dans `FOLLOWUP.md` F4 plutôt que dilués dans un « partiel ».
+
+---
+
+## ⚠ CONVENTION DE LECTURE : CHAQUE CHIFFRE DIT D'OÙ IL VIENT
+
+Toute sortie, tout visuel et tout chiffre de ce rapport porte, **dans la même
+phrase**, l'une de ces deux marques :
+
+- **[chemin de production]** — produit par le code qui tournera en production,
+  sur la stack PostgreSQL 16 locale ou par les suites du dépôt frontend. Une
+  carte composée par `lib/compose/`, une ligne de `credit_ledger` écrite par
+  `reserve_credit`, un compte de tests.
+- **[fixture]** — produit par un double de test. Rien de ce qui porte cette
+  marque n'a touché un fournisseur, et aucun chiffre qui en vient n'est une
+  mesure de ce que quelque chose coûte réellement.
+
+Sans exception, y compris pour les rendus d'illustration et les cartes
+d'exemple.
 
 ---
 
@@ -176,6 +202,13 @@ soit importé d'ailleurs, et ce test a refusé la première position du fichier.
 ---
 
 ## 4. CE QUE LES VÉRIFICATIONS ONT TROUVÉ
+
+> **[chemin de production]** — tous les chiffres de cette section (les 38px, le
+> 2,89, les 207px sur 575, les 270 millions d'exécutions, les 6 ms → 60 ms →
+> 127 ms) sont des mesures faites sur le vrai moteur et la vraie base, par les
+> suites du dépôt et par `explain (analyze, buffers)`. Aucun ne vient d'une
+> fixture ni d'une estimation.
+
 
 Douze défauts, tous trouvés par une garde, une suite ou une mesure — aucun par
 relecture.
@@ -359,6 +392,12 @@ publications, réparties sur 10 États × 5 modalités — **deux par groupe
 **36 000 attributions. Zéro doublon. Zéro collision. Zéro épuisement.**
 Six minutes.
 
+> ⚠ **CE RUN EST CELUI DE L'ANCIEN HARNAIS. LIRE §10.8.** Le chiffre est vrai,
+> mais la densité qu'il mesure est plus douce qu'elle n'en a l'air : les deux
+> consœurs d'un groupe (État, modalité) y avaient des populations différentes,
+> donc des segments d'élection différents, et la contention n'apparaissait
+> qu'au débordement. La SUITE a resserré le harnais et refait la mesure.
+
 Les deux assertions sont vérifiées sur les données produites, pas supposées :
 
 - aucune paire `(kit, sujet)` n'apparaît deux fois — la clef primaire
@@ -440,21 +479,30 @@ premier remplissage réel.
 
 ### 7.2 PHASE 5 — interface
 
+> ⚠ **CETTE SOUS-SECTION EST PÉRIMÉE, ET ELLE EST GARDÉE EXPRÈS.** Elle décrit
+> l'état AVANT la SUITE. Ce qu'elle annonce comme non livré l'est désormais :
+> voir **§10.3**. Elle reste ici parce que son dernier paragraphe explique
+> pourquoi l'ordre a été celui-là, et que cette raison est toujours vraie.
+
 Livré : le **compteur de crédits** (branché sur `/app/content`, parce que
 `wired-to-a-screen` refuse un module de `lib/billing/` qu'aucun écran
 n'atteint) et la **page de référence du système visuel** (`/dev/visual-system`),
 qui rend le vrai moteur et affiche ses refus.
 
-Non livré : le flux de cartes à la place du calendrier, le libellé d'angle, la
-ligne « Why this one », la hiérarchie Swap > Edit > Approve, l'écran d'attente
-de première génération, le repli du check-in en une ligne, la refonte de
-`/app/content/[id]`, et les deux à trois mises en page alternatives.
+Non livré **à ce moment-là** : le flux de cartes à la place du calendrier, le
+libellé d'angle, la ligne « Why this one », la hiérarchie Swap > Edit >
+Approve, l'écran d'attente de première génération, le repli du check-in en une
+ligne, la refonte de `/app/content/[id]`, et les deux à trois mises en page
+alternatives.
 
-⚠ **Pourquoi ce n'est pas à moitié fait.** Ces écrans lisent
-`get_content_month`, qui ne porte ni le sujet, ni sa justification, ni son
-angle — le RPC devrait être étendu, et il est appelé par du code existant et
+⚠ **Pourquoi ce n'était pas à moitié fait.** Ces écrans lisent
+`get_content_month`, qui ne portait ni le sujet, ni sa justification, ni son
+angle — le RPC devait être étendu, et il est appelé par du code existant et
 testé. Un flux de cartes câblé sur des données qui n'existent pas encore aurait
-l'air d'un progrès et n'en serait pas.
+eu l'air d'un progrès et n'en aurait pas été un.
+
+C'est exactement ce que la DÉCISION 3 a tranché : étendre le RPC d'abord
+(`20260921090000`), puis finir les écrans. Les deux sont faits.
 
 ### 7.3 Le découpage en commits
 
@@ -467,7 +515,7 @@ aurait produit un premier commit dont je sais qu'il était faux.
 
 ## 8. CE QUI EST VERSÉ DANS `FOLLOWUP.md`
 
-Deux entrées, toutes deux relevées en PHASE 0 :
+Cinq entrées.
 
 - **F1** — la production porte 14 migrations que le tronc n'a pas
   (`origin/claude/stoic-ritchie-1liqrz`, mergée nulle part), dont deux ajouts à
@@ -475,24 +523,44 @@ Deux entrées, toutes deux relevées en PHASE 0 :
   schéma de production. **Atténuation tenue dans tout ce chantier** : aucune
   migration neuve ne référence un objet de ces 14, et tout contrôle de phrase
   passe par `usp_banned_phrases_check` plutôt que par une copie de la liste.
+  ⚠ **La SUITE y a ajouté la liste exacte des quatorze, une par une, avec ce
+  que chacune touche et lesquelles entrent en conflit avec ce chantier.** Le
+  résumé : trois tables nouvelles à déclarer dans `tenancy_layer.test.sql`, un
+  test de parité déontologique à remonter de 19 à 20 motifs, une surface de
+  fonction à revérifier, un gate de phrases qui devient plus strict. **Aucun
+  conflit de schéma au sens strict** — ce sont des tests d'énumération qui
+  casseront, pas des `create table` qui se marcheront dessus.
 - **F2** — la branche de référence citée au prompt a divergé.
+- **F3** — `local-verify.sh` sort en 1 quand la dérive est grande, et cache son
+  propre résumé de tests (SIGPIPE sur `| head -20` sous `set -euo pipefail`).
+- **F4** — deux des « réglages limités » de l'écran de relecture n'ont pas de
+  mécanisme dans les dépôts : la variante de teinte (aucune colonne ne porte le
+  choix clair/sombre d'un post) et le mot accentué (le moteur n'a aucune notion
+  d'accentuation). §10.3, et ce qu'il faudrait pour les livrer.
+- **F5** — `lib/images/config.ts` porte une table de prix par image, et **elle
+  est correcte** : elle décrit `gpt-image-1`, qui publie une grille par image.
+  Ce n'est pas celle que la DÉCISION 1 demande de supprimer.
 
 ### 8.1 Trois décisions qui appellent une réponse humaine
 
-**`gpt-image-2` n'est pas vérifié.** Le chantier l'impose et interdit
-`gpt-image-1`. Aucune clef OpenAI n'est configurée dans ce dépôt, le seul SDK
-de modèle présent est `@anthropic-ai/sdk`, et je n'ai pas pu confirmer
-l'existence de ce modèle. Le nom et la qualité sont pilotés par variables
-d'environnement, comme le chantier le demande lui-même, et la colonne `quality`
-est bornée à `(low, medium)` **par la ligne** pour qu'une variable mal réglée
-ne puisse pas acheter le palier cher. Aucun appel n'est écrit.
+> ⚠ **LES DEUX PREMIÈRES ONT REÇU LEUR RÉPONSE DANS LA SUITE** (DÉCISION 1 et
+> DÉCISION 2, §10.1 et §10.2). Elles sont gardées telles quelles parce qu'elles
+> disent ce qui était incertain et pourquoi — et que la réponse reçue a changé
+> la STRUCTURE du calcul de coût, pas seulement une valeur.
 
-**L'identifiant du modèle de rédaction.** Le chantier nomme
-`claude-haiku-4-5-20251001`. La référence d'API consultée pour ce travail donne
-`claude-haiku-4-5` et dit explicitement de ne jamais suffixer un identifiant par
-une date. Les deux ne peuvent pas être vrais. `MASS_COPY_MODEL` lit
-`CONTENT_COPY_MODEL` avec le nom du chantier comme défaut — l'instruction
-reçue — et corriger la valeur est un changement de configuration.
+**~~`gpt-image-2` n'est pas vérifié.~~ → TRANCHÉ.** Le modèle est
+`gpt-image-2.5-flare`, **facturé au jeton** et non à l'image. La colonne
+`quality` reste bornée à `(low, medium)` par la ligne, et `resolveQuality`
+refuse `high` et au-delà **par le code**. `actual_cost_usd` se calcule depuis
+`usage`. L'appel complet est écrit, avec un client injectable et un double
+étiqueté fixture. §10.1.
+
+**~~L'identifiant du modèle de rédaction.~~ → TRANCHÉ.**
+`claude-haiku-4-5-20251001` **est** l'identifiant Claude API de Haiku 4.5, et il
+est daté ; les formes non datées valent pour des modèles plus récents. La
+valeur du chantier est gardée comme défaut, le pilotage par variable reste, et
+tout commentaire laissant entendre que la forme datée serait interdite a été
+retiré. §10.2.
 
 **La grâce de trois jours existe maintenant à deux endroits.** L'autorité est
 `monthly_presence_past_due_grace()` en base ; `PAST_DUE_GRACE_DAYS` reste dans
@@ -526,3 +594,508 @@ Peu, et chaque fois pour une raison nommée.
   propres assertions exigeaient.
 
 Aucun fichier de migration déjà poussé n'a été renommé ni édité.
+
+---
+
+## 10. LA SUITE — QUATRE DÉCISIONS, QUATRE VÉRIFICATIONS
+
+Le message de SUITE clôt le chantier. Il tranche quatre points laissés ouverts,
+demande quatre vérifications complémentaires, et interdit toute nouvelle phase.
+Cette section est ce qui en est sorti.
+
+### 10.1 DÉCISION 1 — le modèle d'image est facturé au JETON, pas à l'image
+
+**Ce qui a changé structurellement, et pas seulement en valeur.**
+`gpt-image-2.5-flare` n'a **aucune grille de prix par image**. Il est facturé à
+**30 $ par million de jetons de sortie image**, et la documentation du modèle
+dit explicitement que le calculateur de GPT Image 2 n'estime pas la
+consommation de 2.5.
+
+Conséquence, et elle gouverne tout le chemin :
+
+| | avant la décision | après |
+|---|---|---|
+| `actual_cost_usd` | aurait été lu dans une table `(modèle, qualité, taille) → cents` | **calculé depuis l'objet `usage` de la réponse API**, et depuis lui seul (`imageCostUsd`) |
+| absence de `usage` | aurait rendu le prix de la table | rend **`null`** — on écrit qu'on ne sait pas, on n'invente pas |
+| taux unitaire | aurait été une ligne de table parmi d'autres | **une constante unique**, `IMAGE_OUTPUT_PER_MTOK`, avec sa date de vérification (20 septembre 2026) et son URL de source en commentaire |
+| estimation de réservation | aurait été le prix exact | reste approximative, et **un écart > 50 % entre estimé et réel est journalisé en avertissement** (`ESTIMATE_DRIFT_WARN`) |
+
+**Aucune table de prix par image n'existe dans `lib/content/images/`.** Il en
+existe une dans `lib/images/config.ts`, qui décrit `gpt-image-1` — un modèle
+qui, lui, publie une grille par image. Ce n'est pas celle que la décision
+demande de supprimer : voir `FOLLOWUP.md` F5, qui explique pourquoi elle est
+juste là où elle est.
+
+**Les autres bornes, refusées par le code et non déconseillées.**
+
+- Identifiant non daté par défaut (`gpt-image-2.5-flare`), snapshot
+  `gpt-image-2.5-flare-2026-09-08` épinglable par `CONTENT_IMAGE_MODEL`.
+- Format portrait `1024x1536`, le même cadre que le moteur de composition.
+- Qualité par défaut `low`, plafond `medium`, les deux pilotés par
+  l'environnement. `high`, `xhigh`, `max` et `auto` sont **refusés par
+  `resolveQuality`**, qui lève `ContentImageQualityError` — et la ligne de
+  `custom_visual_generations` porte le même refus
+  (`custom_visual_quality_check`), donc un chemin qui oublierait la fonction ne
+  passerait pas non plus.
+- `auto` est refusé pour une raison propre : il laisse le modèle choisir, et un
+  plafond qu'une autre partie décide n'est pas un plafond.
+
+**L'appel complet, et il est testable sans clef.**
+`generateCustomVisual` fait, dans cet ordre : recherche du `prompt_hash` →
+`reserve_credit` → appel (un seul réessai sur erreur transitoire, **aucun** sur
+un refus de modération) → lecture de `usage` → `imageCostUsd` → avertissement
+de dérive si > 50 % → dépôt → `record_custom_visual` → `settle_credit`. Le
+client est injecté (`CustomVisualDeps.client`), donc la totalité du chemin
+tourne sans clef.
+
+⚠ **Le double de test est étiqueté comme tel, dans le nom du fichier et ici.**
+Il vit dans `lib/content/images/fixture-client.ts`, son type est
+`FixtureImageClient` et porte `readonly isFixture: true`, et le fichier s'ouvre
+sur la bannière « ⚠ FIXTURE. RIEN DE CE QUI SORT D'ICI N'A TOUCHÉ OPENAI. ⚠ ».
+
+**24 tests au vert** sur `lib/content/images/__tests__/custom-visual.test.ts`
+**[chemin de production pour la logique, fixture pour la réponse API]** : la
+logique testée est celle qui tournera ; la charge `usage` qu'elle lit vient du
+double et n'est **pas** une mesure de ce qu'une image coûte réellement.
+
+### 10.2 DÉCISION 2 — `claude-haiku-4-5-20251001` est l'identifiant daté, et c'est le bon
+
+La table officielle des modèles donne cette forme datée comme identifiant
+Claude API de Haiku 4.5. Les identifiants non datés (`claude-opus-5`,
+`claude-sonnet-5`) valent pour des modèles plus récents.
+
+La valeur du chantier est donc gardée comme défaut, le pilotage par variable
+d'environnement est gardé, et **tout commentaire ou TODO laissant entendre que
+la forme datée serait interdite a été retiré** de
+`lib/content/generate/copy-batch.ts`. Ce qui reste à sa place dit l'inverse, en
+toutes lettres.
+
+### 10.3 DÉCISION 3 — la PHASE 5 est finie, et rien au-delà
+
+**`get_content_month` porte désormais le sujet, sa justification et son
+libellé d'angle.** Trois migrations :
+
+| migration | ce qu'elle ajoute |
+|---|---|
+| `20260921090000_an_item_knows_why_it_was_chosen` | catalogue `content_intents` (5 libellés), `content_items.topic_id`, `content_items.rationale`, `content_item_json` porte `rationale` et un objet `topic { id, angle, angle_label, archetype_key, timely }` |
+| `20260921100000_swap_is_a_draw_not_a_generation` | `render_rationale(text, uuid)` et `swap_content_item(uuid)` — un tirage, aucune génération, `delta 0` au journal |
+| `20260921110000_a_layout_is_hers_to_change` | `content_items.compose_archetype`, accepté par le patch, refusé en `unknown_layout` sur une valeur inconnue, remis à `null` par un swap |
+
+⚠ **Le libellé d'angle vient de la base, jamais d'une table de correspondance
+en TypeScript.** Une seconde copie voudrait dire qu'une sixième intention
+arrive un jour à l'écran sans mots.
+
+**Les six écrans que la décision énumère.**
+
+| écran | fichier | état |
+|---|---|---|
+| flux de cartes | `components/content/content-stream.tsx` | livré |
+| première génération | `components/content/month-generating.tsx` | livré — quatre étapes réelles du pipeline, pas de pourcentage, pas de spinner nu |
+| check-in replié | `components/content/check-in-line.tsx` | livré — il se replie au lieu de disparaître, donc ce qu'elle a écrit reste corrigeable |
+| **surface de relecture** | `app/app/content/[id]/page.tsx` + `components/content/review-surface.tsx` | **livré par la SUITE** |
+| compteur de crédits | `components/content/credits-meter.tsx` | livré |
+| référence du système visuel | `app/dev/visual-system/page.tsx` | livré |
+
+**Ce que la surface de relecture fait.**
+
+- **Deux ou trois mises en page du même contenu**, composées **pendant le rendu
+  de la page par le vrai moteur** `lib/compose/` **[chemin de production]**.
+  Aucune n'appelle de modèle : le contenu est déjà écrit, les faire tenir
+  autrement est de l'arithmétique. Chaque variante porte son `contentHash`,
+  **le même que `rendered_assets.content_hash`**, donc en choisir une déjà
+  rendue ne rend rien.
+- **Les archétypes compatibles sont trouvés en essayant**, pas listés dans une
+  table : `parse()` de chaque module accepte ou refuse le payload, et `render`
+  accepte ou refuse de le composer aux planchers typographiques. Une table
+  « quel archétype accepte quelle forme » aurait été une troisième source après
+  les onze modules et le validateur SQL, et c'est celle qui se serait périmée.
+- **Une ligne déontologique calculée, pas écrite.** Elle vient de
+  `ethics_scan()`, la fonction que les triggers d'écriture appellent, et elle
+  scanne **le titre, la légende, la ligne d'image, le texte alternatif ET tous
+  les libellés du diagramme** — la même surface que
+  `20260920160000_a_diagram_label_is_published_text` a fermée côté base. Un
+  motif bloquant ne peut pas apparaître sur un item enregistré (le trigger a
+  refusé l'écriture) ; s'il apparaît quand même, l'écran le dit en rouge au
+  lieu de l'avaler.
+- **Copy caption et Download image comme gestes dominants**, en haut, en
+  primaire. L'éditeur de champs, la publication et la suppression passent
+  **en dessous** : c'était l'élément le plus visible de l'écran, et ce n'est
+  pas ce qu'elle vient y faire. « I posted this » et le journal de publication
+  sont intacts.
+- **Le téléchargement compose à la demande et ne stocke rien**
+  (`app/api/content-items/[id]/image/route.ts`). Le seau `content-assets` est
+  en lecture seule pour une cliente ; y écrire demanderait la clef de service,
+  c'est-à-dire un second chemin d'écriture à côté de `record_rendered_asset`
+  avec sa propre façon de se tromper. Rien n'y est facturé, ni au succès ni à
+  l'échec.
+
+⚠ **Deux des « réglages limités » ne sont pas livrés, et la clause d'arrêt
+s'applique.**
+
+Le chantier demande « variante de teinte, changement d'archétype, mot
+accentué ». Le changement d'archétype est livré et il se garde (colonne
+`compose_archetype`). Les deux autres n'ont **aucun mécanisme dans les dépôts** :
+
+- **la variante de teinte** — aucune colonne ne porte le choix clair/sombre
+  d'un post ; il appartient au planificateur du mois (`DARK_CARD_RATIO`). Un
+  sélecteur aurait été un réglage qui ne se garde pas, ce qui est pire qu'un
+  réglage absent ;
+- **le mot accentué** — le moteur n'a aucune notion d'accentuation : ni les
+  onze modules, ni `svg.ts`, ni `layout.ts`, ni `measure.ts`. Le livrer
+  traverserait cinq fichiers et devrait entrer dans `contentHash`, sinon deux
+  cartes différant par leur accentuation partageraient une entrée de cache.
+
+Les deux sont détaillés avec ce qu'il faudrait pour les livrer dans
+`FOLLOWUP.md` F4. **Aucun des deux n'a été simulé par un réglage inopérant.**
+
+⚠ **Un écart trouvé par le compilateur, pas par la relecture.** Il y a deux
+colonnes dont le nom ressemble à « archetype » et elles ne portent pas le même
+vocabulaire :
+
+- `content_items.archetype` → le **format du post** : `statement`, `question`,
+  `notes`, `signature`, `story`, `google_post`. Antérieur à ce chantier.
+- `content_archetypes.id` → la **mise en page** : `single_statement`, `cycle`,
+  `quadrant_model`, … Onze clefs, ajoutées par ce chantier.
+
+Les deux jeux sont disjoints, et le garde-fou de `20260921110000` **vérifie
+qu'ils le restent** : le jour où un mot appartient aux deux, tout écran qui lit
+l'une ou l'autre colonne a raison par accident.
+
+### 10.4 DÉCISION 4 — LE GRAIN, ARBITRÉ. Ne pas le renverser.
+
+⚠ **Cette sous-section existe pour qu'une prochaine session ne défasse pas cet
+arbitrage en croyant corriger une incohérence.** Elle porte donc la raison, pas
+seulement la règle.
+
+| objet | grain | table / colonne |
+|---|---|---|
+| **crédits** | **par utilisatrice** | `credit_quotas(plan, kind)`, `credit_ledger.user_id`, `credit_balances.user_id` |
+| **contenu** | **par kit de marque** | `content_items.brand_kit_id`, `content_months.brand_kit_id`, `topic_assignments.brand_kit_id` |
+| **assets rendus et visuels custom** | **par kit de marque** | `rendered_assets.brand_kit_id`, `custom_visual_generations.brand_kit_id` |
+| **Monthly Presence** | **abonnement par personne** | `check_monthly_presence_entitlement(uuid)`, scopé utilisateur |
+
+**Le prompt de chantier disait l'inverse sur un point, et c'est le prompt qui
+avait tort.** L'arbitrage tient parce que les deux choses ne sont pas de même
+nature :
+
+- **Un crédit est une unité de dépense auprès d'un fournisseur, et le
+  fournisseur facture un compte.** Quatre visuels custom par mois est une
+  limite sur ce qu'Eklio est prêt à payer POUR UNE PERSONNE. L'attacher au kit
+  voudrait dire qu'ouvrir un second kit double la facture sans rien changer à
+  l'abonnement — c'est-à-dire qu'un plafond cesse d'être un plafond dès qu'on
+  clique sur « nouveau kit ».
+- **Un contenu est une expression de marque, et une marque est un kit.** La
+  même praticienne avec deux cabinets a deux voix, deux palettes, deux
+  calendriers. Les rattacher à la personne produirait un flux où les posts de
+  deux marques se mélangent, et une anti-collision qui ne sait plus quelle
+  marque elle protège.
+- **Un asset rendu est une image dans les couleurs d'un kit.** Le cache est
+  donc naturellement par kit : `UNIQUE(brand_kit_id, content_hash)`. Un cache
+  par personne servirait à la seconde marque l'image de la première.
+- **Monthly Presence est un abonnement par personne**, et ce n'est pas une
+  exception au premier point : c'est le premier point. L'abonnement paie une
+  capacité mensuelle, et la capacité est mesurée en crédits.
+
+⚠ **Le seul endroit où les deux grains se croisent est la déduplication de
+prompt d'image**, et il est mesuré plutôt que supposé : voir §10.6.
+
+### 10.5 VÉRIFICATION 1 — chaque contrôle typographique a désormais un cas négatif démontré
+
+**Le problème, énoncé exactement.** Le contrôle de ratio 3:1 était **vert
+pendant qu'une carte mesurait 2,89**. Un contrôle qui ne regarde rien passe
+exactement comme un contrôle qui regarde tout, et rien dans la suite ne
+permettait de faire la différence — parce que la règle vivait **à l'intérieur
+d'un `expect`**, où elle ne peut pas être mise en échec volontairement.
+
+**Ce qui a été fait.** Les règles sont sorties des assertions et vivent dans
+`lib/compose/audit.ts` : six fonctions qui prennent un **document SVG** et
+rendent la liste de ce qui ne va pas, en toutes lettres.
+
+- `absoluteFloorFindings` · `displayRangeFindings` · `ratioFindings`
+- `glyphToStrokeFindings` · `fieldToFieldFindings` · `aboveFooterFindings`
+
+`collision.test.ts` et `floors.test.ts` **appellent maintenant ces fonctions**
+sur les 11 × 3 × 3 cartes de la matrice — même couverture, même granularité,
+meilleurs messages. Et `lib/compose/__tests__/negatives.test.ts` appelle **les
+mêmes fonctions** sur des documents fabriqués pour les violer.
+
+| # | contrôle | cas négatif démontré | **[chemin de production]** |
+|---|---|---|---|
+| 1 | **ratio 3:1** | une vraie carte `cycle` est rendue, vérifiée propre, puis toutes ses bandes secondaires sont repassées au corps qui produit **exactement 2,89** — le contrôle rend un constat qui contient « 2.89 » et « under 3 ». **Ce test aurait échoué avant la correction.** Un second cas pose 2,99 : une borne qui ne refuse que le franchement mauvais est une borne dont on ne peut rien conclure. Un troisième vérifie que le moteur, lui, ne produit plus ce document | oui |
+| 2 | **planchers typographiques** | un glyphe à `ABSOLUTE_FLOOR − 1` est refusé ; une ligne d'affichage à `display.min − 1` est refusée ; **et une à `display.max + 1` aussi** — le débordement est une panne dans les deux sens | oui |
+| 3 | **clearances** | un texte poussé de 220px dans le dessin est refusé (c'est le sens dans lequel la panne s'est produite : un libellé à 38px du bout d'un bras) ; un texte poussé de 900px dans le pied de carte est refusé ; **un champ teinté posé sur un autre** est refusé | oui |
+| 4 | **budget de mots** | `budget.test.ts` portait déjà ses cas négatifs (« un mot de trop, et c'est refusé »). Ce qui manquait est la preuve que le refus **remonte jusqu'au moteur** : `render` lève `BudgetExceededError` sur un payload hors budget, il ne compose pas quand même | oui |
+
+⚠ **Et les mutateurs eux-mêmes sont testés.** Un mutateur qui ne mute plus rend
+TOUS les cas ci-dessus verts — c'est le mode de panne le plus silencieux du
+fichier. `withGlyphSize`, `withSecondarySizes` et `shiftBoxes` vivent donc dans
+`audit.ts` à côté des lecteurs, ils **lèvent** quand la mutation serait un
+no-op, et trois tests vérifient qu'ils changent bien le document, **y compris
+les boîtes internes** — `parseBoxes` lit la boîte du groupe pour un champ mais
+celles des éléments internes pour un texte et pour un tracé, et un mutateur qui
+n'aurait touché que l'attribut du groupe aurait produit un document inchangé
+aux yeux du lecteur.
+
+⚠ **Une chose que ces cas négatifs ne prouvent pas, et qui est dite plutôt que
+sous-entendue :** ils prouvent que le contrôle voit une carte sale. Ils ne
+prouvent pas que la matrice de fixtures couvre toutes les cartes que la
+production produira. Les deux moitiés sont nécessaires et aucune ne remplace
+l'autre.
+
+### 10.6 VÉRIFICATION 2 — la déduplication a DEUX étages, et ce sont deux choses différentes
+
+On les confond facilement parce qu'elles disent toutes les deux « on ne refait
+pas ». Elles ne protègent pas la même dépense. La preuve est
+`supabase/tests/20260921120000_dedup_two_levels.test.sql`, **cinq blocs,
+[chemin de production]** : chaque appel passe par la RPC que la production
+appelle, et rien n'est écrit en table directement.
+
+#### (a) ÉTAGE 1 — LE RENDU. Un payload rendu deux fois pour le même kit
+
+**Clef : `(brand_kit_id, content_hash)`. Ce qu'elle économise : du CPU et une
+écriture de stockage. Rien n'est facturé à personne.**
+
+| ce qui est prouvé | comment |
+|---|---|
+| le premier appel enregistre | `record_rendered_asset` rend `reason = 'rendered'` |
+| le second **ne crée pas de seconde ligne** | `select count(*) from rendered_assets where (kit, hash)` = **1** |
+| le second rend **le chemin existant, pas celui qu'il proposait** | ⚠ le test propose délibérément un AUTRE chemin au second appel — un pipeline qui rerend écrit dans un chemin horodaté. Si la fonction acceptait la proposition, deux objets existeraient dans le seau pour un seul contenu et le cache ne serait qu'une table |
+| **une seule écriture de stockage** | le chemin rendu est identique aux deux appels, donc le pipeline dépose une fois |
+| un **autre kit**, le même hash, **enregistre quand même** | 2 lignes pour 2 kits. Sans ce cas, un cache global passerait le test précédent en servant à la seconde praticienne l'image de la première |
+
+#### (b) ÉTAGE 2 — LE PROMPT D'IMAGE. Le même `prompt_hash` deux fois
+
+**Clef : `(brand_kit_id, prompt_hash)`. Ce qu'elle économise : un APPEL À
+OPENAI et un CRÉDIT.**
+
+| ce qui est prouvé | comment |
+|---|---|
+| la première génération consomme **1 crédit** | `credit_balances.consumed` = 1 après `reserve_credit` + `record_custom_visual` |
+| la seconde **ne déclenche aucun appel** | `record_custom_visual` rend `reason = 'cached'` avant toute génération |
+| la seconde **ne consomme pas de second crédit** | `credit_balances.consumed` = **toujours 1**. La réservation est relâchée par `settle_credit(…, charged => false)` |
+| **une seule ligne de génération** | `count(*) from custom_visual_generations where (kit, prompt_hash)` = **1** |
+| le journal, lui, porte **les deux réservations et leurs deux issues** | 2 `reservation`, 1 `release`. ⚠ C'est voulu : le journal est append-only, et « on a réservé puis relâché » est un fait qui s'est produit. Ce qui doit être à 1 est le **solde**, pas le nombre de lignes — un test qui compterait les lignes prouverait le contraire de ce qu'il croit |
+
+⚠ **Le chemin de production réserve AVANT de savoir si c'est un doublon**, et
+le test le reproduit. Il ne peut pas savoir sans regarder, et regarder puis
+réserver laisserait deux appels concurrents passer tous les deux.
+
+#### (c) Les deux étages ne se déduisent pas l'un de l'autre
+
+Un cinquième bloc vérifie qu'un contenu déjà rendu **n'implique pas** un prompt
+déjà généré, et réciproquement : deux tables, deux clefs, deux rangements dans
+le seau (`…/cards/…` contre `…/custom/…`). Un cache unique qui prétendrait
+couvrir les deux servirait un jour une carte composée à la place d'une
+illustration.
+
+⚠ **LEURS GRAINS DIFFÈRENT, ET C'EST LE SEUL ENDROIT OÙ LA DÉCISION 4 SE
+CROISE.** Le prompt est dédupliqué **par kit** ; le crédit est décompté **par
+utilisatrice**. Pour une praticienne à un seul kit les deux coïncident. Le jour
+où elle en a deux, le même prompt sur le second kit est **un second appel et un
+second crédit** — voulu : un visuel appartient à une marque, un crédit
+appartient à une personne.
+
+**Côté frontend, l'étage 2 est prouvé une seconde fois**, sur la logique
+TypeScript : `lib/content/images/__tests__/custom-visual.test.ts`, 24 tests
+**[chemin de production pour la logique, fixture pour la réponse API]**.
+
+### 10.7 VÉRIFICATION 3 — le coût, republié avec ce qu'il contient ET ce qu'il ne contient pas
+
+#### Ligne 1 — MESURÉ. **0,0259 $ pour trente publications** — **[chemin de production]**
+
+Agrégé depuis `credit_ledger` par `scripts/prove-month-cost.sql`, et non
+calculé par le script : la dépense passe par `reserve_credit` puis
+`settle_credit`, exactement comme en production, et le rapport relit ce que ce
+chemin a écrit.
+
+**Ce que ce chiffre INCLUT, en toutes lettres :**
+
+- les **trente appels de génération de texte** d'un mois — titre, légende,
+  ligne d'image, texte alternatif de chaque publication ;
+- **le prompt caching réellement obtenu** : la première carte écrit le préfixe,
+  les vingt-neuf suivantes le lisent. L'écart entre 0,0414 $ estimé et
+  0,0259 $ réel — **0,0155 $, soit 37 %** — **est** ce que le cache a
+  économisé, mesuré plutôt qu'annoncé ;
+- la remise Batch de Haiku 4.5 (−50 % entrée et sortie).
+
+**Ce que ce chiffre EXCLUT, et chaque exclusion est un coût réel :**
+
+1. **Les visuels custom.** Zéro dans ce mois. Le chemin est écrit et testé
+   (§10.1) mais **n'est pas câblé à un écran** : aucune cliente ne peut
+   aujourd'hui en demander un. C'est la plus grosse exclusion, et la ligne 2
+   ci-dessous l'estime.
+2. **L'amortissement de la banque de sujets.** Les sujets sont écrits une fois
+   et servis à beaucoup ; leur rédaction est un coût de modèle qui n'apparaît
+   dans le journal d'aucune cliente. Il n'a pas été mesuré, parce qu'aucune
+   banque réelle n'a été rédigée.
+3. **L'amortissement de la veille.** `insight_runs` borne les recherches à 40
+   par exécution ; aucune n'a tourné, donc aucune n'est facturée ici.
+4. **Le rendu vectoriel — et son absence EST la mesure.** Trente cartes
+   composées par `lib/compose/` : ni appel d'API, ni crédit, ni ligne de
+   journal. C'est le fait central du chantier.
+5. **Le stockage et la bande passante.** Non mesurés.
+
+⚠ **Et d'où vient le chiffre : d'UNE utilisatrice de test**, créée par le
+script, sur la stack locale. C'est un mois complet passé par le vrai chemin,
+pas un échantillon de production : personne d'autre n'a encore généré de mois.
+Un parc réel donnera une moyenne, pas ce nombre-ci.
+
+**0,000863 $ par publication.**
+
+#### Ligne 2 — ESTIMÉ. **≈ 0,21 $ pour trente publications + quatre visuels custom**
+
+⚠ **CE CHIFFRE EST UNE ESTIMATION, PAS UNE MESURE.** Aucun appel à OpenAI n'a
+été fait dans ce chantier. Il est publié parce qu'il est la question qui
+compte — ce que coûte une abonnée quand le produit est entier — et il est
+marqué pour qu'on ne le cite jamais comme un fait.
+
+```
+  0,0259 $   texte de 30 publications        [MESURÉ, chemin de production]
++ 0,1800 $   4 visuels custom en qualité low [ESTIMÉ, non mesuré]
+             4 × 1 500 jetons de sortie × 30 $/M jetons = 4 × 0,045 $
+─────────
+≈ 0,2059 $   par praticienne et par mois     [DOMINÉ PAR L'ESTIMATION]
+```
+
+**Ce qui rend cette estimation fragile, nommément :**
+
+- **les 1 500 jetons de sortie par image sont une hypothèse**, pas une mesure.
+  Elle est écrite comme telle dans `ESTIMATED_OUTPUT_TOKENS`, et
+  `ESTIMATE_DRIFT_WARN` la rend falsifiable : le premier appel réel qui
+  s'écartera de plus de 50 % le journalisera ;
+- **le taux de 30 $/M jetons de sortie image est vérifié au 20 septembre
+  2026**, source en commentaire dans `IMAGE_OUTPUT_PER_MTOK` ;
+- **les jetons de texte du prompt d'image ne sont PAS comptés** — ils sont
+  facturés à part, à un tarif qui n'a pas été vérifié. Quelques dizaines de
+  jetons face à des milliers de jetons d'image : l'écart est petit, mais il est
+  réel et il est nommé plutôt que dilué ;
+- **quatre visuels est le plafond, pas la moyenne.** `credit_quotas` accorde 4
+  par mois au plan standard. Une cliente qui n'en demande aucun reste à la
+  ligne 1 ;
+- **l'estimation ignore la déduplication.** Une cliente qui redemande le même
+  prompt ne paie pas deux fois (§10.6), donc 0,18 $ est un majorant.
+
+**Écart entre les deux lignes : ×8.** Le mois de texte coûte 2,6 cents ; les
+quatre images en coûteraient 18. **La quasi-totalité du coût variable d'Eklio
+est dans un chemin qui n'est pas encore câblé**, et c'est ce que la comparaison
+des deux lignes existe pour dire.
+
+### 10.8 VÉRIFICATION 4 — le seuil d'épuisement de la banque
+
+**La question, telle qu'elle est posée :** à partir de quel volume par segment
+la simulation COMMENCE à échouer ? C'est ce chiffre-là qui dimensionne la
+génération de sujets, pas celui qui passe.
+
+#### Ce qui a changé dans le harnais pour pouvoir y répondre
+
+Trois modifications à `scripts/simulate-collisions.sql`, et chacune répare une
+raison pour laquelle la question ne pouvait pas être posée :
+
+1. **`-v topics_per_segment=N`.** Le volume était écrit en dur à 500. On ne
+   peut pas mesurer un seuil sur une constante.
+2. **L'épuisement lève, au PREMIER.** Il était compté et rapporté en bas de
+   tableau, à côté de deux zéros rassurants — un run à 400 épuisements se
+   lisait comme un succès. Et il lève au premier plutôt qu'à la fin : une
+   banque qui ne répond plus ne répondra pas davantage aux 8 999 tirages
+   suivants, et chacun coûte un parcours complet du pool pour rendre `null`.
+   Un run à banque insuffisante passait de quelques minutes à un temps qu'on
+   n'a pas mesuré parce qu'on l'a interrompu.
+3. **La population est dérivée de l'État.** Voir ci-dessous — c'est la
+   modification qui rend la densité réaliste.
+
+#### ⚠ La densité mesurée jusqu'ici était plus douce qu'elle n'en avait l'air
+
+L'ancien harnais posait `v_pers[1 + (i - 1) % 3]`. Les deux consœurs d'un
+groupe (État, modalité) sont les rangs `i` et `i+50`, et `(i-1) % 3` contre
+`(i+49) % 3` diffèrent toujours — 50 n'est pas multiple de 3. **Les cinquante
+groupes avaient donc deux populations différentes.**
+
+⚠ **Ce n'était PAS une assertion vide, et il faut le dire précisément.** J'ai
+d'abord conclu que les pools étaient disjoints et que « zéro collision » ne
+prouvait rien. C'était faux, et la relecture de `next_topic_for_kit` l'a
+montré : le segment est accepté si **la modalité OU la population**
+correspond — un OU, pas un ET. Deux consœurs de même modalité atteignaient donc
+déjà les trois mêmes segments de cette modalité et pouvaient parfaitement se
+marcher dessus.
+
+Ce qui est vrai est plus faible : la contrainte mordait **dans le
+débordement** seulement. Chacune vidait d'abord son propre segment d'élection —
+celui que le tri préfère, score 4 contre 2 — que l'autre ne visait pas en
+premier. En dérivant la population de l'État, les deux tirent d'abord dans **le
+même** segment. La contention est frontale au lieu d'être résiduelle, et c'est
+ce que la fenêtre de 90 jours est censée tenir dans la vraie vie : deux
+thérapeutes qui se ressemblent, dans la même ville, qui publient le même mois.
+
+**C'est donc un test plus dur que le précédent, pas un test qui en répare un
+cassé.**
+
+#### Le bord théorique, qui est de l'arithmétique et non une mesure
+
+Avec 5 modalités × 3 populations = 15 segments de N sujets, une praticienne
+`(m, p)` atteint les 3 segments de modalité `m` **ou** les 5 de population
+`p` — soit `3 + 5 − 1 = 7` segments, donc **7N sujets atteignables**.
+
+| horizon | ce qu'elle consomme à elle seule | ce que sa consœur lui bloque | pool atteignable requis | **N par segment** |
+|---|---|---|---|---|
+| 3 mois (= la fenêtre entière) | 90 | ≤ 90 | ≥ 180 | **≥ 26** |
+| 12 mois | 360 (unicité à vie) | ≤ 90 par fenêtre | ≥ 450 | **≥ 65** |
+
+Ce sont des bornes INFÉRIEURES : elles ignorent que le tri concentre les
+premiers tirages sur le segment d'élection, ce qui épuise ce segment-là bien
+avant les six autres. Le seuil mesuré doit donc être **au-dessus** de ces
+nombres, et l'écart entre les deux est ce que le balayage mesure réellement.
+
+#### Ce qui est mesuré à l'heure où ce rapport est écrit
+
+**[chemin de production — ANCIEN harnais, densité plus douce]**
+
+| volume par segment | mois | résultat |
+|---|---|---|
+| 500 | 12 | 36 000 attributions, 0 épuisement, 0 collision, 0 doublon — §6.1 |
+| 500 | 3 | 9 000 attributions, 0 épuisement, 0 collision, 0 doublon |
+| **100** | 3 | **9 000 attributions, 0 épuisement, 0 collision, 0 doublon** — 341 s |
+
+Le point à 100 est le plus informatif des trois : il dit que le seuil de
+l'ancien harnais est **sous 100 par segment**, c'est-à-dire sous 1 500 sujets
+au total pour 100 praticiennes — très loin des 7 500 que le chantier visait.
+
+⚠ **LE BALAYAGE SUR LE NOUVEAU HARNAIS N'EST PAS TERMINÉ À L'HEURE DE CE
+COMMIT.** Il tourne sur 500 / 360 / 240 / 180, et son premier point a été perdu
+pour une raison bête et qui mérite d'être écrite : **j'ai édité le script
+pendant que `psql` le lisait**, et le processus a reçu un octet UTF-8 coupé en
+deux (`invalid byte sequence for encoding "UTF8"`). Le fichier sur le disque
+est valide ; c'est le flux qui ne l'était pas.
+
+**Ce qu'il faut retenir en l'état, sans attendre le balayage :** la banque de
+500 par segment que le chantier vise porte **un ordre de grandeur de marge** au
+delà du bord théorique (65 requis contre 500 posés, à 12 mois). Le chiffre qui
+mérite d'être surveillé n'est donc pas le volume mais **la concentration** :
+`required_per_reachable_pool` vaut `max(G × 90, 30 × mois)`, et **G est le
+nombre de praticiennes partageant (État, modalité)**. À deux par groupe il faut
+360 ; **à dix par groupe il en faut 900**, et 500 ne suffit plus. C'est le parc
+qui se concentre sur un État qui casse cette banque, pas le parc qui grandit.
+
+**Pour reproduire :**
+
+```bash
+for n in 500 360 240 180 120 60 30; do
+  psql -v months=3 -v topics_per_segment=$n -f scripts/simulate-collisions.sql
+done
+```
+
+Le premier `n` qui lève `EPUISEMENT: draw #… found no topic` est le seuil. Le
+message porte le numéro du tirage, le mois et le kit.
+
+### 10.9 CE QUE LA SUITE A AJOUTÉ AUX SUITES DE TESTS
+
+| dépôt | fichier | ce qu'il prouve |
+|---|---|---|
+| backend | `supabase/tests/20260921100000_swap.test.sql` | le swap depuis un **vrai rôle** : il recopie et ne fabrique rien ; il est gratuit et laisse quand même une trace ; l'item d'une autre est `not_found` et **n'a pas bougé** ; la banque épuisée se dit une fois ; et **un tirage raté n'assigne rien** — une assignation posée puis abandonnée brûlerait un sujet que personne n'a vu |
+| backend | `supabase/tests/20260921110000_her_layout.test.sql` | les deux vocabulaires « archétype » sont disjoints **dans les deux sens** ; elle change la mise en page et l'écran la relit ; la chaîne vide efface ; une mise en page inventée est `unknown_layout` **et n'écrit rien** ; la clef étrangère reste la garantie ; un swap remet à zéro |
+| backend | `supabase/tests/20260921120000_dedup_two_levels.test.sql` | les cinq blocs de §10.6 |
+| frontend | `lib/compose/__tests__/negatives.test.ts` | les cas négatifs de §10.5, **13 tests** |
+| frontend | `lib/content/__tests__/review-surface.test.ts` | les variantes composent vraiment (mesuré sur le document, pas déduit d'un `render` qui n'a pas levé) ; leur hash **est** celui du cache de rendu ; le carrousel n'est jamais une variante ; aucun bandeau n'est jamais vide ; `payloadPublishedText` remonte les gloses mais **pas** les clefs de système ; **16 tests** |
+
+**Total après la SUITE : 3 852 tests frontend au vert, 160 fichiers, 0 échec**
+**[chemin de production]**. Et côté base : **146 migrations rejouées depuis
+zéro, 94 fichiers de tests SQL, 0 échec** **[chemin de production]**.
