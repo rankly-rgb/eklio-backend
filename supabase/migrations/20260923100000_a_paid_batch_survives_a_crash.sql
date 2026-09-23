@@ -100,7 +100,31 @@ create table if not exists public.content_generation_results (
 );
 
 comment on table public.content_generation_results is
-  'One row per topic, written AS EACH RESULT ARRIVES -- never after the whole stream is in memory. A crash then costs at most the response in flight. `settled` says the credit has already been charged for this topic, so a resume does not charge a second one.';
+  'One row per topic, INSERTED AT SUBMISSION with result null, then filled AS EACH RESULT ARRIVES -- never after the whole stream is in memory. A crash then costs at most the response in flight. `settled` says the credit has already been charged for this topic, so a resume does not charge a second one.';
+
+-- ── ⚠ LES LIGNES EXISTENT DÈS LA SOUMISSION, RÉPONSE OU PAS ─────────────
+--
+-- Rencontré en vrai le 2026-09-23 sur le chemin local : une reprise a
+-- rattaché le bon lot — déjà payé — puis a REFAIT SON TIRAGE. Les deux
+-- ensembles se sont trouvés identiques et le mois est passé, parce que
+-- `next_topic_for_kit` trie par `created_at desc, id`. C'est une coïncidence
+-- d'ordonnancement, pas une garantie : un sujet ajouté, expiré ou pris par
+-- une autre praticienne entre les deux, et la reprise paie un lot dont elle
+-- ne sait plus lire les réponses.
+--
+-- ⚠ UN `batch_id` SANS SA LISTE DE SUJETS NE SE REPREND DONC PAS. On avait
+-- sauvé de quoi RETROUVER le travail payé, pas de quoi le RECONNAÎTRE.
+--
+-- D'où l'ordre d'écriture, qui n'est pas négociable :
+--
+--   1. `content_generation_runs` : la ligne, avec `batch_id`, à la soumission ;
+--   2. `content_generation_results` : UNE LIGNE PAR SUJET, `result` à null,
+--      dans la même transaction — c'est la liste des sujets du lot ;
+--   3. puis chaque `result` se remplit à l'arrivée de sa réponse.
+--
+-- Sans l'étape 2, la table reste vide pendant les vingt-cinq minutes où la
+-- question se pose, et c'est exactement la fenêtre que ces tables existent
+-- pour couvrir.
 
 create index if not exists content_generation_results_run_idx
   on public.content_generation_results (run_id);
