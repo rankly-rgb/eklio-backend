@@ -67,13 +67,22 @@ echo ""
 echo "== Drift against the recorded production fingerprint =="
 sudo -u postgres psql -d "$DB" -At -q -f supabase/tests/helpers/schema_fingerprint.sql \
   | sort > /tmp/_replay_fingerprint.txt
+# ⚠ CE RAPPORT SORT EN ERREUR DÈS QU'UNE MIGRATION N'EST PAS ENCORE EN
+# PRODUCTION — c'est-à-dire toujours, sur une branche de travail. Sous
+# `set -e -o pipefail` il arrêtait le script ICI, avant la ligne de verdict :
+# une suite rouge et une suite verte sortaient toutes deux en code 1, et le
+# décompte des échecs ne s'imprimait jamais (2026-09-27). La dérive est lue et
+# imprimée ; c'est `schema-drift.yml` qui la juge. Ce script juge les TESTS.
 python3 supabase/tests/helpers/schema_drift_report.py \
   supabase/tests/helpers/schema_fingerprint.production.txt \
   /tmp/_replay_fingerprint.txt \
-  | grep -E '^(production|replay|== |TOTAL|  Ces)' | head -20
+  | grep -E '^(production|replay|== |TOTAL|  Ces)' | head -20 || true
 
 echo ""
 echo "Migrations replayed clean. Tests: $ran run, $failed failed."
+if [ "$ran" -lt 50 ]; then
+  echo "Only $ran test file(s) ran — the suite was not read."; exit 1
+fi
 if [ "$failed" -ne 0 ]; then
   exit 1
 fi

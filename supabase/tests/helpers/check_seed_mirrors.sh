@@ -56,5 +56,11 @@ while IFS= read -r marker; do
   echo "ok       $marker"
 done < /tmp/_markers.txt
 
-if [ "$fail" -eq 0 ]; then echo "all seed mirrors match"; else echo "SEED MIRRORS OUT OF SYNC"; fi
+# ⚠ ZÉRO MARQUEUR LU N'EST PAS « TOUT CONCORDE » (2026-09-27). Si l'extraction
+# des marqueurs rate, la boucle ne tourne pas et rien n'échoue.
+checked=$(grep -c . /tmp/_markers.txt || true)
+if [ "${checked:-0}" -lt 5 ]; then
+  echo "SEED MIRRORS NOT READ: ${checked:-0} marker(s) found in the migrations"; fail=1
+fi
+if [ "$fail" -eq 0 ]; then echo "all $checked seed mirrors match"; else echo "SEED MIRRORS OUT OF SYNC"; fi
 exit "$fail"
