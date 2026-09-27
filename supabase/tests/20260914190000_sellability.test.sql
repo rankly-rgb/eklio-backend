@@ -28,6 +28,7 @@ declare
   v_blocked  text[];
   v_comment  text;
   v_lot      text;
+  v_n        int;
 begin
   -- ── 1. Exactement ces trois-là ────────────────────────────────────────
   select coalesce(array_agg(tier order by tier), array[]::text[])
@@ -92,8 +93,14 @@ begin
   --   · ni prix Stripe : `lib/billing/plans.ts` les déclare sous
   --     STRIPE_PRICE_FOUNDATION et STRIPE_PRICE_ROSTER, absentes de
   --     l'environnement. La session de checkout échoue APRÈS le clic.
-  --   · ni État vendable : `license_type_states` porte zéro `verified_at`,
-  --     donc la génération qui suit le paiement rend 409.
+  --   · ni État vendable : `license_type_states` portait zéro `verified_at`,
+  --     donc la génération qui suit le paiement rendait 409.
+  --
+  -- ⚠ LA SECONDE RAISON EST TOMBÉE LE 17 SEPTEMBRE — la Californie est
+  -- vérifiée, cinq couples, LEP compris. La fermeture tient désormais sur la
+  -- PREMIÈRE seule, plus « les textes ne sont pas jugés ». C'est exactement ce
+  -- que `sellability_decisions` enregistre, et pourquoi l'alarme ci-dessous ne
+  -- compare plus à un zéro : la cause a bougé une fois, elle rebougera.
   --
   -- Encaisser puis refuser est pire que ne pas vendre. Le lot qui les ferme
   -- est `a_button_that_breaks_is_not_shown`, et il vient le dire ICI, comme le
@@ -111,23 +118,89 @@ begin
 
   /*
    * ⚠ ET LA FERMETURE S'EXPIRE TOUTE SEULE. Une fermeture « en attendant » qui
-   * ne dit pas ce qu'elle attend devient permanente par oubli. Celle-ci est
-   * attachée à sa cause : le jour où un État devient vendable, la moitié
-   * mesurable de la raison tombe, ce test vire au rouge, et quelqu'un doit
-   * reprendre la décision au lieu de la laisser dormir.
+   * ne dit pas ce qu'elle attend devient permanente par oubli.
    *
-   * L'autre moitié — les deux prix Stripe — ne se lit pas depuis SQL. Elle est
-   * écrite en toutes lettres dans l'en-tête de la migration qui ferme.
+   * ⚠ LA PREMIÈRE VERSION DE CETTE ALARME A MORDU — PUIS EST RESTÉE ROUGE.
+   * Elle exigeait « si foundation et roster sont fermés, alors zéro État
+   * vendable ». La Californie s'est ouverte le 17 septembre, l'alarme a sonné,
+   * la décision a été reprise : ils RESTENT fermés, parce que les prix Stripe
+   * LIVE manquent et que les textes n'ont pas été jugés. Mais le zéro, lui,
+   * était figé : l'alarme ne pouvait plus repasser au vert sans qu'on supprime
+   * sa condition. Une alarme qui reste rouge n'est plus une alarme — on
+   * apprend à l'ignorer, et le jour où elle dit autre chose, personne ne
+   * regarde.
+   *
+   * Elle compare donc désormais le monde à la PHOTO prise au moment de la
+   * décision (`sellability_decisions`), et non plus à une constante. Verte
+   * tant que rien n'a bougé, rouge au prochain CHANGEMENT DE CAUSE. Elle se
+   * réarme toute seule, ce que le zéro ne savait pas faire.
    */
-  if not (select bool_and(sellable) from public.plans
-           where tier = any (array['foundation', 'roster'])) then
-    assert (select count(*) from public.sellable_states where sellable) = 0,
-      format('The Foundation et The Roster sont fermés, mais %s État(s) sont '
-             'désormais vendables. La raison de la fermeture a changé : '
-             'reprenez la décision (prix Stripe, puis un UPDATE dans une '
-             'migration neuve qui revérifie les trois conditions).',
-             (select count(*) from public.sellable_states where sellable));
-  end if;
+  assert (select count(*) from public.sellability_decisions
+           where tier = any (array['foundation', 'roster'])) = 2,
+    'foundation et roster sont fermés sans décision enregistrée. Une fermeture '
+    'sans propriétaire ni date est un « en attendant » que l''oubli rend '
+    'permanent : voir public.sellability_decisions.';
+
+  -- La décision dit la même chose que la colonne.
+  for v_lot, v_n in
+    select d.tier, 1 from public.sellability_decisions d
+      join public.plans p on p.tier = d.tier
+     where p.sellable is distinct from d.sellable
+  loop
+    assert false, format(
+      'plans.sellable pour %s contredit la décision enregistrée. Quelqu''un a '
+      'basculé la colonne sans repasser par sellability_decisions — ou '
+      'l''inverse.', v_lot);
+  end loop;
+
+  /*
+   * ⚠ LE CŒUR : LA CAUSE A-T-ELLE CHANGÉ DEPUIS LA DÉCISION ? Deux causes se
+   * lisent en SQL. Les deux autres — un prix Stripe LIVE, quelqu'un qui a lu
+   * les textes — n'existent dans aucune table, et `conditions_to_revisit` les
+   * porte en toutes lettres plutôt que de faire semblant de les mesurer.
+   */
+  for v_lot, v_n in
+    select d.tier, 1 from public.sellability_decisions d
+     where d.states_sellable
+             is distinct from (select count(*) from public.sellable_states where sellable)
+        or d.accepted_platforms
+             is distinct from (select count(*) from public.site_platforms
+                                where status = 'accepted')
+  loop
+    assert false, format(
+      'La cause de la décision sur %s a changé : elle a été prise avec %s '
+      'État(s) ouvert(s) et %s plateforme(s) acceptée(s) ; il y en a %s et %s '
+      'aujourd''hui. Reprenez la décision, puis mettez sa ligne à jour dans une '
+      'migration neuve — ne corrigez pas la photo toute seule, c''est ce qui '
+      'ferait taire l''alarme.',
+      v_lot,
+      (select states_sellable from public.sellability_decisions where tier = v_lot),
+      (select accepted_platforms from public.sellability_decisions where tier = v_lot),
+      (select count(*) from public.sellable_states where sellable),
+      (select count(*) from public.site_platforms where status = 'accepted'));
+  end loop;
+
+  /*
+   * ⚠ ET LES FERMETURES QUI N'ONT PAS ENCORE DE DÉCISION SONT DÉCLARÉES, PAS
+   * DÉDUITES. Trois lignes restent fermées sans ligne dans la table : leurs
+   * raisons vivent dans le commentaire de `plans.sellable` (contrôle 2
+   * ci-dessus), pas encore sous forme de décision datée. Une QUATRIÈME
+   * fermeture sans décision fait échouer ce test — ce qui est le seul moment
+   * où quelqu'un se demandera qui la rouvre.
+   */
+  assert (
+    select coalesce(array_agg(p.tier order by p.tier), array[]::text[])
+      from public.plans p
+     where not p.sellable
+       and not exists (select 1 from public.sellability_decisions d where d.tier = p.tier)
+  ) = array['fill_practice', 'fill_solo', 'roster_seat'],
+    format('La liste des fermetures sans décision enregistrée a changé : %s. '
+           'Une fermeture neuve doit venir avec sa décision, sa date et la '
+           'photo de ses causes.',
+           (select array_agg(p.tier order by p.tier) from public.plans p
+             where not p.sellable
+               and not exists (select 1 from public.sellability_decisions d
+                                where d.tier = p.tier)));
 
   raise notice 'sellability: ok';
 end $$;

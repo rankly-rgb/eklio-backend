@@ -10,7 +10,35 @@
 -- vrai ici : marquer une juridiction dans un test serait exactement la copie à
 -- côté de la source qu'on refuse. La section 4 le prouve.
 -- ============================================================================
+-- ⚠ LA PHOTO EST PRISE AVANT LA TRANSACTION, et une table temporaire survit
+-- au rollback qui suit : c'est ce qui permet de prouver qu'il n'a rien laissé
+-- filtrer, au lieu de le supposer en comptant des zéros.
+create temp table _matrice_avant as
+  select license_type_id, state_code, verified_at, verified_by,
+         abbreviation, source_url, note
+    from public.license_type_states;
+
 begin;
+
+/*
+ * ⚠ CE FICHIER SUPPOSAIT UNE MATRICE VIERGE, et la Californie
+ * (`20260917160202`) a rendu cette prémisse fausse — le jour où le produit a
+ * fonctionné comme prévu. Un test dont la prémisse est « rien n'est encore
+ * arrivé » s'expire tout seul, sans prévenir, et c'est ce qu'il vient de faire.
+ *
+ * Il pose donc SA PROPRE prémisse, dans sa transaction : les lignes CA
+ * redeviennent non vérifiées le temps du fichier. Les assertions ci-dessous
+ * sont inchangées — elles gardent exactement les mêmes dents — mais elles ne
+ * dépendent plus de l'état du monde. Le second État vérifié ne les cassera pas.
+ *
+ * Le rollback rend la matrice intacte, et la section finale ne le suppose plus :
+ * elle le PROUVE colonne par colonne contre une photo prise avant la
+ * transaction.
+ */
+update public.license_type_states
+   set verified_at = null, verified_by = null, abbreviation = null,
+       source_url = null, note = null
+ where state_code = 'CA';
 
 -- ---------------------------------------------------------------------------
 -- 1. Aujourd'hui, rien n'est ouvert
@@ -128,7 +156,18 @@ rollback;
 do $$
 declare v_n int;
 begin
-  select count(*) into v_n from public.license_type_states where verified_at is not null;
+  -- Toute différence, dans les deux sens et sur n'importe quelle colonne.
+  select count(*) into v_n from (
+    (select * from _matrice_avant
+      except select license_type_id, state_code, verified_at, verified_by,
+                    abbreviation, source_url, note from public.license_type_states)
+    union all
+    (select license_type_id, state_code, verified_at, verified_by,
+            abbreviation, source_url, note from public.license_type_states
+      except select * from _matrice_avant)
+  ) as d;
   assert v_n = 0,
-    format('le test a laissé %s ligne(s) marquées vérifiées hors de sa transaction', v_n);
+    format('le test a laissé %s ligne(s) modifiées hors de sa transaction', v_n);
 end $$;
+
+drop table _matrice_avant;

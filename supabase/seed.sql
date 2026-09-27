@@ -1111,3 +1111,303 @@ update public.plans set sellable = false
  where tier = any (array['foundation', 'roster']);
 
 -- <<< FOUNDATION AND ROSTER CLOSED <<<
+
+-- >>> CALIFORNIA VERIFIED PAIRS, LEP INCLUDED (mirrored verbatim in supabase/seed.sql) >>>
+
+insert into public.license_types (id, label, description, sort_order, active) values
+  ('lep', 'LEP', 'Licensed Educational Psychologist', 11, true)
+on conflict (id) do update
+  set label = excluded.label,
+      description = excluded.description;
+
+insert into public.license_type_states (license_type_id, state_code) values
+  ('lep', 'CA')
+on conflict do nothing;
+
+update public.license_type_states
+   set verified_at  = date '2026-09-17',
+       verified_by  = 'nainarahal@gmail.com (relevé machine, pages du board lues le 2026-09-17, non relu par un humain)',
+       abbreviation = v.abbrev,
+       source_url   = v.url,
+       note         = v.note
+  from (values
+    ('lcsw', 'LCSW',
+     'https://www.bbs.ca.gov/applicants/lcsw.html',
+     'Board of Behavioral Sciences. Page : « Licensed Clinical Social Worker (LCSW) Applicants ».'),
+    ('lmft', 'LMFT',
+     'https://www.bbs.ca.gov/applicants/lmft.html',
+     'Board of Behavioral Sciences. Page : « Licensed Marriage and Family Therapist (LMFT) Applicants ».'),
+    ('lpcc', 'LPCC',
+     'https://www.bbs.ca.gov/applicants/lpcc.html',
+     'Board of Behavioral Sciences. Page : « Licensed Professional Clinical Counselor (LPCC) applicants ».'),
+    ('lep', 'LEP',
+     'https://www.bbs.ca.gov/applicants/lep.html',
+     'Board of Behavioral Sciences. Page : « Information for Licensed Educational Psychologist (LEP) Applicants ». Aucune inscription pré-licence pour ce titre.'),
+    ('licensed_psychologist', null,
+     'https://www.psychology.ca.gov/applicants/psychologist.shtml',
+     'Board of Psychology (PAS le BBS). La page nomme la licence « Psychologist », sans préfixe « Licensed » et sans aucun sigle. Ni « LP » ni « PSY » : « PSY » est un préfixe de numéro de licence, pas une abréviation du titre. NULL est le fait relevé.')
+  ) as v(lt, abbrev, url, note)
+ where license_type_states.state_code      = 'CA'
+   and license_type_states.license_type_id = v.lt;
+
+-- <<< CALIFORNIA VERIFIED PAIRS, LEP INCLUDED <<<
+
+-- >>> POSITIONING RULE EXAMPLES (mirrored verbatim in supabase/seed.sql) >>>
+
+/*
+ * ⚠ CES DEUX LIGNES SONT DES EXEMPLES DE STRUCTURE, PAS DES RÈGLES. Elles
+ * portent `is_example = true`, leur libellé commence par « EXAMPLE », et elles
+ * sont là pour UNE raison : qu'on puisse voir la mécanique tourner avant que
+ * les vraies règles soient écrites. Elles ne sont pas le fruit d'une décision
+ * produit et personne ne doit les lire comme telles.
+ *
+ * Les remplacer est un INSERT et un DELETE, sans déploiement.
+ */
+insert into public.positioning_rules
+  (id, short_label, description, example_weak, example_strong, sort_order, is_example) values
+  ('example_opens_on_the_writer',
+   'EXAMPLE — the opening is about you, not about her',
+   'PROVISIONAL EXAMPLE, NOT A REAL RULE. Someone scanning a directory reads two or three lines before deciding. If those lines are about your training, she has learned nothing about whether you understand what is happening to her.',
+   'I hold a PhD from Berkeley and have been licensed in California for twelve years.',
+   'The mornings are the hardest part, and you have stopped telling people how little you slept.',
+   1, true),
+  ('example_length_for_the_snippet',
+   'EXAMPLE — the opening is longer than a search result shows',
+   'PROVISIONAL EXAMPLE, NOT A REAL RULE. The bounds below are a placeholder: nobody has measured what Psychology Today actually truncates in search results. See FIRST_LINE_TARGET_CHARS in lib/check/first-line.ts.',
+   null, null, 2, true)
+on conflict (id) do update
+  set short_label   = excluded.short_label,
+      description   = excluded.description,
+      example_weak  = excluded.example_weak,
+      example_strong = excluded.example_strong,
+      sort_order    = excluded.sort_order,
+      is_example    = excluded.is_example;
+
+insert into public.positioning_patterns
+  (id, rule_id, kind, pattern, window_chars, min_chars, max_chars, severity, sort_order) values
+  /* La fenêtre : est-ce que la lectrice apparaît dans l'ouverture ? */
+  ('example_no_second_person_up_front', 'example_opens_on_the_writer',
+   'absent_in_opening', '\y(you|your|yours|you''re|you''ve)\y', 320, null, null, 'costly', 1),
+  /* La longueur, seule des cinq formes à ne porter aucun motif. */
+  ('example_opening_too_long', 'example_length_for_the_snippet',
+   'length', null, null, 40, 700, 'minor', 2)
+on conflict (id) do update
+  set rule_id      = excluded.rule_id,
+      kind         = excluded.kind,
+      pattern      = excluded.pattern,
+      window_chars = excluded.window_chars,
+      min_chars    = excluded.min_chars,
+      max_chars    = excluded.max_chars,
+      severity     = excluded.severity,
+      sort_order   = excluded.sort_order;
+
+-- <<< POSITIONING RULE EXAMPLES <<<
+
+-- >>> POSITIONING RULES V1 (mirrored verbatim in supabase/seed.sql) >>>
+
+delete from public.positioning_patterns where rule_id in
+  (select id from public.positioning_rules where is_example);
+delete from public.positioning_rules where is_example;
+
+insert into public.positioning_rules
+  (id, short_label, description, example_weak, example_strong, sort_order, active, is_example) values
+  ('opening_is_about_her',
+   'Your opening talks about you, not her',
+   'The first thing a client reads is a paragraph about your training. She is scanning for herself. If nothing in the opening is addressed to her, she scrolls on before she reaches the part that would have mattered.',
+   'I am a Licensed Professional Counselor with over twelve years of experience serving the greater Portland area.',
+   'Something ended that you did not choose. Months have gone by, and everyone around you has moved on to other things, so you stopped bringing it up.',
+   10, true, false),
+  ('credential_opens_the_text',
+   'Your licence is the first thing on the page',
+   'Your credential belongs on your profile — the directory already shows it beside your name. Leading with it spends the one sentence she is guaranteed to read on information she can get from the search results.',
+   'Jane Doe, LCSW, is a licensed clinical social worker practicing in Sacramento.',
+   'The argument never lands anywhere. I''m a clinical social worker in Sacramento, and I work with couples who have stopped fighting and started avoiding each other.',
+   20, true, false),
+  ('serves_everyone',
+   'You offer to help everyone, so you speak to no one',
+   'A list that covers individuals, couples, families, children and adults tells a reader that you have not chosen. She is looking for someone who works with her problem in particular — the broader the list, the less likely she is to see herself in it.',
+   'I work with individuals, couples, and families across the lifespan.',
+   'I work with adults who are standing in the middle of a life they didn''t plan for and aren''t sure what to do with.',
+   30, true, false),
+  ('diagnostic_labels_only',
+   'You name the diagnosis, not what she is living',
+   'Nobody types their diagnosis into a search box on the worst night. They type what is happening to them. Naming the clinical category tells her what you treat; naming the experience tells her you have met someone like her.',
+   'I help clients struggling with anxiety and depression.',
+   'You go to work. You answer texts. And underneath it, you keep having the same argument — with your partner, or just in your own head at two in the morning.',
+   40, true, false),
+  ('modality_before_person',
+   'You list your modalities and never address her',
+   'Your training matters, but it is an answer to a question she has not asked yet. When the acronyms appear and the word "you" never does, the profile reads as a CV rather than as an invitation.',
+   'I am trained in CBT, DBT, and EMDR, with additional certification in trauma-informed care.',
+   'I''m trained in EMDR, which shapes how I pay attention. Loss tends to live in the body as much as anywhere else — so I might ask what you notice physically as you say something.',
+   50, true, false),
+  ('whether_youre_laundry_list',
+   'The « whether you''re… » list covers everything and lands nowhere',
+   'This construction is a way of not choosing: it offers three or four problems so that nobody is excluded. The reader recognises the shape of the sentence from every other profile she has read that morning.',
+   'Whether you''re facing anxiety, grief, relationship difficulties, or a major life transition, I''m here to help.',
+   'Most people come to me long after the world decided they should be past it — after the casseroles stopped, after the coworkers stopped asking.',
+   60, true, false),
+  ('safe_space_filler',
+   '« A safe, non-judgmental space » is on almost every profile',
+   'It is true and it is invisible. Because every profile says it, it carries no information — and it uses the space where something only you could say would have gone.',
+   'I provide a safe, non-judgmental space where you can be yourself.',
+   'The way I work is probably slower than you expect. I mostly listen. I don''t fill silences to keep things comfortable.',
+   70, true, false),
+  ('written_in_third_person',
+   'The profile is written about you, not by you',
+   'Third person reads like an entry someone else filed. The first contact a client has with you is this text — first person is the difference between a directory listing and a person speaking.',
+   'Sarah is a licensed marriage and family therapist who has been practicing since 2014.',
+   'I''ve been doing this since 2014, and the way I work has changed a good deal since then.',
+   80, true, false),
+  ('no_next_step',
+   'You never say what happens if she reaches out',
+   'She has read to the end and she is still deciding. A profile that stops without saying what the first contact looks like leaves her to imagine it — and the thing she imagines is usually worse than the thing you would have described.',
+   null,
+   'A first session is mostly you talking and me listening. There''s no obligation to book again. If you''d like to talk, reach out and we''ll find a time.',
+   90, true, false),
+  ('too_short_to_say_anything',
+   'There is not enough here for her to decide',
+   'A very short profile cannot do the work: it can name a specialty but it cannot show how you think. The reader is choosing someone to tell the worst thing about her life to, on the strength of this text alone. The 600-character threshold is an ESTIMATE, not a measurement: no real Psychology Today profile was counted. It lives in positioning_patterns.min_chars and changes with one UPDATE, no deploy.',
+   'I am a licensed therapist in Denver specializing in anxiety, depression, and trauma. Accepting new clients.',
+   null,
+   100, true, false)
+on conflict (id) do update
+  set short_label    = excluded.short_label,
+      description    = excluded.description,
+      example_weak   = excluded.example_weak,
+      example_strong = excluded.example_strong,
+      sort_order     = excluded.sort_order,
+      active         = excluded.active,
+      is_example     = excluded.is_example;
+
+insert into public.positioning_patterns
+  (id, rule_id, kind, pattern, secondary_pattern, window_chars, min_chars, max_chars, severity, sort_order, active) values
+  ('opening_is_about_her', 'opening_is_about_her', 'absent_in_opening',
+   '\y(you|your|you''re|youre|yourself)\y',
+   null, 320, null, null, 'costly', 10, true),
+  ('credential_opens_the_text', 'credential_opens_the_text', 'present',
+   '^[^.!?]{0,90}\y(LPC|LPCC|LMFT|LCSW|LMHC|LCPC|LMSW|Ph\.?D|Psy\.?D|licensed)\y',
+   null, null, null, null, 'costly', 20, true),
+  ('serves_everyone', 'serves_everyone', 'present',
+   '\y(individuals,? (and )?couples|couples,? (and )?famil|children,? adolescents|adolescents,? and adults)\y',
+   null, null, null, null, 'costly', 30, true),
+  ('diagnostic_labels_only', 'diagnostic_labels_only', 'present',
+   '\y(anxiety and depression|depression and anxiety)\y',
+   null, null, null, null, 'costly', 40, true),
+  ('modality_before_person', 'modality_before_person', 'present_without',
+   '\y(CBT|DBT|EMDR|ACT|IFS|EFT|somatic experiencing|psychodynamic|person-centered)\y',
+   '\y(you|your)\y', null, null, null, 'costly', 50, true),
+  ('whether_youre_laundry_list', 'whether_youre_laundry_list', 'present',
+   '\ywhether you''?re\y',
+   null, null, null, null, 'minor', 60, true),
+  ('safe_space_filler', 'safe_space_filler', 'present',
+   '\y(safe space|safe,? (and )?non-?judgment(al)?|non-?judgmental space|judgment-free)\y',
+   null, null, null, null, 'minor', 70, true),
+  ('written_in_third_person', 'written_in_third_person', 'present',
+   '\y(he|she|they) (is|has|holds) (a |an )?(licensed|certified|board-certified|master)',
+   null, null, null, null, 'minor', 80, true),
+  ('no_next_step', 'no_next_step', 'absent',
+   '\y(reach out|get in touch|contact me|book a|schedule a|call me|email me|message me|free consultation|first session)\y',
+   null, null, null, null, 'minor', 90, true),
+  ('too_short_to_say_anything', 'too_short_to_say_anything', 'length',
+   null,
+   null, null, 600, null, 'minor', 100, true)
+on conflict (id) do update
+  set rule_id           = excluded.rule_id,
+      kind              = excluded.kind,
+      pattern           = excluded.pattern,
+      secondary_pattern = excluded.secondary_pattern,
+      window_chars      = excluded.window_chars,
+      min_chars         = excluded.min_chars,
+      max_chars         = excluded.max_chars,
+      severity          = excluded.severity,
+      sort_order        = excluded.sort_order,
+      active            = excluded.active;
+
+-- <<< POSITIONING RULES V1 <<<
+
+-- >>> FIRST LINE FINDINGS SHOWN (mirrored verbatim in supabase/seed.sql) >>>
+
+insert into public.app_settings (key, value) values
+  ('first_line_findings_shown', to_jsonb(3))
+on conflict (key) do update set value = excluded.value;
+
+-- <<< FIRST LINE FINDINGS SHOWN <<<
+
+-- >>> THIRD PERSON BECOMES PRESENT WITHOUT (mirrored verbatim in supabase/seed.sql) >>>
+
+update public.positioning_patterns
+   set kind              = 'present_without',
+       pattern           = '\y[A-Z][a-z]+ (is|has|holds) (a |an )?(licensed|certified|board-certified|master)',
+       secondary_pattern = '\y(supervised by|under the supervision of)\y'
+ where id = 'written_in_third_person';
+
+update public.positioning_rules
+   set description = 'Third person reads like an entry someone else filed. The first contact a client has with you is this text — first person is the difference between a directory listing and a person speaking. KNOWN LIMIT, not an oversight: the pattern matches an unaccented first name, so José, Chloé and Zoë are missed. It also stays silent when the text says "supervised by" or "under the supervision of" — a Texas associate is REQUIRED to write it (22 TAC 681.91(m)), and reproaching someone for obeying the law is the one thing this product must never do.'
+ where id = 'written_in_third_person';
+
+-- <<< THIRD PERSON BECOMES PRESENT WITHOUT <<<
+
+-- >>> THIRD PERSON IS ANCHORED, NOT CAPITALISED (mirrored verbatim in supabase/seed.sql) >>>
+
+update public.positioning_patterns
+   set kind              = 'present_without',
+       pattern           = '^[^.!?]{0,40}\y(is|has|holds) (a |an )?(licensed|certified|board-certified|master)',
+       secondary_pattern = '\y(supervised by|under the supervision of|supervisor|supervision)\y',
+       severity          = 'minor'
+ where id = 'written_in_third_person';
+
+update public.positioning_rules
+   set description = 'Third person reads like an entry someone else filed. The first contact a client has with you is this text — first person is the difference between a directory listing and a person speaking. The pattern is ANCHORED: it looks at the opening only, because a profile written in the third person opens on the name, while "my colleague is a licensed therapist" mid-text is an aside. TWO KNOWN LIMITS, both measured, neither an oversight: (1) a title containing dots closes the window early, so "Sarah Chen, Ph.D., is a licensed psychologist" is missed; (2) it stays silent on any text containing "supervised by", "under the supervision of", "supervisor" or "supervision" — which also silences a supervisor''s own profile. That second cost is paid on purpose: a Texas associate is REQUIRED to write the supervision line (22 TAC 681.91(m)), and reproaching someone for obeying the law is the one thing this product must never do.'
+ where id = 'written_in_third_person';
+
+-- <<< THIRD PERSON IS ANCHORED, NOT CAPITALISED <<<
+
+-- >>> THE WINDOW DOES THE WORK (mirrored verbatim in supabase/seed.sql) >>>
+
+update public.positioning_patterns
+   set pattern           = '^[^!?]{0,40}\y(is|has|holds) (a |an )?(licensed|certified|board-certified|master)',
+       secondary_pattern = '\y(supervised by|under the supervision of|my supervisor|supervisor''s)\y'
+ where id = 'written_in_third_person';
+
+update public.positioning_rules
+   set description = 'Third person reads like an entry someone else filed. The first contact a client has with you is this text — first person is the difference between a directory listing and a person speaking. The pattern is ANCHORED to the first 40 characters, because a profile written in the third person opens on the name, while "my colleague is a licensed therapist" mid-text is an aside. The window, not sentence punctuation, does that work: "Sarah Chen, Ph.D., is a licensed psychologist" is caught, dots and all. It stays silent only on the supervision line itself — "supervised by", "under the supervision of", "my supervisor", "supervisor''s" — because a Texas associate is REQUIRED to write it (22 TAC 681.91(m)), and reproaching someone for obeying the law is the one thing this product must never do. A supervisor''s own profile is NOT silenced. KNOWN LIMIT, measured, not an oversight: a long header before the verb pushes it past the 40-character window, so a pasted name-address-phone block ahead of the first sentence goes unnoticed.'
+ where id = 'written_in_third_person';
+
+-- <<< THE WINDOW DOES THE WORK <<<
+
+-- >>> THIRD PARTY SAYS (mirrored verbatim in supabase/seed.sql) >>>
+
+insert into public.ethics_patterns (id, rule_id, pattern, severity, sort_order, active)
+values (
+  'third_party_says',
+  'client_voice',
+  '\y((a|an|one|my|our|her|his|their|another|the) +)?(former +|current +|past +|longtime +|long-time +)?(colleagues?|supervisors?|mentors?|peers?|co-?workers?|professors?|instructors?|teachers?) +((have|has|had) +)?(once|often|always|recently|sometimes|frequently|usually|more +than +once)? *(said|says|say|told|tells|tell|described|describes|describe|called|calls|call|remarked|observed|joked|puts? +it)\y',
+  'block',
+  20,
+  true
+)
+on conflict (id) do update set
+  rule_id    = excluded.rule_id,
+  pattern    = excluded.pattern,
+  severity   = excluded.severity,
+  sort_order = excluded.sort_order,
+  active     = excluded.active;
+
+update public.ethics_rules
+   set short_label = 'No borrowed voices',
+       description = 'No quotes, paraphrases or reported praise attributed to anyone else — a client, a colleague, a supervisor or a mentor. "Clients often say", and equally "a colleague once described me as".'
+ where id = 'client_voice';
+
+-- <<< THIRD PARTY SAYS <<<
+
+-- >>> TWO CRAFT CLICHES (mirrored verbatim in supabase/seed.sql) >>>
+
+insert into public.banned_phrases (phrase, category, active)
+values
+  ('about the dishwasher',      'directory_cliche', true),
+  ('a hundred and sixty-eight', 'directory_cliche', true),
+  ('168 hours',                 'directory_cliche', true)
+on conflict do nothing;
+
+-- <<< TWO CRAFT CLICHES <<<
