@@ -1,0 +1,14 @@
+-- ============================================================================
+-- ⚠ LA FONCTION DE TRIGGER DE 20260924150000 ÉTAIT EXÉCUTABLE PAR UN CLIENT
+-- ============================================================================
+--
+-- Trouvé le 2026-09-27 en rejouant la suite SQL : deux tests
+-- (20260831090000_revoke_internal_function_surface, 20260911170458_function_surface)
+-- échouaient sur `section_types_pages_exist()`. La migration de restauration a
+-- créé la fonction sans révoquer l'EXECUTE que PostgreSQL accorde à PUBLIC par
+-- défaut ; `anon` et `authenticated` l'héritaient.
+--
+-- Nouvelle migration plutôt que retouche de 20260924150000 : la répétition à
+-- blanc applique celle-là SEULE, en premier, et son octet exact est ce qu'on a
+-- éprouvé contre la restauration.
+revoke all on function public.section_types_pages_exist() from public, anon, authenticated;

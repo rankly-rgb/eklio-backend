@@ -48,8 +48,13 @@ begin
            format('active must be true for status %s', s);
   end loop;
 
+  -- ⚠ UN ABONNEMENT PAR STATUT (20260927110000) : sur un même
+  -- `stripe_subscription_id`, `canceled` est terminal et on ne revient pas à
+  -- `incomplete` — la base refuse désormais ces transitions, que Stripe ne produit
+  -- jamais. Ce bloc teste la colonne générée `active`, pas les transitions.
   foreach s in array array['incomplete','incomplete_expired','past_due','canceled','unpaid','paused'] loop
-    update public.subscriptions set status = s where user_id='99999999-0000-0000-0000-000000000001';
+    update public.subscriptions set status = s, stripe_subscription_id = 'sub_state_' || s
+     where user_id='99999999-0000-0000-0000-000000000001';
     assert (select active from public.subscriptions
              where user_id='99999999-0000-0000-0000-000000000001') is false,
            format('active must be false for status %s', s);
@@ -68,7 +73,8 @@ begin
   exception when others then blocked := true; end;
   assert blocked, 'active could be written directly; it must be generated from status';
 
-  update public.subscriptions set status = 'active' where user_id='99999999-0000-0000-0000-000000000001';
+  update public.subscriptions set status = 'active', stripe_subscription_id = 'sub_state_1'
+   where user_id='99999999-0000-0000-0000-000000000001';
 end
 $$;
 

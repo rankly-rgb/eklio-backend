@@ -337,8 +337,16 @@ begin
   set local role authenticated;
   perform set_config('request.jwt.claims', json_build_object('sub', v_a)::text, true);
 
+  -- ⚠ DÉRIVÉ, PAS ÉCRIT : 20260924100000 a ajouté `overhead` aux deux plans et ce
+  -- compte littéral est resté à 8 — la suite échouait depuis. Ce que le test
+  -- affirme, c'est que la cliente voit TOUT le catalogue, quel qu'en soit le nombre.
   select count(*) into v_n from public.credit_quotas;
-  assert v_n = 8, format('le catalogue de quotas montre %s lignes, attendu 8', v_n);
+  reset role;
+  assert v_n = (select count(*) from public.credit_quotas),
+    format('le catalogue de quotas montre %s lignes à une cliente, et en porte %s', v_n,
+           (select count(*) from public.credit_quotas));
+  assert v_n >= 8, format('le catalogue de quotas est tombé à %s lignes', v_n);
+  set local role authenticated;
 
   update public.credit_quotas set monthly_limit = 9999;
   get diagnostics v_rows = row_count;
