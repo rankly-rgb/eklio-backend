@@ -7,7 +7,7 @@ declare
   v_row  public.subscriptions;
   t      timestamptz := '2026-09-27 10:00:00+00';
 begin
-  insert into auth.users (email) values ('stale-event@eklio-test.invalid') returning id into v_user;
+  insert into auth.users (id, email) values (gen_random_uuid(), 'stale-event@eklio-test.invalid') returning id into v_user;
 
   -- 1. Un event plus ancien ne réécrit pas.
   insert into public.subscriptions (user_id, stripe_subscription_id, status, stripe_event_at)

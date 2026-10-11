@@ -10,7 +10,7 @@ declare
   v_project uuid;
   v_user uuid;
 begin
-  insert into auth.users (email) values ('f64-shape@eklio-test.invalid') returning id into v_user;
+  insert into auth.users (id, email) values (gen_random_uuid(), 'f64-shape@eklio-test.invalid') returning id into v_user;
   insert into public.projects (user_id, name) values (v_user, 'f64 shape') returning id into v_project;
   insert into public.project_briefs (project_id) values (v_project);
 
@@ -121,7 +121,7 @@ declare
   v_r jsonb;
   v_stopped boolean := false;
 begin
-  insert into auth.users (email) values ('f64-reprise@eklio-test.invalid') returning id into v_user;
+  insert into auth.users (id, email) values (gen_random_uuid(), 'f64-reprise@eklio-test.invalid') returning id into v_user;
   insert into public.projects (user_id, name) values (v_user, 'r1') returning id into v_p1;
   insert into public.projects (user_id, name) values (v_user, 'r2') returning id into v_p2;
   insert into public.projects (user_id, name) values (v_user, 'r3') returning id into v_p3;

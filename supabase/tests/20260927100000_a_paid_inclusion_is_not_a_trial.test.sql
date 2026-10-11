@@ -7,7 +7,7 @@ declare
   v_user uuid;
   v_purchase uuid;
 begin
-  insert into auth.users (email) values ('paid-trial@eklio-test.invalid') returning id into v_user;
+  insert into auth.users (id, email) values (gen_random_uuid(), 'paid-trial@eklio-test.invalid') returning id into v_user;
   insert into public.subscriptions (user_id, stripe_subscription_id, status)
        values (v_user, 'sub_paid_trial', 'trialing');
 
