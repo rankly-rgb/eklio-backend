@@ -1,0 +1,39 @@
+# F76 (20261012090000_the_practice_state_has_one_authority) — ce que la production doit
+# porter APRÈS application, relevé sur le rejeu local des 179 migrations le 2026-10-12.
+# Ce n'est PAS l'empreinte de production : celle-ci se relève sur la base, après coup.
+# Lignes '+' : à trouver en production. Lignes '-' : à ne plus y trouver.
++ column|content_items.licence_state_code|51ec27fe9ce7340950461d914b593c8b
++ constraint|content_items.content_items_licence_state_shape|6f435176d8518a0ac2c3a1c1e5ef4eee
++ function.body|content_item_licence_state_problem(p_id uuid)|1f7f7c88f48ca2904969202809f0fbcb
++ function.body|content_items_licence_state()|1849e60d60b0442c2f1c34329bbf986f
++ function.body|practice_place_reprise(p_decisions jsonb)|a11be4f53465bcb71edfbd177aad2353
++ function.body|practice_state_of_kit(p_brand_kit_id uuid)|0141d1362be1f12ec7889b2359388d54
++ function.body|project_briefs_place_to_specs()|902418c0b2409106f36ba02de10d41f8
++ function.body|site_spec_patch(p_brand_kit_id uuid, p_patch jsonb)|51550f3d4967734500bf46be2d32da53
++ function.body|site_specs_place_from_brief()|ee2d9e30b132b237ab26e91bd968f6e4
++ function|content_item_licence_state_problem(p_id uuid)|5640b41a994932bba974980095e8515b
++ function|content_items_licence_state()|a231a03132d249c40943f20b45ae2e1d
++ function|practice_place_reprise(p_decisions jsonb)|cc101ef003e95b698403eaf29e02d5c7
++ function|practice_state_of_kit(p_brand_kit_id uuid)|d52eeec0c4a8660065872d8d60f48f7d
++ function|project_briefs_place_to_specs()|27c2fcbc208122271cb0bcb092b31661
++ function|site_spec_patch(p_brand_kit_id uuid, p_patch jsonb)|2817aecd144d8fb473b0b427b4c72896
++ function|site_specs_place_from_brief()|238566be55ad17166acda17d3a5f2124
++ grant.function.env|content_item_licence_state_problem(p_id uuid)|b50339a10e1de285ac99d4c3990b8693
++ grant.function.env|content_items_licence_state()|b50339a10e1de285ac99d4c3990b8693
++ grant.function.env|practice_place_reprise(p_decisions jsonb)|b50339a10e1de285ac99d4c3990b8693
++ grant.function.env|practice_state_of_kit(p_brand_kit_id uuid)|b50339a10e1de285ac99d4c3990b8693
++ grant.function.env|project_briefs_place_to_specs()|b50339a10e1de285ac99d4c3990b8693
++ grant.function.env|site_specs_place_from_brief()|b50339a10e1de285ac99d4c3990b8693
++ grant.function|content_item_licence_state_problem(p_id uuid)|f440cb7547aafb71bac3b9275ad5f4bd
++ grant.function|content_items_licence_state()|8dd1771e78316f3d93a564b7d81a4c88
++ grant.function|practice_place_reprise(p_decisions jsonb)|8dd1771e78316f3d93a564b7d81a4c88
++ grant.function|practice_state_of_kit(p_brand_kit_id uuid)|8dd1771e78316f3d93a564b7d81a4c88
++ grant.function|project_briefs_place_to_specs()|8dd1771e78316f3d93a564b7d81a4c88
++ grant.function|site_specs_place_from_brief()|8dd1771e78316f3d93a564b7d81a4c88
++ trigger|content_items.content_items_licence_state|44e3b79dbccda743ab150054f22a6e58
++ trigger|project_briefs.project_briefs_place_to_specs|c0c89a0af799fe8fa572f19160297913
++ trigger|site_specs.site_specs_place_from_brief|0f380c3e27c1d073f62c60879b1483d7
+- column|project_briefs.license_state_code|51ec27fe9ce7340950461d914b593c8b
+- constraint|project_briefs.project_briefs_license_state_shape|1f6f9536cdcb6ed1fc289affe0acb244
+- function.body|site_spec_patch(p_brand_kit_id uuid, p_patch jsonb)|6e6ba87cd480b800439a89599e399138
+- function|site_spec_patch(p_brand_kit_id uuid, p_patch jsonb)|b786b74ed8629a2f8265b7cc892f92d7
