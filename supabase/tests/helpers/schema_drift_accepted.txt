@@ -86,3 +86,75 @@ function|site_spec_seed_values(p_brand_kit_id uuid)|7a4e12f680895f336996e691463d
 function|site_spec_suggest_hex(p_move_hex text, p_fixed_hex text, p_target numeric)|ed7a9ec0cd4667798b179078c302de86|d4aff2deeca7859782c2f37474d47c43  # commentaires retirés à l'application ; le dépôt est le côté long
 function|site_spec_text_variant(p_brand_hex text, p_paper_hex text)|023810a0ea7e2af0a825961be9e4881b|dade86e04bdfe5ff27e842c73cf854ab  # commentaires retirés à l'application ; le dépôt est le côté long
 function|site_spec_voice_guide(p_spec jsonb)|a18d10f4ed6b3463e49b92f65d33ebed|c14d849ec01a61344a6689f67b08a663  # commentaires retirés à l'application ; le dépôt est le côté long
+
+# ── 2026-10-12 : CINQUANTE-SIX FINS DE LIGNE, ET DANS L'AUTRE SENS ─────────
+#
+# L'empreinte relevée le 2026-10-12 (178 migrations) diffère du rejeu sur
+# cinquante-six définitions brutes de fonction, et sur RIEN d'autre. Elles ont
+# toutes été appliquées par collage dans l'éditeur SQL de Supabase (voie G du
+# 2026-09-27, F71 du 2026-10-11) : la production stocke leurs corps en fins de
+# ligne CRLF, le dépôt en LF. Ce n'est pas l'écart des quarante-sept ci-dessus
+# (commentaires retirés) : ici la production a gardé toute la prose.
+#
+# Prouvé par le lexer, pas par le regex : `scripts/sql_tokens.py` sur chacune
+# des 56 paires (définition lue en production, définition du rejeu) — 56 flux
+# de jetons identiques, 0 comportement différent. Les quarante-six autres écarts
+# vus au premier passage (contraintes vers auth.users, politiques RLS) venaient
+# du `search_path` de la connexion locale ; relevé comme la CI, ils disparaissent.
+#
+function|abandon_stale_generation_runs()|b05b7c8dff0d88e74dac0620244966e9|40b342084365c8bd76e87b0f41d8e7ca  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|apply_on_demand_write(p_write_id uuid, p_title text, p_caption text, p_on_image_text text, p_alt_text text, p_compose_archetype text, p_payload jsonb, p_rationale text, p_topic_id uuid, p_cost_usd numeric)|ba567efd3926a7eef77c2916d7b38adc|65845ced4d2dfd503ee029b51fdbd5b1  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|assign_topic_to_kit(p_brand_kit_id uuid, p_month date, p_archetype text)|cb0db4cb512667b79be64741d50b125f|5ad7d1cad98a2735dd5be2299f0ede8c  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|begin_on_demand_write(p_item_id uuid, p_idempotency_key text)|cbfcf1160eb9ca54bd738fa438d20847|c40497397020d498901b471dc24f20a9  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|check_monthly_presence_entitlement(p_user uuid)|9d8fb13707c013afe8240a98a1649966|f526ec687525d9238c1c42407fb365b1  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|content_item_json(p_id uuid)|c17df420cd5e8d921be5a1295b824169|39b412fd509f49124b3e0568ba3952b9  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|content_item_valid(p jsonb)|c694f45ba1d4a3e5265ece5c7df63477|55f0aa866f072de52f0f9d48b8e69825  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|content_items_payload_ethics_gate()|1bbf00b6a857c57fccad6b0dfedbcf26|5bf119ea9b334f4eed51f5345fb7f5f5  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|content_items_valid(p jsonb, p_min integer, p_max integer)|138f4fb32c2d9e383d4a18a881d753c0|f3f8061d55174b4e208cd7f03b5d4572  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|content_month_cost(p_user uuid, p_month date)|65bee1915fe02c990e0b5f4de03ef9be|00163a274657d92f3e77e16ab3940ff6  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|content_topic_bank_payload_valid(p_archetype text, p jsonb)|c8c1bc46e1375048f8f0846525b1ada1|eb62a1e4d80c8287380b4df702a9f346  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|content_topic_payload_valid(p_archetype text, p jsonb)|79edeae883f38f352e364130f96384f1|51f242aee7d9554bf2042a0e9ccfde7b  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|content_topic_text(p jsonb)|cccde56a6d136b3e215532125f953065|d2c3d1de4e8fc75e9fa2f342103e6c2a  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|content_topics_banned_phrases_gate()|309185c2b0f066daed1cb74883ad2a6d|ec52e54b7de337c380974a7f5d778df2  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|content_topics_ethics_gate()|a7ae25eac7193c71a9380c17cd02da3a|18b9dc902861d339ceeb5150923c6d12  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|content_words(p text)|191b501258da4c4e636cb971627d604d|fb2716e6a039e45061f52a164ee0a646  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|credit_ledger_apply()|ca642a1df5d3c998d1a0f8928b859365|9455111b3d8b04eaef3194ecd3fbc787  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|credit_ledger_is_append_only()|c673c0f4b87fb5a9d5571242459ccdd8|8ff77577cb7091fab7ce6d7454d8b3cc  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|credit_meter(p_month date)|d931a7da499ad5907a1328a1863f44fe|57932cd6ce1447890dbb5d715f7d83a2  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|credit_monthly_limit(p_user uuid, p_kind text)|4b9f87cbf5af3c2f786f6e1de066c531|7eedc652ca75f6c2926a20dbbdb0cb2c  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|credit_plan_for(p_user uuid)|c6496b84be92fd3c4fd9428ce3e05364|f01e53a937764409c497b7a581ae0f8f  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|credit_remaining(p_user uuid, p_kind text, p_month date)|ae3199f591a87f93287951fcd1ff44a5|bf2654ea4500f7f0833ddc6db8850d1f  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|custom_visual_path(p_brand_kit_id uuid, p_prompt_hash text)|e133571db3129285042b3f3f1ae84be9|12d908b615bee9a9832130f3ff8b5713  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|drawable_count_for_kit(p_brand_kit_id uuid)|1fff54cb8e2aac35e36a9bc6449244e9|b1cec950fbd066824b949479b9289faa  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|drawable_topics_for_kit(p_brand_kit_id uuid, p_archetype text)|9b3d0e1ef6df8ebcf594c19d67bcfe12|ca42f0b7102462cf46c5edb536340739  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|ethics_prohibitive_lead()|83c3805432ac44e51440be3c30dd1e17|01cfe5427ca1451c4307a22a3e3af938  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|ethics_scan(p_text text)|a3f9bd4e728d35e92ea9715f64b29a0d|db2b84016d3cad9ab2475b1c61320364  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|insight_cards_validate_segments()|f539eb34234660df7dbca7f76115731e|9b802dd50ddb8c583a3841d40caf2ef7  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|licence_number_problem(p text)|aaf657ab7f6dfc8ba7fdc2bb8c6af438|eba550d9f91400721e0047f4070dab59  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|licence_number_reprise()|a6c359ab89ed2844f64ae5bf10929afb|26e6bf0c665977f628de1fc7cb535989  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|monthly_presence_entitled()|604a41baf83635c3bbb7e74c65c1639a|4198b3c75448f91d9f912206b1991d3a  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|monthly_presence_past_due_grace()|11df6b28b29332a3cb1b138a5c809a9b|f9edfdd4259121c1b7c795b415f46eff  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|next_background_for_kit(p_brand_kit_id uuid)|5c53d111b4e6c05a663e23d2e48901bd|d88d0009780da8296ab2e15dbdaf1dd4  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|next_topic_for_kit(p_brand_kit_id uuid, p_month date, p_archetype text)|283edd3ef5cb4149f77c1a9685ddcfc8|f1d269ee12898b29c8af972ae36b6e21  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|project_briefs_licence_number_to_specs()|65c22c4c8d5ecddcf651643b0e4d5400|60753150c1dc43eed35db99e11448b2a  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|reassert_topic_assignments(p_brand_kit_id uuid, p_topic_ids uuid[])|a4f42313fd7efe9e3f46680fb18896c7|a9b3eb72b88188ad4f6c38cc1df2f629  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|record_custom_visual(p_brand_kit_id uuid, p_prompt_hash text, p_content_item_id uuid, p_model text, p_quality text, p_size text, p_storage_path text, p_cost_usd numeric, p_reservation_id uuid)|8d9fce5061474e628dee32115c662867|b754b84aaa738136866988fe46207348  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|record_rendered_asset(p_brand_kit_id uuid, p_content_hash text, p_archetype_key text, p_palette_key text, p_storage_path text, p_width integer, p_height integer, p_bytes integer, p_render_ms integer)|17c8606c321a7fbcb56fc6b5fd8eac99|18c3f7603181c3cdf66a63de22802fcf  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|release_on_demand_write(p_write_id uuid, p_cost_usd numeric)|b925d8ab1b77c7dbb307ddc4fa942628|688dfb6a908378f6a0462aca2dc0f523  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|release_stale_credit_reservations(p_older_than interval)|0239931a0e14a0e7e231c08d8f406e67|3b5a52cac30bab914614a03a16b1ab31  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|release_stale_topic_assignments()|7442a6164684ae3e0a9ed63b591291a4|b5b1425b760e839d975d99c8726d395f  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|render_rationale(p_template text, p_brand_kit_id uuid)|0cb8dcf0b7ea2527275288dec89b8263|4bd01e64d56a015404cd9e206bbab956  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|rendered_asset_path(p_brand_kit_id uuid, p_content_hash text)|f513a77694e20cd597179efaf029736c|c9f832d1b8a5c5aca3e9cd9cf3b9676b  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|reserve_credit(p_user uuid, p_kind text, p_reason text, p_ref_type text, p_ref_id uuid, p_estimated_cost_usd numeric, p_provider text, p_model text, p_month date)|2af0c963a9772e61cd53a5310718e783|57e7cd385504bb27f46a0b9166a7e7c0  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|section_types_pages_exist()|1ab50da3948b74bb841e9d42ad9feea2|4e87f2d58f66478d13e665b2dcee1c8d  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|set_content_item_topic(p_id uuid, p_topic_id uuid, p_rationale text)|f6d098c87e89e54566a1cb7a1474112c|03126886139e401d6c8e48c5ea080515  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|settle_credit(p_reservation_id uuid, p_actual_cost_usd numeric, p_succeeded boolean)|ed96cc81fcbdf2812eae13116a7dabdf|75e874ae9ce6d54dd0eb8410cdefc2ae  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|site_spec_patch(p_brand_kit_id uuid, p_patch jsonb)|b786b74ed8629a2f8265b7cc892f92d7|310c4089576bcc29d3c0a7b9e4ad4e30  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|site_specs_licence_number_from_brief()|a05c9f20a49c889f557ef5b3e1779539|91c8ebda87c31951e24324bdb58e5ca8  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|subscriptions_refuse_stale_event()|9de83a1304a7bf1dace3443866552c4f|131168c624ba0df6773937f943950236  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|suggest_topics_for_kit(p_brand_kit_id uuid, p_month date, p_limit integer, p_exclude uuid[])|75022fb7142f12178c7b4b18c7569057|d9ce140cfac581a66667b99461618268  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|swap_content_item(p_id uuid)|3245cd4d5e7ca3352a90374e7f95f43d|fd475b6e1de646b6f4ce1c32328dbfd4  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|topic_assignment_grace()|1893bbbfb3d1544126361e6cdf59a24f|4a4ed1f41444932589b7fa85645cbd0a  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|topic_assignment_holds(p_brand_kit_id uuid, p_topic_id uuid, p_assigned_at timestamp with time zone)|46b240f3a2924d6831906ac66207a38a|b6d5ee66b82163ec1527011a6145c844  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|topic_collision_window()|dd2989ebf1f8b64726d03514ebd40f64|b49282c256a54d2ff68af646b9e043a4  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+function|update_content_item(p_id uuid, p_patch jsonb)|140c59f10ad33129a1e2934ac569a30c|432f361f163a23eb13a816b5f039c6b2  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)

@@ -1,76 +1,38 @@
-# Fingerprint of PRODUCTION (project fobgdsupyfslxbswfuay), recorded 2026-09-17,
-# refreshed after 20260917210004_positioning_is_a_second_family_of_rules.
+# Fingerprint of PRODUCTION (project fobgdsupyfslxbswfuay), recorded 2026-10-12,
+# after 20261011090000_a_refused_month_is_not_resumed — 178 migrations in
+# supabase_migrations.schema_migrations.
 #
 # Produced by supabase/tests/helpers/schema_fingerprint.sql.
 #
-# ⚠ HOW THIS COPY WAS BUILT, BECAUSE IT WAS NOT A SINGLE `psql -f`.
+# ⚠ HOW THIS COPY WAS BUILT. Read in ONE query through the Supabase MCP
+# endpoint, read-only: the same SQL, its lines aggregated into one text with
+# md5(string_agg(... order by line)). The md5 recomputed here over the received
+# text matched the md5 production reported (3250 lines), so this file is
+# production's output, not an impression of it. Then sorted, like the replay.
 #
-# The only path to production from here is the Supabase MCP endpoint, which
-# returns rows through a conversation rather than into a file. So the query was
-# run against production in the PER-KIND AGGREGATE form — twelve rows of
-# `kind, count, md5(concat of sorted per-line md5)` — and compared with the same
-# aggregate computed on a local replay of supabase/migrations.
+# ⚠ THE PREVIOUS COPY (2026-09-17) PREDATED THE 30 MIGRATIONS APPLIED ON
+# 2026-09-27: schema-drift.yml was red on main from then on, reporting age as
+# drift (689 divergences) — and would have warned of nothing.
 #
-# NINE of the twelve kinds came back identical, count and hash, which is a proof
-# that the two multisets of lines are equal, not an impression that they look
-# alike. Those nine are written here from the replay. The three that differed —
-# `function`, `grant.table.env`, `grant.function.env` — were pulled from
-# production line by line.
-#
-# The assembled file was then re-hashed per kind and matched production's twelve
-# reported values, all twelve, before being written. Re-run that check against
-# a live production by running schema_fingerprint.sql there in its aggregate
-# form and comparing with the per-kind table below.
-#
-# ⚠ A SNAPSHOT, NOT A LIVE READ. CI cannot reach production. This file goes
-# stale the moment a migration is applied to production without regenerating it,
-# and a stale baseline reports age as drift. Where psql can reach production:
+# ⚠ A SNAPSHOT, NOT A LIVE READ. Regenerate it after every migration applied to
+# production:
 #
 #   psql "$PROD_URL" -At -f supabase/tests/helpers/schema_fingerprint.sql \
 #     | sort > supabase/tests/helpers/schema_fingerprint.production.txt
 #
-#   column                 577
-#   constraint             357
-#   function               258
-#   function.body          258
-#   grant.function         258
-#   grant.function.env     258
-#   grant.table             67
-#   grant.table.env         67
-#   index                  149
-#   policy                 149
-#   rls                     67
-#   trigger                 39
-#   TOTAL                 2504
+#   column                   762
+#   constraint               506
+#   function                 311
+#   function.body            311
+#   grant.function           311
+#   grant.function.env       311
+#   grant.table               89
+#   grant.table.env           89
+#   index                    206
+#   policy                   215
+#   rls                       89
+#   trigger                   50
 #
-# Canonical hash (order-independent, collation-immune):
-#   md5(concat of sorted md5-per-line) = 729abe1eae8eff05a6b15931212a10e4
-#
-# ⚠ THE LEDGER NOW COINCIDES WITH THE REPOSITORY, 131 VERSIONS ON BOTH SIDES,
-# same list (md5 of the sorted versions: f785880e226b2def4c4e8a0772d3f171).
-# Two of them, 20260901190000 and 20260902090000, were applied by hand around
-# 1-2 September and never entered the ledger; they were recorded on 17 September
-# once their effects had been PROVEN present (the ensure_rls event trigger is
-# live, and grant.function matches a full replay bit for bit). Each carries the
-# repository copy as its statement, with a header saying so -- the text that
-# actually ran was never captured, and the row does not pretend otherwise.
-#
-# ⚠ THE `.env` KINDS ARE THE SERVER, NOT THE SCHEMA — see the long note in
-# schema_fingerprint.sql. They carry the MAINTAIN privilege (PostgreSQL 17 only),
-# the REFERENCES/TRIGGER/TRUNCATE that Supabase's default privileges hand out,
-# and the EXECUTE supabase_admin holds on extension functions. schema_drift_
-# report.py prints them and does not count them.
-#
-# ⚠ WHAT THIS SNAPSHOT STILL SHOWS AS DRIFT, KNOWINGLY: the `function` rows.
-# Roughly forty raw definitions differ from a replay while their `function.body`
-# rows are identical — the whole `function.body` kind matches production exactly.
-# That is a comment-or-whitespace difference, and the previous snapshot of
-# 12 September already carried thirty-eight of them. They are being diffed one
-# by one -- see supabase/tests/helpers/function_drift_2026-09-17.md, which
-# classifies all forty-one with a real PostgreSQL lexer rather than the
-# approximate regex: forty-one comment gaps, proven, and zero behavioural.
-# This file records what production HAS, which is the only thing a baseline may
-# ever record.
 column|anon_generation_counters.bucket|bfd7a34b0a0954d9eb54990fcc6ca449
 column|anon_generation_counters.day|507d91db1cacfe4362f078375f6b42b5
 column|anon_generation_counters.used|25f2c985f13dbb4b044e6947b5be27cf
@@ -87,6 +49,15 @@ column|asset_catalog.label|bfd7a34b0a0954d9eb54990fcc6ca449
 column|asset_catalog.min_tier|51f5818a1cadaba5fb9541f52f8df556
 column|asset_catalog.sort_order|25f2c985f13dbb4b044e6947b5be27cf
 column|asset_catalog.width|dd6c221a0234f979ca31fe24eb5c777c
+column|background_assignments.asset_id|44a3ae17bd44ec9ab36d03e5d8b14002
+column|background_assignments.assigned_at|1f4d4e4ad4c5de3894870bee567ea8a7
+column|background_assignments.brand_kit_id|44a3ae17bd44ec9ab36d03e5d8b14002
+column|background_library.active|dae01412d6b86590b78a042d88105c2c
+column|background_library.created_at|1f4d4e4ad4c5de3894870bee567ea8a7
+column|background_library.id|941fb71b7f14da4ef6249ea7f0ef7c41
+column|background_library.slug|bfd7a34b0a0954d9eb54990fcc6ca449
+column|background_library.storage_path|bfd7a34b0a0954d9eb54990fcc6ca449
+column|background_library.treatment|bfd7a34b0a0954d9eb54990fcc6ca449
 column|banned_phrases.active|dae01412d6b86590b78a042d88105c2c
 column|banned_phrases.category|bfd7a34b0a0954d9eb54990fcc6ca449
 column|banned_phrases.id|941fb71b7f14da4ef6249ea7f0ef7c41
@@ -186,6 +157,14 @@ column|comp_grants.id|941fb71b7f14da4ef6249ea7f0ef7c41
 column|comp_grants.reason|bfd7a34b0a0954d9eb54990fcc6ca449
 column|comp_grants.revoked_at|3b78bc2a0ac0f96164a997cdf0a40dd6
 column|comp_grants.user_id|44a3ae17bd44ec9ab36d03e5d8b14002
+column|content_archetypes.active|dae01412d6b86590b78a042d88105c2c
+column|content_archetypes.id|bfd7a34b0a0954d9eb54990fcc6ca449
+column|content_archetypes.illustration_zone|bfd7a34b0a0954d9eb54990fcc6ca449
+column|content_archetypes.is_multi_card|6c203456f8e9693c8eef8890bfa995b9
+column|content_archetypes.items_max|cf768e9c1c16d3e1e1ce816fe60855fc
+column|content_archetypes.items_min|cf768e9c1c16d3e1e1ce816fe60855fc
+column|content_archetypes.label|bfd7a34b0a0954d9eb54990fcc6ca449
+column|content_archetypes.sort_order|cf768e9c1c16d3e1e1ce816fe60855fc
 column|content_checkins.brand_kit_id|44a3ae17bd44ec9ab36d03e5d8b14002
 column|content_checkins.created_at|1f4d4e4ad4c5de3894870bee567ea8a7
 column|content_checkins.happening|44735fcd1e7f687a9ac2130e871687ab
@@ -194,6 +173,22 @@ column|content_checkins.month|d5fa620fa39dfd57711ba83951dc1e4f
 column|content_checkins.sessions_theme|44735fcd1e7f687a9ac2130e871687ab
 column|content_checkins.taking_clients|44735fcd1e7f687a9ac2130e871687ab
 column|content_checkins.updated_at|1f4d4e4ad4c5de3894870bee567ea8a7
+column|content_generation_results.created_at|1f4d4e4ad4c5de3894870bee567ea8a7
+column|content_generation_results.id|941fb71b7f14da4ef6249ea7f0ef7c41
+column|content_generation_results.result|75cfa09e88ebe48706483bf199825a4a
+column|content_generation_results.run_id|44a3ae17bd44ec9ab36d03e5d8b14002
+column|content_generation_results.settled|6c203456f8e9693c8eef8890bfa995b9
+column|content_generation_results.topic_id|44a3ae17bd44ec9ab36d03e5d8b14002
+column|content_generation_results.usage|99540861e5d4a894380d260f2be522c7
+column|content_generation_runs.batch_id|44735fcd1e7f687a9ac2130e871687ab
+column|content_generation_runs.brand_kit_id|44a3ae17bd44ec9ab36d03e5d8b14002
+column|content_generation_runs.closed_at|3b78bc2a0ac0f96164a997cdf0a40dd6
+column|content_generation_runs.cost_usd|a2243af9c79a09c15cc121760a911cc7
+column|content_generation_runs.created_at|1f4d4e4ad4c5de3894870bee567ea8a7
+column|content_generation_runs.id|941fb71b7f14da4ef6249ea7f0ef7c41
+column|content_generation_runs.month|d5fa620fa39dfd57711ba83951dc1e4f
+column|content_generation_runs.state|5c9ff416cf9ac1261aedc9163de38af6
+column|content_generation_runs.updated_at|1f4d4e4ad4c5de3894870bee567ea8a7
 column|content_grounds.cost_cents|25f2c985f13dbb4b044e6947b5be27cf
 column|content_grounds.created_at|1f4d4e4ad4c5de3894870bee567ea8a7
 column|content_grounds.fingerprint|bfd7a34b0a0954d9eb54990fcc6ca449
@@ -210,22 +205,29 @@ column|content_image_allowance.month|d5fa620fa39dfd57711ba83951dc1e4f
 column|content_image_allowance.reserved_cents|25f2c985f13dbb4b044e6947b5be27cf
 column|content_image_allowance.updated_at|1f4d4e4ad4c5de3894870bee567ea8a7
 column|content_image_allowance.used_cents|25f2c985f13dbb4b044e6947b5be27cf
+column|content_intents.id|bfd7a34b0a0954d9eb54990fcc6ca449
+column|content_intents.label|bfd7a34b0a0954d9eb54990fcc6ca449
+column|content_intents.sort_order|cf768e9c1c16d3e1e1ce816fe60855fc
 column|content_items.alt_text|44735fcd1e7f687a9ac2130e871687ab
 column|content_items.archetype|bfd7a34b0a0954d9eb54990fcc6ca449
 column|content_items.brand_kit_id|44a3ae17bd44ec9ab36d03e5d8b14002
 column|content_items.caption|44735fcd1e7f687a9ac2130e871687ab
 column|content_items.category|44735fcd1e7f687a9ac2130e871687ab
+column|content_items.compose_archetype|44735fcd1e7f687a9ac2130e871687ab
 column|content_items.created_at|1f4d4e4ad4c5de3894870bee567ea8a7
 column|content_items.id|941fb71b7f14da4ef6249ea7f0ef7c41
 column|content_items.image_slot|44735fcd1e7f687a9ac2130e871687ab
 column|content_items.month_id|48fab12d214b859cc04a8a4228752965
 column|content_items.on_image_text|44735fcd1e7f687a9ac2130e871687ab
+column|content_items.payload|75cfa09e88ebe48706483bf199825a4a
+column|content_items.rationale|44735fcd1e7f687a9ac2130e871687ab
 column|content_items.register|44735fcd1e7f687a9ac2130e871687ab
 column|content_items.scheduled_for|571a6d6177dfb805a9406a97cea7277d
 column|content_items.status|8e39ecc2838b153011ceb4e705e09569
 column|content_items.tags|338601327b34fecf4a320a90ba8c047a
 column|content_items.theme|44735fcd1e7f687a9ac2130e871687ab
 column|content_items.title|44735fcd1e7f687a9ac2130e871687ab
+column|content_items.topic_id|48fab12d214b859cc04a8a4228752965
 column|content_items.updated_at|1f4d4e4ad4c5de3894870bee567ea8a7
 column|content_months.brand_kit_id|44a3ae17bd44ec9ab36d03e5d8b14002
 column|content_months.created_at|1f4d4e4ad4c5de3894870bee567ea8a7
@@ -251,6 +253,72 @@ column|content_registers.id|bfd7a34b0a0954d9eb54990fcc6ca449
 column|content_registers.label|bfd7a34b0a0954d9eb54990fcc6ca449
 column|content_registers.safety_rule|bfd7a34b0a0954d9eb54990fcc6ca449
 column|content_registers.sort_order|cf768e9c1c16d3e1e1ce816fe60855fc
+column|content_segments.created_at|1f4d4e4ad4c5de3894870bee567ea8a7
+column|content_segments.id|941fb71b7f14da4ef6249ea7f0ef7c41
+column|content_segments.modality_id|bfd7a34b0a0954d9eb54990fcc6ca449
+column|content_segments.persona_id|bfd7a34b0a0954d9eb54990fcc6ca449
+column|content_segments.state_code|51ec27fe9ce7340950461d914b593c8b
+column|content_topics.archetype_key|bfd7a34b0a0954d9eb54990fcc6ca449
+column|content_topics.caption_seed|bfd7a34b0a0954d9eb54990fcc6ca449
+column|content_topics.created_at|1f4d4e4ad4c5de3894870bee567ea8a7
+column|content_topics.ethics_reviewed_at|3b78bc2a0ac0f96164a997cdf0a40dd6
+column|content_topics.expires_at|3b78bc2a0ac0f96164a997cdf0a40dd6
+column|content_topics.generation_batch_id|48fab12d214b859cc04a8a4228752965
+column|content_topics.hook|bfd7a34b0a0954d9eb54990fcc6ca449
+column|content_topics.id|941fb71b7f14da4ef6249ea7f0ef7c41
+column|content_topics.insight_card_id|48fab12d214b859cc04a8a4228752965
+column|content_topics.intent|bfd7a34b0a0954d9eb54990fcc6ca449
+column|content_topics.payload|a0e061c181b982c23913499a5ffb060a
+column|content_topics.rationale_template|bfd7a34b0a0954d9eb54990fcc6ca449
+column|content_topics.segment_id|44a3ae17bd44ec9ab36d03e5d8b14002
+column|content_topics.timely|6c203456f8e9693c8eef8890bfa995b9
+column|content_topics.title|bfd7a34b0a0954d9eb54990fcc6ca449
+column|credit_balances.actual_cost_usd|a2243af9c79a09c15cc121760a911cc7
+column|credit_balances.consumed|25f2c985f13dbb4b044e6947b5be27cf
+column|credit_balances.estimated_cost_usd|a2243af9c79a09c15cc121760a911cc7
+column|credit_balances.kind|bfd7a34b0a0954d9eb54990fcc6ca449
+column|credit_balances.month|d5fa620fa39dfd57711ba83951dc1e4f
+column|credit_balances.releases|25f2c985f13dbb4b044e6947b5be27cf
+column|credit_balances.reservations|25f2c985f13dbb4b044e6947b5be27cf
+column|credit_balances.settlements|25f2c985f13dbb4b044e6947b5be27cf
+column|credit_balances.updated_at|1f4d4e4ad4c5de3894870bee567ea8a7
+column|credit_balances.user_id|44a3ae17bd44ec9ab36d03e5d8b14002
+column|credit_ledger.actual_cost_usd|c0f5a0ffe6259b12c7dd28a66376847f
+column|credit_ledger.created_at|1f4d4e4ad4c5de3894870bee567ea8a7
+column|credit_ledger.delta|08dc10c32b29217c8d729bf9fe97d77f
+column|credit_ledger.entry_type|bfd7a34b0a0954d9eb54990fcc6ca449
+column|credit_ledger.estimated_cost_usd|c0f5a0ffe6259b12c7dd28a66376847f
+column|credit_ledger.id|941fb71b7f14da4ef6249ea7f0ef7c41
+column|credit_ledger.kind|bfd7a34b0a0954d9eb54990fcc6ca449
+column|credit_ledger.model|44735fcd1e7f687a9ac2130e871687ab
+column|credit_ledger.month|d5fa620fa39dfd57711ba83951dc1e4f
+column|credit_ledger.provider|44735fcd1e7f687a9ac2130e871687ab
+column|credit_ledger.reason|bfd7a34b0a0954d9eb54990fcc6ca449
+column|credit_ledger.ref_id|48fab12d214b859cc04a8a4228752965
+column|credit_ledger.ref_type|44735fcd1e7f687a9ac2130e871687ab
+column|credit_ledger.reservation_id|48fab12d214b859cc04a8a4228752965
+column|credit_ledger.user_id|44a3ae17bd44ec9ab36d03e5d8b14002
+column|credit_month_audit.cost_usd|c0f5a0ffe6259b12c7dd28a66376847f
+column|credit_month_audit.kind|44735fcd1e7f687a9ac2130e871687ab
+column|credit_month_audit.month|571a6d6177dfb805a9406a97cea7277d
+column|credit_month_audit.releases|de75f88ce8313f3f24dd9c5b2aafb799
+column|credit_month_audit.reservations|de75f88ce8313f3f24dd9c5b2aafb799
+column|credit_month_audit.settlements|de75f88ce8313f3f24dd9c5b2aafb799
+column|credit_month_audit.user_id|48fab12d214b859cc04a8a4228752965
+column|credit_quotas.kind|bfd7a34b0a0954d9eb54990fcc6ca449
+column|credit_quotas.monthly_limit|dd6c221a0234f979ca31fe24eb5c777c
+column|credit_quotas.plan|bfd7a34b0a0954d9eb54990fcc6ca449
+column|custom_visual_generations.brand_kit_id|44a3ae17bd44ec9ab36d03e5d8b14002
+column|custom_visual_generations.content_item_id|48fab12d214b859cc04a8a4228752965
+column|custom_visual_generations.cost_usd|d26ba6ebffb18273d662daa48d06aef9
+column|custom_visual_generations.created_at|1f4d4e4ad4c5de3894870bee567ea8a7
+column|custom_visual_generations.id|941fb71b7f14da4ef6249ea7f0ef7c41
+column|custom_visual_generations.model|bfd7a34b0a0954d9eb54990fcc6ca449
+column|custom_visual_generations.prompt_hash|bfd7a34b0a0954d9eb54990fcc6ca449
+column|custom_visual_generations.quality|bfd7a34b0a0954d9eb54990fcc6ca449
+column|custom_visual_generations.reservation_id|44a3ae17bd44ec9ab36d03e5d8b14002
+column|custom_visual_generations.size|bfd7a34b0a0954d9eb54990fcc6ca449
+column|custom_visual_generations.storage_path|bfd7a34b0a0954d9eb54990fcc6ca449
 column|degrees.active|dae01412d6b86590b78a042d88105c2c
 column|degrees.full_name|bfd7a34b0a0954d9eb54990fcc6ca449
 column|degrees.id|bfd7a34b0a0954d9eb54990fcc6ca449
@@ -336,6 +404,33 @@ column|generation_credits.plan_tier|663922a3c6bb2ee96ff195de83224ddb
 column|generation_credits.project_id|44a3ae17bd44ec9ab36d03e5d8b14002
 column|generation_credits.regenerations_used|963f4261ac62386adc96aba9c49c50b3
 column|generation_credits.updated_at|1f4d4e4ad4c5de3894870bee567ea8a7
+column|illustration_library.active|dae01412d6b86590b78a042d88105c2c
+column|illustration_library.archetype_key|44735fcd1e7f687a9ac2130e871687ab
+column|illustration_library.created_at|1f4d4e4ad4c5de3894870bee567ea8a7
+column|illustration_library.id|941fb71b7f14da4ef6249ea7f0ef7c41
+column|illustration_library.slug|bfd7a34b0a0954d9eb54990fcc6ca449
+column|illustration_library.svg|bfd7a34b0a0954d9eb54990fcc6ca449
+column|illustration_library.version|312bd96e2d3de6d2f79836e364595f40
+column|insight_cards.created_at|1f4d4e4ad4c5de3894870bee567ea8a7
+column|insight_cards.expires_at|1d90ba5b1bb334b101daeb349d422e62
+column|insight_cards.id|941fb71b7f14da4ef6249ea7f0ef7c41
+column|insight_cards.published_at|3b78bc2a0ac0f96164a997cdf0a40dd6
+column|insight_cards.run_id|44a3ae17bd44ec9ab36d03e5d8b14002
+column|insight_cards.segments|be8203290db919f445bad56464f17ac9
+column|insight_cards.source_id|bfd7a34b0a0954d9eb54990fcc6ca449
+column|insight_cards.summary|bfd7a34b0a0954d9eb54990fcc6ca449
+column|insight_runs.finished_at|3b78bc2a0ac0f96164a997cdf0a40dd6
+column|insight_runs.id|941fb71b7f14da4ef6249ea7f0ef7c41
+column|insight_runs.searches_used|25f2c985f13dbb4b044e6947b5be27cf
+column|insight_runs.started_at|1f4d4e4ad4c5de3894870bee567ea8a7
+column|insight_runs.state|c79e9be7445c0615329e29a8c40e5346
+column|insight_runs.week|d5fa620fa39dfd57711ba83951dc1e4f
+column|insight_sources.active|dae01412d6b86590b78a042d88105c2c
+column|insight_sources.id|bfd7a34b0a0954d9eb54990fcc6ca449
+column|insight_sources.kind|bfd7a34b0a0954d9eb54990fcc6ca449
+column|insight_sources.label|bfd7a34b0a0954d9eb54990fcc6ca449
+column|insight_sources.sort_order|cf768e9c1c16d3e1e1ce816fe60855fc
+column|insight_sources.url|44735fcd1e7f687a9ac2130e871687ab
 column|launch_checklist_items.brand_kit_id|44a3ae17bd44ec9ab36d03e5d8b14002
 column|launch_checklist_items.created_at|1f4d4e4ad4c5de3894870bee567ea8a7
 column|launch_checklist_items.description|44735fcd1e7f687a9ac2130e871687ab
@@ -381,6 +476,13 @@ column|notifications.kind|bfd7a34b0a0954d9eb54990fcc6ca449
 column|notifications.payload|99540861e5d4a894380d260f2be522c7
 column|notifications.read_at|3b78bc2a0ac0f96164a997cdf0a40dd6
 column|notifications.user_id|44a3ae17bd44ec9ab36d03e5d8b14002
+column|on_demand_writes.content_item_id|44a3ae17bd44ec9ab36d03e5d8b14002
+column|on_demand_writes.created_at|1f4d4e4ad4c5de3894870bee567ea8a7
+column|on_demand_writes.idempotency_key|bfd7a34b0a0954d9eb54990fcc6ca449
+column|on_demand_writes.id|941fb71b7f14da4ef6249ea7f0ef7c41
+column|on_demand_writes.reservation_id|44a3ae17bd44ec9ab36d03e5d8b14002
+column|on_demand_writes.settled_at|3b78bc2a0ac0f96164a997cdf0a40dd6
+column|on_demand_writes.state|6946e7dd00a9d5a8080c5067e67d7ac2
 column|organization_members.activated_at|3b78bc2a0ac0f96164a997cdf0a40dd6
 column|organization_members.created_at|1f4d4e4ad4c5de3894870bee567ea8a7
 column|organization_members.id|941fb71b7f14da4ef6249ea7f0ef7c41
@@ -478,6 +580,8 @@ column|project_briefs.completed_steps|35ea837ba0f5c417576ebf5dc0fd836e
 column|project_briefs.data|99540861e5d4a894380d260f2be522c7
 column|project_briefs.degree_id|44735fcd1e7f687a9ac2130e871687ab
 column|project_briefs.gain_card_ids|338601327b34fecf4a320a90ba8c047a
+column|project_briefs.license_number|44735fcd1e7f687a9ac2130e871687ab
+column|project_briefs.license_state_code|51ec27fe9ce7340950461d914b593c8b
 column|project_briefs.license_type_id|44735fcd1e7f687a9ac2130e871687ab
 column|project_briefs.modality_ids|991ef2888960c469a81ab43a982c3d03
 column|project_briefs.modality_prominence|44735fcd1e7f687a9ac2130e871687ab
@@ -540,6 +644,17 @@ column|purchases.stripe_payment_intent_id|44735fcd1e7f687a9ac2130e871687ab
 column|purchases.tier|bfd7a34b0a0954d9eb54990fcc6ca449
 column|purchases.updated_at|1f4d4e4ad4c5de3894870bee567ea8a7
 column|purchases.user_id|44a3ae17bd44ec9ab36d03e5d8b14002
+column|rendered_assets.archetype_key|bfd7a34b0a0954d9eb54990fcc6ca449
+column|rendered_assets.brand_kit_id|44a3ae17bd44ec9ab36d03e5d8b14002
+column|rendered_assets.bytes|08dc10c32b29217c8d729bf9fe97d77f
+column|rendered_assets.content_hash|bfd7a34b0a0954d9eb54990fcc6ca449
+column|rendered_assets.created_at|1f4d4e4ad4c5de3894870bee567ea8a7
+column|rendered_assets.height|08dc10c32b29217c8d729bf9fe97d77f
+column|rendered_assets.id|941fb71b7f14da4ef6249ea7f0ef7c41
+column|rendered_assets.palette_key|bfd7a34b0a0954d9eb54990fcc6ca449
+column|rendered_assets.render_ms|08dc10c32b29217c8d729bf9fe97d77f
+column|rendered_assets.storage_path|bfd7a34b0a0954d9eb54990fcc6ca449
+column|rendered_assets.width|08dc10c32b29217c8d729bf9fe97d77f
 column|section_types.active|dae01412d6b86590b78a042d88105c2c
 column|section_types.allowed_pages|9ec2c9986d615ed7694b697c835c404d
 column|section_types.default_enabled|0ff73dc5af51db9c227bd032dd66651c
@@ -633,6 +748,7 @@ column|subscriptions.created_at|1f4d4e4ad4c5de3894870bee567ea8a7
 column|subscriptions.current_period_end|3b78bc2a0ac0f96164a997cdf0a40dd6
 column|subscriptions.id|941fb71b7f14da4ef6249ea7f0ef7c41
 column|subscriptions.status|bfd7a34b0a0954d9eb54990fcc6ca449
+column|subscriptions.stripe_event_at|3b78bc2a0ac0f96164a997cdf0a40dd6
 column|subscriptions.stripe_price_id|44735fcd1e7f687a9ac2130e871687ab
 column|subscriptions.stripe_subscription_id|bfd7a34b0a0954d9eb54990fcc6ca449
 column|subscriptions.trial_end|3b78bc2a0ac0f96164a997cdf0a40dd6
@@ -649,6 +765,10 @@ column|tone_cards.id|bfd7a34b0a0954d9eb54990fcc6ca449
 column|tone_cards.keywords|9ec2c9986d615ed7694b697c835c404d
 column|tone_cards.sample_hero|bfd7a34b0a0954d9eb54990fcc6ca449
 column|tone_cards.sort_order|08dc10c32b29217c8d729bf9fe97d77f
+column|topic_assignments.assigned_at|1f4d4e4ad4c5de3894870bee567ea8a7
+column|topic_assignments.brand_kit_id|44a3ae17bd44ec9ab36d03e5d8b14002
+column|topic_assignments.month|d5fa620fa39dfd57711ba83951dc1e4f
+column|topic_assignments.topic_id|44a3ae17bd44ec9ab36d03e5d8b14002
 column|type_pairings.active|dae01412d6b86590b78a042d88105c2c
 column|type_pairings.body_font|bfd7a34b0a0954d9eb54990fcc6ca449
 column|type_pairings.google_fonts_url|bfd7a34b0a0954d9eb54990fcc6ca449
@@ -681,6 +801,13 @@ constraint|app_settings.app_settings_pkey|729d3ed6c85722f863da384d2313331e
 constraint|asset_catalog.asset_catalog_kind_check|9daabeb80267cd534b7b4665a0457ec6
 constraint|asset_catalog.asset_catalog_min_tier_check|472dfa6ccc9bee4f047580d7a4e956ed
 constraint|asset_catalog.asset_catalog_pkey|729d3ed6c85722f863da384d2313331e
+constraint|background_assignments.background_assignments_asset_id_fkey|51d2fe951f9c5e61515947b06b115f30
+constraint|background_assignments.background_assignments_brand_kit_id_fkey|2741a6bc16a0f06f45296dd0030fd66b
+constraint|background_assignments.background_assignments_pkey|a552defbf77cfef9eae69f11c47c36d7
+constraint|background_library.background_library_pkey|4c6419b3704337bbfe50f018842a9ad3
+constraint|background_library.background_library_slug_check|d26e66afad1a43e4e0f614720a299890
+constraint|background_library.background_library_slug_key|687397275d0e852fb2a4b50394adffee
+constraint|background_library.background_library_treatment_check|eeb2a4a9a4400849e122209323e78801
 constraint|banned_phrases.banned_phrases_category_check|8cce42683d9c64c0aa6aeb72d1c2ff42
 constraint|banned_phrases.banned_phrases_pkey|4c6419b3704337bbfe50f018842a9ad3
 constraint|brand_assets.brand_assets_brand_kit_id_fkey|2741a6bc16a0f06f45296dd0030fd66b
@@ -736,6 +863,10 @@ constraint|comp_grants.comp_grants_granted_by_check|42a8427cbe18e0f084f90a1563c2
 constraint|comp_grants.comp_grants_pkey|4c6419b3704337bbfe50f018842a9ad3
 constraint|comp_grants.comp_grants_reason_check|a9252cac158ca98614f40d0391c354cc
 constraint|comp_grants.comp_grants_user_id_fkey|85d8b2f5f0c0f6b4dcb854efb61a8cb1
+constraint|content_archetypes.content_archetypes_items_check|380e7a8bbaadf9de8f29bbe4c669acf6
+constraint|content_archetypes.content_archetypes_label_check|9e61e1d4ac2915666609f532ac5bfae7
+constraint|content_archetypes.content_archetypes_pkey|4c6419b3704337bbfe50f018842a9ad3
+constraint|content_archetypes.content_archetypes_zone_check|e43b71b75bb7b39fc974ea22120004af
 constraint|content_checkins.content_checkins_brand_kit_id_fkey|2741a6bc16a0f06f45296dd0030fd66b
 constraint|content_checkins.content_checkins_happening_check|93edd939374627f009014a131f28fe76
 constraint|content_checkins.content_checkins_kit_month_key|ba547cf08396d209103174e9eef43dc3
@@ -743,6 +874,14 @@ constraint|content_checkins.content_checkins_month_check|9f398ab62912fe4efbcc0d2
 constraint|content_checkins.content_checkins_pkey|4c6419b3704337bbfe50f018842a9ad3
 constraint|content_checkins.content_checkins_sessions_check|ebed0c1cd55db75b09c8f7c5463b749b
 constraint|content_checkins.content_checkins_taking_check|346409672d1c9074f3c7d70b16b6621f
+constraint|content_generation_results.content_generation_results_pkey|4c6419b3704337bbfe50f018842a9ad3
+constraint|content_generation_results.content_generation_results_run_id_fkey|c6597a2b968a6f235d689a0b2a0b520e
+constraint|content_generation_results.content_generation_results_topic_id_fkey|d1dee20311ce28f47d04e323194d65ed
+constraint|content_generation_results.content_generation_results_unique|8cdccc24936ea9a02389fc9eb577f99f
+constraint|content_generation_runs.content_generation_runs_brand_kit_id_fkey|2741a6bc16a0f06f45296dd0030fd66b
+constraint|content_generation_runs.content_generation_runs_month_check|9f398ab62912fe4efbcc0d203fc5ab10
+constraint|content_generation_runs.content_generation_runs_pkey|4c6419b3704337bbfe50f018842a9ad3
+constraint|content_generation_runs.content_generation_runs_state_check|919c57040cb9d6476c326ddb5f23fc49
 constraint|content_grounds.content_grounds_cost_check|baa295378ebd3ffb36abd154e6bf606d
 constraint|content_grounds.content_grounds_month_id_fkey|317d384c79a519f6c1010ccbf18dcd41
 constraint|content_grounds.content_grounds_month_theme_key|5a39936434cc3ffee442764bf92467bf
@@ -757,21 +896,29 @@ constraint|content_image_allowance.content_image_allowance_pkey|8c3f65bc8733b6d2
 constraint|content_image_allowance.content_image_allowance_reserved_check|eb91379376513d003a93e6c235f9a5ed
 constraint|content_image_allowance.content_image_allowance_used_check|c37be6eeccf822675add673a2ef7d879
 constraint|content_image_allowance.content_image_allowance_within_budget_check|6ec3679c27bb88c98b883fd7aabd27d3
+constraint|content_intents.content_intents_label_check|4ffbb80e685e778db1ef6d64f52f70f8
+constraint|content_intents.content_intents_label_fits_band|b8f12342beda90f38bf433fcd16bf688
+constraint|content_intents.content_intents_pkey|4c6419b3704337bbfe50f018842a9ad3
 constraint|content_items.content_items_alt_text_check|93f661bd6662daec06001983993d9b37
 constraint|content_items.content_items_archetype_check|480daedbef3eb6c9ee32baef0c75cc44
 constraint|content_items.content_items_brand_kit_id_fkey|2741a6bc16a0f06f45296dd0030fd66b
 constraint|content_items.content_items_caption_check|b5c0af4b5b69a99bfaba0e4431a1d224
 constraint|content_items.content_items_category_check|ec1f3e17a6d40716a053b754e6572a93
+constraint|content_items.content_items_compose_archetype_fkey|75d4a7a17acab75894e01b715f54df1b
 constraint|content_items.content_items_google_post_has_no_image|6c5a8c66bf6a710fe32d972f00c7df94
 constraint|content_items.content_items_image_slot_check|bce15eefc6ecef908625d0eff65bfa2c
 constraint|content_items.content_items_month_id_fkey|236835606d57dfb1ac5a0b8e5aa303e3
 constraint|content_items.content_items_on_image_text_check|86cf2d638e8a64a66ad18eac9ebba4d9
+constraint|content_items.content_items_payload_needs_archetype|3a21328e7baba30761af92dd942ca992
+constraint|content_items.content_items_payload_valid|60b1bf37f054c5c2be30e80312ba0639
 constraint|content_items.content_items_pkey|4c6419b3704337bbfe50f018842a9ad3
+constraint|content_items.content_items_rationale_check|5e03c52c08059230ba81ffffb78bde34
 constraint|content_items.content_items_register_fkey|a71ac8f5a44d1d2f40edd89454898bf5
 constraint|content_items.content_items_status_check|f267471d3e674ddc746e9a908aff82f8
 constraint|content_items.content_items_tags_check|f3dc4069cc159436c7b67f481d9b9bf9
 constraint|content_items.content_items_theme_check|355414ba10e830db074d2a5c4d4154a1
 constraint|content_items.content_items_title_check|7d08ea302bde5392adef3891c1d283c9
+constraint|content_items.content_items_topic_id_fkey|d0d23a5456a4a9430781ebafaad0ec70
 constraint|content_months.content_months_brand_kit_id_fkey|2741a6bc16a0f06f45296dd0030fd66b
 constraint|content_months.content_months_kit_month_key|ba547cf08396d209103174e9eef43dc3
 constraint|content_months.content_months_month_check|9f398ab62912fe4efbcc0d203fc5ab10
@@ -793,6 +940,65 @@ constraint|content_publications.content_publications_pkey|4c6419b3704337bbfe50f0
 constraint|content_registers.content_registers_label_check|09111c3dc3c51465f1774b14accbca93
 constraint|content_registers.content_registers_pkey|4c6419b3704337bbfe50f018842a9ad3
 constraint|content_registers.content_registers_rule_check|7406bd63315d49e80835a76f96a99fde
+constraint|content_segments.content_segments_modality_id_fkey|c38f007ef99b1ba6b0abd6bb86b336bb
+constraint|content_segments.content_segments_persona_id_fkey|009245d6f8c034c4c07b68cecd5da0ad
+constraint|content_segments.content_segments_pkey|4c6419b3704337bbfe50f018842a9ad3
+constraint|content_segments.content_segments_state_check|10c7c7fda99439838fffd37a53e80fa0
+constraint|content_topics.content_topics_archetype_key_fkey|2821f0f53778af13cf6993103591497d
+constraint|content_topics.content_topics_caption_check|0edc4360903e3e184d05ccea74bd5693
+constraint|content_topics.content_topics_hook_check|d7fc5cd579ccc280d8d7eb68f6c39516
+constraint|content_topics.content_topics_insight_card_id_fkey|0dd6fd45744ecae517bfdfc7777961ae
+constraint|content_topics.content_topics_intent_fkey|a6844cce2b91343ca305705305541ade
+constraint|content_topics.content_topics_payload_check|991bd145a628cd004d5c1a87cef0a02c
+constraint|content_topics.content_topics_pkey|4c6419b3704337bbfe50f018842a9ad3
+constraint|content_topics.content_topics_rationale_check|f95292f48ef797af9314bd7402fe2dd5
+constraint|content_topics.content_topics_segment_id_fkey|771ae1bd2116fddc646f22535bd2b81c
+constraint|content_topics.content_topics_timely_expiry_check|b32312b738bbdde7891e851d8016ae92
+constraint|content_topics.content_topics_title_check|323034e728bef8a49c1a7c33bc10360c
+constraint|credit_balances.credit_balances_actual_check|659ca9baa1d20bb11f201458bafa05ef
+constraint|credit_balances.credit_balances_consumed_check|dc5d4269b23dd85f5d53ccf0bae3cee7
+constraint|credit_balances.credit_balances_estimated_check|cab01c5bbdb4f9438ee841a29c445e30
+constraint|credit_balances.credit_balances_kind_check|0a2f484d1e31b3c4107538bb78118dd3
+constraint|credit_balances.credit_balances_month_check|9f398ab62912fe4efbcc0d203fc5ab10
+constraint|credit_balances.credit_balances_outcomes_check|f0a22838fc0914764b9f5b13a492c52d
+constraint|credit_balances.credit_balances_pkey|eb3d19bdc4f781230bc456522037939d
+constraint|credit_balances.credit_balances_releases_check|1d93013297d8382a4fe0201eb1f27e9a
+constraint|credit_balances.credit_balances_reservations_check|09c8a54e1ea80a933e8e4ba83f147ba7
+constraint|credit_balances.credit_balances_settlements_check|fce93709fb92a634b9d7c267b8fd4bee
+constraint|credit_balances.credit_balances_user_id_fkey|85d8b2f5f0c0f6b4dcb854efb61a8cb1
+constraint|credit_ledger.credit_ledger_actual_check|9ebe5c7a339067772c9d339be7db0ed0
+constraint|credit_ledger.credit_ledger_entry_type_check|339fbac9d96aba11dacea3130e455391
+constraint|credit_ledger.credit_ledger_estimated_check|be4f4b0b44f524f1eb1d53f346dc4d2b
+constraint|credit_ledger.credit_ledger_kind_check|0a2f484d1e31b3c4107538bb78118dd3
+constraint|credit_ledger.credit_ledger_model_check|d499d91148549af54589d1ff24a17afc
+constraint|credit_ledger.credit_ledger_month_check|9f398ab62912fe4efbcc0d203fc5ab10
+constraint|credit_ledger.credit_ledger_overhead_is_free_check|ca3c596444e6efe16779b5b9d1ce5440
+constraint|credit_ledger.credit_ledger_pkey|4c6419b3704337bbfe50f018842a9ad3
+constraint|credit_ledger.credit_ledger_provider_check|afc344e010ff568f27691b5df102ccb4
+constraint|credit_ledger.credit_ledger_reason_check|a9252cac158ca98614f40d0391c354cc
+constraint|credit_ledger.credit_ledger_ref_check|836717a4c9e5612b5034805742b6ad4a
+constraint|credit_ledger.credit_ledger_release_shape_check|24d51dfd28659bd6857515f5dedd790d
+constraint|credit_ledger.credit_ledger_reservation_id_fkey|7bd7e4ac4743f18deef8cff4b17ba135
+constraint|credit_ledger.credit_ledger_reservation_shape_check|e39bfab2ac81f0844b56f18971ae7034
+constraint|credit_ledger.credit_ledger_settlement_shape_check|a5007b697cdeee0211f0f418d89ef00d
+constraint|credit_ledger.credit_ledger_swap_is_free_check|13aa308b020741bd05fd5c30b6693f61
+constraint|credit_ledger.credit_ledger_user_id_fkey|85d8b2f5f0c0f6b4dcb854efb61a8cb1
+constraint|credit_quotas.credit_quotas_kind_check|0a2f484d1e31b3c4107538bb78118dd3
+constraint|credit_quotas.credit_quotas_limit_check|f7db87e8e1b1211e407eb309f6b85948
+constraint|credit_quotas.credit_quotas_pkey|add38f0f5868d3b3d67ffadd185d885a
+constraint|credit_quotas.credit_quotas_plan_check|8389faa1eabb761a673db4b41c6fa661
+constraint|custom_visual_generations.custom_visual_cost_check|64e7b43ae85a688fa2f32fb0267237d0
+constraint|custom_visual_generations.custom_visual_generations_brand_kit_id_fkey|2741a6bc16a0f06f45296dd0030fd66b
+constraint|custom_visual_generations.custom_visual_generations_content_item_id_fkey|123f0ad2fcf0850c56ab128b96ea942d
+constraint|custom_visual_generations.custom_visual_generations_pkey|4c6419b3704337bbfe50f018842a9ad3
+constraint|custom_visual_generations.custom_visual_generations_reservation_id_fkey|c9bfc28ae578ddbcd315346d9bcf756e
+constraint|custom_visual_generations.custom_visual_hash_check|eba62319ca82c322aa87a167ff1f0b9b
+constraint|custom_visual_generations.custom_visual_kit_prompt_key|f390845df8f5c2257408ec30d520d276
+constraint|custom_visual_generations.custom_visual_model_check|02c1e1393abad4fd22ad7b68279282f4
+constraint|custom_visual_generations.custom_visual_path_check|b521e49f90ea10ff696c998e7911c221
+constraint|custom_visual_generations.custom_visual_path_prefix_check|374a34258a5eb3742a9fa55bbf720341
+constraint|custom_visual_generations.custom_visual_quality_check|f9b034159ec0f7d722f18d83cb6cf8fb
+constraint|custom_visual_generations.custom_visual_size_check|4ad349a052c00e29b33789c94599f1a9
 constraint|degrees.degrees_label_check|0f7882a02a85b55610788f27260c6ffc
 constraint|degrees.degrees_pkey|4c6419b3704337bbfe50f018842a9ad3
 constraint|direction_asset_daily_spend.direction_asset_daily_spend_actual_check|7de0f0aa27f3d143b15819d16797d717
@@ -839,6 +1045,27 @@ constraint|generation_credits.generation_credits_pkey|4c6419b3704337bbfe50f01884
 constraint|generation_credits.generation_credits_plan_tier_fkey|df0aa137825b062162cd058afb813741
 constraint|generation_credits.generation_credits_project_id_fkey|07f3414b4de8691ee7edea30c01f758f
 constraint|generation_credits.generation_credits_project_id_key|4d5536461431e71ddfa1a4ffd2a451a2
+constraint|illustration_library.illustration_library_archetype_key_fkey|2821f0f53778af13cf6993103591497d
+constraint|illustration_library.illustration_library_pkey|4c6419b3704337bbfe50f018842a9ad3
+constraint|illustration_library.illustration_library_slug_check|d26e66afad1a43e4e0f614720a299890
+constraint|illustration_library.illustration_library_slug_version_key|b2c13a792af1c58d64cc53c2b9968c4a
+constraint|illustration_library.illustration_library_svg_check|6c3d6ce35856f095297ec83235fd4e0b
+constraint|illustration_library.illustration_library_version_check|3e5843bf80ef107834bb748fbe091642
+constraint|insight_cards.insight_cards_pkey|4c6419b3704337bbfe50f018842a9ad3
+constraint|insight_cards.insight_cards_run_id_fkey|727ec9b2dc5b98a8029e91cce12f10ca
+constraint|insight_cards.insight_cards_segments_check|5cae71b4154080f072bf5f9bf0214397
+constraint|insight_cards.insight_cards_source_id_fkey|be360c589dde4100f185f2ef124a524b
+constraint|insight_cards.insight_cards_summary_check|6cfafa298022ed8d8fa69d09f7711df9
+constraint|insight_runs.insight_runs_finished_check|645abd14d338cb30887125388da32109
+constraint|insight_runs.insight_runs_pkey|4c6419b3704337bbfe50f018842a9ad3
+constraint|insight_runs.insight_runs_searches_check|120284421943cb60a2e2fe8a75089e6b
+constraint|insight_runs.insight_runs_state_check|7bb35b3e65d27a4586023763bfd7a9eb
+constraint|insight_runs.insight_runs_week_check|7081bdb89004676ff53cee0370509492
+constraint|insight_runs.insight_runs_week_key|92edc184b55d265972c22a2946263169
+constraint|insight_sources.insight_sources_kind_check|d01c6a7af407d7a4b3147e407a75b706
+constraint|insight_sources.insight_sources_label_check|8ff8e2207dd4b71c1c0bcb4b7458a1b3
+constraint|insight_sources.insight_sources_pkey|4c6419b3704337bbfe50f018842a9ad3
+constraint|insight_sources.insight_sources_url_check|e7391bbdad0b1d3d16d72a2f7ebd3d86
 constraint|launch_checklist_items.launch_checklist_items_brand_kit_id_fkey|2741a6bc16a0f06f45296dd0030fd66b
 constraint|launch_checklist_items.launch_checklist_items_brand_kit_id_key_key|624ee327fc5304178931c77ae07cce65
 constraint|launch_checklist_items.launch_checklist_items_done_xor_skipped_check|d4a8c4fb65c2725c0591d2240e9537ae
@@ -866,6 +1093,12 @@ constraint|notifications.notifications_brand_kit_id_fkey|2741a6bc16a0f06f45296dd
 constraint|notifications.notifications_kind_check|0599acff0d1b01da466d4460a78136d5
 constraint|notifications.notifications_pkey|4c6419b3704337bbfe50f018842a9ad3
 constraint|notifications.notifications_user_id_fkey|f52ea365e97de6e8cafd675b03a940e4
+constraint|on_demand_writes.on_demand_writes_content_item_id_fkey|eb1e9bc55192ae0d6359740e51824848
+constraint|on_demand_writes.on_demand_writes_key_check|aa87ef9842db91fd1253ab048589a961
+constraint|on_demand_writes.on_demand_writes_pkey|4c6419b3704337bbfe50f018842a9ad3
+constraint|on_demand_writes.on_demand_writes_reservation_id_fkey|c9bfc28ae578ddbcd315346d9bcf756e
+constraint|on_demand_writes.on_demand_writes_state_check|cda62404bd48638ed522f161135f6c07
+constraint|on_demand_writes.on_demand_writes_unique|cbc606dd4374f23a1b1a23471cb1f786
 constraint|organization_members.organization_members_active_shape_check|adead69072cf63cf81e1fe85ff83f3c2
 constraint|organization_members.organization_members_invited_shape_check|29c0d0d59416c661899dda990a46da27
 constraint|organization_members.organization_members_organization_id_fkey|3c702b28ccc97a0ac52c0acefcdea477
@@ -926,6 +1159,8 @@ constraint|profiles.profiles_pkey|4c6419b3704337bbfe50f018842a9ad3
 constraint|project_briefs.project_briefs_builder_target_id_fkey|cc89dc2733e927b0b3711362aec56ea5
 constraint|project_briefs.project_briefs_data_shape_check|1336f1b7b6ce3b9cf0cea500351474c2
 constraint|project_briefs.project_briefs_degree_id_fkey|14eaa8c78c0b903e955d63eb61ca1111
+constraint|project_briefs.project_briefs_license_number_shape|0417b5a0bc196d0696cdb16c23eba6d1
+constraint|project_briefs.project_briefs_license_state_shape|1f6f9536cdcb6ed1fc289affe0acb244
 constraint|project_briefs.project_briefs_license_type_id_fkey|b8159309958158272024a4247b32ad13
 constraint|project_briefs.project_briefs_modality_ids_check|42dcb979add889831c2b609b5163bc83
 constraint|project_briefs.project_briefs_modality_prominence_fkey|3a05c521832ddc0840a116edcf67608b
@@ -971,9 +1206,21 @@ constraint|purchases.purchases_status_check|92596a2feb87b097b4cb4bdc9d44cbcd
 constraint|purchases.purchases_stripe_checkout_session_id_key|eb15d74653b6bdcb910ecf3f52bd9f4d
 constraint|purchases.purchases_tier_check|2521cd46a5b9b6164daa41d37532bbf1
 constraint|purchases.purchases_user_id_fkey|f52ea365e97de6e8cafd675b03a940e4
-constraint|section_types.section_types_allowed_pages_check|2b3007815efcc683c57974bef66c72c6
+constraint|rendered_assets.rendered_assets_archetype_key_fkey|2821f0f53778af13cf6993103591497d
+constraint|rendered_assets.rendered_assets_brand_kit_id_fkey|2741a6bc16a0f06f45296dd0030fd66b
+constraint|rendered_assets.rendered_assets_bytes_check|5833e8cd6370442ef2de7bd77741a717
+constraint|rendered_assets.rendered_assets_dims_check|0a0f16914b343b4a0aed1432d2b2b342
+constraint|rendered_assets.rendered_assets_hash_check|779b9eba80103890ca4acd7ea53d3138
+constraint|rendered_assets.rendered_assets_kit_hash_key|38732618ac44c31b84cfe03b14750a89
+constraint|rendered_assets.rendered_assets_palette_check|3cfbb90c52bf9546b2f8f7c9317de722
+constraint|rendered_assets.rendered_assets_path_check|b521e49f90ea10ff696c998e7911c221
+constraint|rendered_assets.rendered_assets_path_prefix_check|374a34258a5eb3742a9fa55bbf720341
+constraint|rendered_assets.rendered_assets_pkey|4c6419b3704337bbfe50f018842a9ad3
+constraint|rendered_assets.rendered_assets_render_ms_check|7c4afa99f58b28a384da7b84192b4617
+constraint|section_types.section_types_allowed_pages_check|014eabce2f221c2c62e842c68287a43b
 constraint|section_types.section_types_fields_check|36ab937b4057fa34a5eec96a571f7414
 constraint|section_types.section_types_label_check|25234d90fd8080d35c19fe3cedbfd4ef
+constraint|section_types.section_types_pages_exist_trigger|aac6dc9e89c94dfced18fa2e02f5e5bc
 constraint|section_types.section_types_pkey|4c6419b3704337bbfe50f018842a9ad3
 constraint|section_types.section_types_source_check|df94f1965c1fbe1648e42a669a77549d
 constraint|sellability_decisions.sellability_decisions_accepted_platforms_check|7a6ed6dce9f8b033d55c81ef842a76fa
@@ -1037,6 +1284,10 @@ constraint|subscriptions.subscriptions_user_id_key|180ab7ada944bc4434863ec0e09cc
 constraint|tone_cards.tone_cards_keywords_check|9856186b7b30955f6e1be6e201c2a5aa
 constraint|tone_cards.tone_cards_pkey|4c6419b3704337bbfe50f018842a9ad3
 constraint|tone_cards.tone_cards_sample_hero_check|32000198d9e5a4bc28672b08f87e99de
+constraint|topic_assignments.topic_assignments_brand_kit_id_fkey|2741a6bc16a0f06f45296dd0030fd66b
+constraint|topic_assignments.topic_assignments_month_check|9f398ab62912fe4efbcc0d203fc5ab10
+constraint|topic_assignments.topic_assignments_pkey|7f554a922a96432bd5e70b50f84d37fc
+constraint|topic_assignments.topic_assignments_topic_id_fkey|d1dee20311ce28f47d04e323194d65ed
 constraint|type_pairings.type_pairings_google_fonts_url_check|c59b2e4f017afce5c0772a9b52b203be
 constraint|type_pairings.type_pairings_pkey|4c6419b3704337bbfe50f018842a9ad3
 constraint|user_uploads.user_uploads_brand_kit_id_fkey|2741a6bc16a0f06f45296dd0030fd66b
@@ -1050,12 +1301,16 @@ constraint|usp_fingerprints.usp_fingerprints_brief_id_key|5e590577b7aeda80275ee2
 constraint|usp_fingerprints.usp_fingerprints_pkey|4c6419b3704337bbfe50f018842a9ad3
 constraint|usp_fingerprints.usp_fingerprints_user_id_fkey|85d8b2f5f0c0f6b4dcb854efb61a8cb1
 constraint|usp_stopwords.usp_stopwords_pkey|2ca4eb3aebf71cae7c1a554a3bc4282e
+function.body|abandon_stale_generation_runs()|4246586aab877bd71670df89e460182b
 function.body|accept_organization_invitation(p_token text)|da4c2e904fff592252373b59adf44a0c
 function.body|anon_spend_today()|aa1f39884b700f28e215e05b1939bf12
 function.body|anon_token_hash()|482b057944f1b00466528761d4571dad
 function.body|app_search(p_brand_kit_id uuid, p_query text)|bfc42b8af9265843fb0f980e5f11161e
+function.body|apply_on_demand_write(p_write_id uuid, p_title text, p_caption text, p_on_image_text text, p_alt_text text, p_compose_archetype text, p_payload jsonb, p_rationale text, p_topic_id uuid, p_cost_usd numeric)|85ce8885d16324823fc4de22c5a0b29d
 function.body|approve_content_month(p_month_id uuid)|3f7063b6c20bba59301d466f123b6308
 function.body|asset_variant_path(p_brand_kit_id uuid, p_key text, p_fingerprint text, p_kind text, p_size integer, p_format text)|37971710a51387c6af5339b2ec82d1e3
+function.body|assign_topic_to_kit(p_brand_kit_id uuid, p_month date, p_archetype text)|98489cd3ca8c78199b5a27c0c7be02b5
+function.body|begin_on_demand_write(p_item_id uuid, p_idempotency_key text)|7da6d0184f36f539c2fa603f8a6ea361
 function.body|brand_images_claim(p_brand_kit_id uuid, p_slot text, p_image_fingerprint text, p_cost_estimate_cents integer, p_daily_cap_cents integer, p_reclaim_after interval)|e7381c216697e71625bda29822c855c9
 function.body|brand_images_enabled()|bcf7f40765d424d22df65041007baeb4
 function.body|brand_images_mark_failed(p_image_id uuid, p_claim_token timestamp with time zone, p_status text, p_failure_reason text)|b7cd193b04cb7e556dff3b841e28307c
@@ -1087,6 +1342,7 @@ function.body|brief_preview(p_brief_id uuid)|7aad44e4a5cdbec69d401eddbe0c976d
 function.body|brief_progress_step_renumber_up(p_progress integer)|403f670fd5188ec0895612e69ee093fc
 function.body|brief_step_renumber_up(p_step smallint)|33885912a6111cb504c16be6701954b7
 function.body|caller_is_the_database()|166929c27d574e3b27524a3c3540b60b
+function.body|check_monthly_presence_entitlement(p_user uuid)|3dc832a5b7ff9a0b284b4f6e7bf2a625
 function.body|comp_access_active()|9046df1f8d68cb08ab093d56294b506d
 function.body|comp_grant_active(p_user_id uuid)|f85fc6cbc58e61ca0f57f1d739b85639
 function.body|comp_grant_credits(p_user_id uuid)|aa787dd645d3369f60398940092c4402
@@ -1095,13 +1351,30 @@ function.body|consume_anon_generation(p_ip_hash text, p_kind text)|0922907c45111
 function.body|consume_check_rewrite()|65d8d8b7d29aef50d9942b6c07b90af6
 function.body|consume_generation_credit(p_brand_kit_id uuid)|7ca84edac4b55c94f42e967dc4261a74
 function.body|content_error(p_code text)|b7f8c40886ac1bb462b0db8e7cc9a296
-function.body|content_item_json(p_id uuid)|e40584ba798ad45accfd553ad7ae8622
+function.body|content_item_json(p_id uuid)|ab3e3a7aa8b5d325f883ea579068b43f
+function.body|content_item_valid(p jsonb)|683866d3ba2d2b040d2f831229f7445b
 function.body|content_items_ethics_gate()|d09ef7af263ceb7a3298d46c778c4a2a
+function.body|content_items_payload_ethics_gate()|7cdeb4dfde42ec4e18be597bac2db4c4
 function.body|content_items_theme_belongs_to_month()|ac065d95237419b3ea450a1ba68191f9
+function.body|content_items_valid(p jsonb, p_min integer, p_max integer)|dbbd815627a875a96afdc74d9c35907c
 function.body|content_kit_access(p_brand_kit_id uuid)|bce3e6013e04ba8e5ef9a124bc5f4c72
+function.body|content_month_cost(p_user uuid, p_month date)|69ba2e0419baf95363803e908d1ae6c3
 function.body|content_normalize_tags(p_tags text[])|db92a986695a32bfe4d877ef420940a1
 function.body|content_preferences_validate_registers()|d4ac79616ddb7e7ced2f96a716e02a56
+function.body|content_topic_bank_payload_valid(p_archetype text, p jsonb)|4582dbb459e27e344e2f7539d3b105b1
+function.body|content_topic_payload_valid(p_archetype text, p jsonb)|ec673206809cc218002de34c5c9a5bf9
+function.body|content_topic_text(p jsonb)|7b5a67e33a69303d217497d388f5c6de
+function.body|content_topics_banned_phrases_gate()|1fac9f92c7720caa5918e1ad3c667259
+function.body|content_topics_ethics_gate()|4116f519908420536c016dd5e5a512c3
+function.body|content_words(p text)|1a0684c8297ea9e0cb9884ba125ae451
 function.body|create_content_item(p_brand_kit_id uuid, p_archetype text, p_scheduled_for date)|05d66934455b6d91bb59551e1a15cd13
+function.body|credit_ledger_apply()|ff6c5dffa8940c0f3fb6f1aea9a1858a
+function.body|credit_ledger_is_append_only()|0418074714c1cc6beb53cd5843bf466b
+function.body|credit_meter(p_month date)|da8f6fe9875c70c7d24c962512421eab
+function.body|credit_monthly_limit(p_user uuid, p_kind text)|53bc7c1dea66399f748199c0828283a3
+function.body|credit_plan_for(p_user uuid)|9fc2b5e9e6d8360013d02c659d13a932
+function.body|credit_remaining(p_user uuid, p_kind text, p_month date)|30ec8f6303e98f5b5aac510bd990f5b2
+function.body|custom_visual_path(p_brand_kit_id uuid, p_prompt_hash text)|8e14758b938f1a92d6a23c80812bfc73
 function.body|delete_brand_kit(p_brand_kit_id uuid)|db68845a7607af49e6e6cd40204a1cdc
 function.body|delete_content_item(p_id uuid)|d3c9c91510404c2273b6e1b04f9dc1d5
 function.body|delete_user_upload(p_id uuid)|628745af1e46dfdd091d7a9436275c0f
@@ -1111,9 +1384,12 @@ function.body|direction_assets_mark_ready(p_asset_id uuid, p_claim_token timesta
 function.body|direction_limits()|3a0e053b910ae9f04b2ff82c0f761330
 function.body|directory_profiles_ethics_gate()|60015f86f2665f74c1f521c86a269790
 function.body|directory_structured_valid(p jsonb)|bce89a76dfa046ee30fb34946f678208
+function.body|drawable_count_for_kit(p_brand_kit_id uuid)|6ac362c035f98aae527db8da1b32903b
+function.body|drawable_topics_for_kit(p_brand_kit_id uuid, p_archetype text)|67959fdaba5dd53a281829b22b04d122
 function.body|enforce_direction_selection_entitlement()|9921b73e0c0c66ca4203f31c8491b0c6
 function.body|ethics_blocks(p_text text)|5cb953eac5eb6ca3cf7773032037f5bd
-function.body|ethics_scan(p_text text)|d81fae0ec7dadb1f9f356de6dbd519d7
+function.body|ethics_prohibitive_lead()|a10a21b9a8a5a600904544cc15aac528
+function.body|ethics_scan(p_text text)|7864f393c46bb390b2a444c88b69b830
 function.body|funnel_props_are_safe(p_props jsonb)|472be8a66400dde20df9476f71beafaf
 function.body|funnel_report(p_from timestamp with time zone, p_to timestamp with time zone)|c75318877e9da12edf3e86c57abe8b46
 function.body|get_brand_asset_manifest(p_brand_kit_id uuid, p_current_fingerprint text)|92679ad0caa990b2735a0a0f226a7f6e
@@ -1151,9 +1427,12 @@ function.body|handle_new_user()|9f3e4d359c2ac9d5d8b1f7ef673f9372
 function.body|hex_rgb(p_hex text)|0fa67c04e828a267e206e86f4c25c27f
 function.body|holds_anon_brief()|99af70a655add4d67c386dd4b3de757d
 function.body|home_recent_activity(p_brand_kit_id uuid)|d4ff452d60cf88443545a6a559dc624c
+function.body|insight_cards_validate_segments()|85702ba7c6ab75b7919015ed5958dc49
 function.body|invite_clinician(p_organization_id uuid, p_email text)|4bb23fb14388495136abeff212b5d1b3
 function.body|is_org_member(p_org_id uuid)|9111256ddee4f37c11d338526ae7882d
 function.body|kit_paid_access(p_brand_kit_id uuid)|47adddd4172ac373a6648141ab225117
+function.body|licence_number_problem(p text)|99eafb35f854ce09624993b2716450db
+function.body|licence_number_reprise()|9a0026aa2059b3de3d16f929cf719507
 function.body|license_state_allowed(p_license_type_id text, p_state text)|ac0666d4408e6863cbad4b91fad6b5a6
 function.body|license_type_states_track_delete_gate()|dd366209d0a8799664b333de2a53c76d
 function.body|license_type_states_track_gate()|5d277d909665cc8182b28f0c2a8da8a8
@@ -1164,12 +1443,17 @@ function.body|maintain_site_spec_text_variants()|b74718d8f9ff4bb145410615a32c11d
 function.body|mark_brand_kit_delivered(p_brand_kit_id uuid)|0a1150a993973c57b0d0720b28a16455
 function.body|mark_content_posted(p_id uuid, p_posted boolean, p_channel text)|05269b764f44d79912a509ba6cacd6a9
 function.body|mark_notifications_read(p_brand_kit_id uuid)|ec31fce705738e9d2b752f17515cc623
+function.body|monthly_presence_entitled()|62f5f46f1922067f04bd8f6829e5149b
+function.body|monthly_presence_past_due_grace()|dce5f08f693ab75ee00306c9cb5ff4e1
 function.body|nearest_color_name(p_hex text)|5dcbd514d322fe47977f2c17cd213fb0
+function.body|next_background_for_kit(p_brand_kit_id uuid)|a8180835957d523af581c6d43adb2d81
+function.body|next_topic_for_kit(p_brand_kit_id uuid, p_month date, p_archetype text)|96a380bcb2afa13f7813a250a3fb0ac5
 function.body|organization_invitation_preview(p_token text)|07e6f414d8dd6c96d6a8010b69c43a68
 function.body|orphaned_purchases()|8bcf1ac1e862b9499b69668bd26ae2da
 function.body|owns_project(p_project_id uuid)|fbfac0b01ea00f089c692a132a0656b9
 function.body|platform_refusal_counts(p_since timestamp with time zone)|8a27c9b629801b481fa3b590b239189a
 function.body|project_briefs_data_valid(p jsonb)|f1a6169dae0820abc9cdf0e106848965
+function.body|project_briefs_licence_number_to_specs()|1e18258e4579c3f9c0e77846fdfa7657
 function.body|project_briefs_license_state_gate()|5e617edee221433baa50ad09bb5723b4
 function.body|project_briefs_tone_cards_valid(p jsonb)|4628495671fb3024d9a6de886798828a
 function.body|project_briefs_usp_options_valid(p jsonb)|1d14b70cf4fd0d904dd8c95ed6fe1a53
@@ -1183,31 +1467,43 @@ function.body|purchase_status_events_append_only()|b4a0ecf6c30aa6d2cb6bc3f6fdc53
 function.body|purchase_status_events_apply()|bd6fd4b54fb7711103e629151069c034
 function.body|purchases_kind_matches_plan()|0741b06ec012aadfb48c5271bc027232
 function.body|purge_funnel_events()|c6f5b2d66563988bb48daa98cdd35895
+function.body|reassert_topic_assignments(p_brand_kit_id uuid, p_topic_ids uuid[])|4fd9bacda97817e47178a8e2439f5eb6
 function.body|record_asset_download(p_brand_kit_id uuid, p_key text, p_fingerprint text, p_size integer, p_format text)|328968fdf71eb93839859ba79eb0eb8f
 function.body|record_brand_asset(p_brand_kit_id uuid, p_key text, p_fingerprint text, p_storage_path text, p_byte_size integer, p_width integer, p_height integer, p_size integer, p_format text, p_change_summary text, p_fingerprint_inputs jsonb)|c357fb85a764036551d42aebda49dd35
+function.body|record_custom_visual(p_brand_kit_id uuid, p_prompt_hash text, p_content_item_id uuid, p_model text, p_quality text, p_size text, p_storage_path text, p_cost_usd numeric, p_reservation_id uuid)|3a1efc491b565b4d81a29fb0c67aee39
 function.body|record_funnel_events(p_events jsonb)|79d5eb3ae2c182860e6c98bf3cd17cdc
 function.body|record_platform_refusal(p_platform_id text, p_project_id uuid)|590364335d6d4965627b0d7fc3d157e8
 function.body|record_purchase_status_event(p_purchase_id uuid, p_stripe_event_id text, p_new_status text, p_event_type text, p_amount_cents integer, p_occurred_at timestamp with time zone)|1372bb088e8391ac22eaebe8f7214ddd
+function.body|record_rendered_asset(p_brand_kit_id uuid, p_content_hash text, p_archetype_key text, p_palette_key text, p_storage_path text, p_width integer, p_height integer, p_bytes integer, p_render_ms integer)|de9f3fa1f01ebe2f26789275d366f044
 function.body|record_user_upload(p_brand_kit_id uuid, p_id uuid, p_kind text, p_storage_path text, p_mime_type text, p_byte_size integer, p_original_name text)|b00e9223614738d6a9597c34d21ba637
 function.body|refresh_brand_kit_site_prompt()|0774eff524575c9a60fc7401cbe6dfae
 function.body|release_generation_credit(p_brand_kit_id uuid)|bcd1dda228ca057bdb35f4b6687a226c
+function.body|release_on_demand_write(p_write_id uuid, p_cost_usd numeric)|9dbd6166c67bf600c52911cd5d28870b
+function.body|release_stale_credit_reservations(p_older_than interval)|7aa2faffd3b8c13814660e0d11baa368
+function.body|release_stale_topic_assignments()|0f7b1646c67d5e944f1d5c107bcc4c77
+function.body|render_rationale(p_template text, p_brand_kit_id uuid)|89a373efdcb02f1e5afd57e7a9a507f7
+function.body|rendered_asset_path(p_brand_kit_id uuid, p_content_hash text)|cdd7297247619e1c9a79b815aad49738
 function.body|request_brand_asset_upload(p_brand_kit_id uuid, p_key text, p_fingerprint text, p_size integer, p_format text)|8565f0be3860c17b4ac811b93205c97f
 function.body|request_user_upload(p_brand_kit_id uuid, p_kind text, p_mime_type text, p_byte_size integer)|7b20321bcada05645461edb5752e123a
 function.body|reserve_content_image(p_brand_kit_id uuid, p_month date, p_cost_cents integer)|227237554fdafeb26530e958f38f9baf
+function.body|reserve_credit(p_user uuid, p_kind text, p_reason text, p_ref_type text, p_ref_id uuid, p_estimated_cost_usd numeric, p_provider text, p_model text, p_month date)|0c9ce5e436d38936b1bb8bdc69bc40e0
 function.body|reserve_image_regeneration(p_brand_kit_id uuid, p_cost_cents integer)|ea88eedc8b1b32a9361cd79d6cb57722
 function.body|restore_brand_kit(p_brand_kit_id uuid)|8d0089e8601bfe37897dc64efeeec09f
 function.body|retire_seed_clamp_notes()|9d703deecbc9061fef46f39ea98f7130
 function.body|rls_auto_enable()|58249bb7e7ad29ddb07a33b2d61f4a16
 function.body|save_directory_profile(p_brand_kit_id uuid, p_platform text, p_first_paragraph text, p_body text, p_structured jsonb, p_ethics_check jsonb)|1742d56ca89f54314f74842bf5be9a76
 function.body|section_type_fields_valid(p jsonb)|29052ba5d30c1104addfb60614418293
+function.body|section_types_pages_exist()|e7d546e32de5cdbe7e6f3639efc2a319
 function.body|seed_launch_checklist(p_brand_kit_id uuid)|8608dae00025d884c5c9a9dc62dd770d
 function.body|seed_site_spec(p_brand_kit_id uuid)|9d2c6ad98963dff695c1d44728bf1440
 function.body|set_content_checkin(p_brand_kit_id uuid, p_month date, p_sessions_theme text, p_taking_clients text, p_happening text)|f53fb83eb886615a775fb3d1a3840ff5
+function.body|set_content_item_topic(p_id uuid, p_topic_id uuid, p_rationale text)|73cc462489fb0c6b4f4e7842eb6a179c
 function.body|set_content_preferences(p_brand_kit_id uuid, p_cadence_per_week smallint, p_accepted_registers text[], p_off_limits text)|9021983b35a2d77c2e73a3a9ef89e922
 function.body|set_launch_step(p_brand_kit_id uuid, p_key text, p_status text)|a6d6a7db5d982cb5c2876a3bbc492f9d
 function.body|set_limit(real)|0ecc3e27be7f9c8103dbb3707f835095
 function.body|set_updated_at()|9ea5fd0cca29cf2505b6e391a2fb1a57
 function.body|settle_content_image(p_brand_kit_id uuid, p_month date, p_cost_cents integer, p_succeeded boolean)|6db21a4240068c9af19f9752facfc822
+function.body|settle_credit(p_reservation_id uuid, p_actual_cost_usd numeric, p_succeeded boolean)|95a5514c3b64f3a3c9ba3b159a2ebac9
 function.body|settle_image_regeneration(p_brand_kit_id uuid, p_cost_cents integer, p_succeeded boolean)|15c18138f62eb8a8c1f52dbb21de2eaa
 function.body|show_limit()|4c2e62b6a66772a0544f7161c65f58d9
 function.body|show_trgm(text)|e4bc335cf26250af2f457dfff43a1a6a
@@ -1261,7 +1557,7 @@ function.body|site_spec_pages_lengths_valid(p jsonb)|271c4b2cf79b7678cffc0a3dddd
 function.body|site_spec_pages_skeleton(p_pages jsonb)|53924debd8b21f5abe743c07dad56414
 function.body|site_spec_pages_valid(p jsonb)|a8b1df78504cd78d17cfa7705a1d6915
 function.body|site_spec_palette_role(p_palette jsonb, p_role text)|28e1577f4bf3920423f4c278b69fc844
-function.body|site_spec_patch(p_brand_kit_id uuid, p_patch jsonb)|43d96a6dc7622135fe5e0cd1548dd7f7
+function.body|site_spec_patch(p_brand_kit_id uuid, p_patch jsonb)|6e6ba87cd480b800439a89599e399138
 function.body|site_spec_patchable_keys()|2c13b09794f35164cb1bd17e8b254598
 function.body|site_spec_practice_detail_keys()|e8de52674ff75aaa4b250d9329718797
 function.body|site_spec_practice_details_valid(p jsonb)|47f12918a8b7a319060687555df8de1b
@@ -1284,6 +1580,7 @@ function.body|site_spec_variant_of(p_spec jsonb, p_role text)|bbdce481235a763f4e
 function.body|site_spec_voice_guide(p_spec jsonb)|f320f58300d60cc0e3ea7f5e5cbb8783
 function.body|site_spec_voice_lines(p_spec jsonb, p_frag jsonb)|85d15bc08e973a93796f8784c9872326
 function.body|site_specs_ethics_gate()|9fca53daadb650eb195f0ae1ee6281f4
+function.body|site_specs_licence_number_from_brief()|cc715d39435b2e30c7bfa98d144cafed
 function.body|site_specs_set_color_labels()|c6c97e198a1c1efa6527ab188912fe5c
 function.body|state_is_sellable(p_state text)|119e964430b558110d19d57950af8fcf
 function.body|strict_word_similarity(text, text)|ee45a2ab384e122787c477314d32dfc6
@@ -1291,11 +1588,17 @@ function.body|strict_word_similarity_commutator_op(text, text)|f3c27cc9a03570d0a
 function.body|strict_word_similarity_dist_commutator_op(text, text)|3dfd12cf4e11fbb885827250d340c492
 function.body|strict_word_similarity_dist_op(text, text)|f82eb930eabec53f64225f36bbbec25d
 function.body|strict_word_similarity_op(text, text)|e2aab7ed586ee17e52955f3340ef44f1
+function.body|subscriptions_refuse_stale_event()|ebab50d23f582f15fc5c56173d427510
+function.body|suggest_topics_for_kit(p_brand_kit_id uuid, p_month date, p_limit integer, p_exclude uuid[])|3bfc7a8bcddbe9eea1d000424b7ae952
+function.body|swap_content_item(p_id uuid)|51322efd9bfa68fcf16856e2a5156ce8
 function.body|sync_notifications(p_brand_kit_id uuid)|070cb2c50db983c907096fe94d5e66d1
 function.body|title_abbreviation(p_license_type_id text, p_state text)|03ded953dafdec1adf845574e7909a42
+function.body|topic_assignment_grace()|fa10d040694f5cb6b808810c11a689f3
+function.body|topic_assignment_holds(p_brand_kit_id uuid, p_topic_id uuid, p_assigned_at timestamp with time zone)|0e13c051be110c425ba8f70c445fa6c9
+function.body|topic_collision_window()|0dd354a8b8c8a022b323cb6ab63191e3
 function.body|truncate_on_word_boundary(p_text text, p_max integer)|34068bb00c9a482d36f02a6439afca27
 function.body|unwarned_trials(p_within_days integer)|94a5e723bbaa0a7b3e43a1a11d0193eb
-function.body|update_content_item(p_id uuid, p_patch jsonb)|614b1b58ecf6d2875f8e019f21a19c21
+function.body|update_content_item(p_id uuid, p_patch jsonb)|7c501860276e66bacd32152d4c56aa9b
 function.body|user_uploads_error(p_code text)|8ec391baf3709ebefbf3c312e950cd0e
 function.body|user_uploads_quota_error(p_brand_kit_id uuid, p_byte_size integer, p_replacing uuid)|0e9ae0c440f9baa2ab8f2df5cb764556
 function.body|user_uploads_setting_int(p_key text, p_fallback integer)|d9801df51d03c5c8b3ed4eb971e60739
@@ -1309,12 +1612,16 @@ function.body|word_similarity_commutator_op(text, text)|d18bc4eee8ca082d515e7cff
 function.body|word_similarity_dist_commutator_op(text, text)|02eaec0ce535a90a338fb5ad7dbbd0e5
 function.body|word_similarity_dist_op(text, text)|211ec4576f43590d12ca73f3654a71b4
 function.body|word_similarity_op(text, text)|4e71be6933b5cf5f71638bce7143d020
+function|abandon_stale_generation_runs()|b05b7c8dff0d88e74dac0620244966e9
 function|accept_organization_invitation(p_token text)|0b28fc353b0843c668b8733165fd6d6f
 function|anon_spend_today()|37cde0f534cb778510c35863b492b023
 function|anon_token_hash()|6ef9a88504193e8548f6cfca5b6ef3c6
 function|app_search(p_brand_kit_id uuid, p_query text)|3923dfd2c7233e0c110ed10a13a5ae27
+function|apply_on_demand_write(p_write_id uuid, p_title text, p_caption text, p_on_image_text text, p_alt_text text, p_compose_archetype text, p_payload jsonb, p_rationale text, p_topic_id uuid, p_cost_usd numeric)|ba567efd3926a7eef77c2916d7b38adc
 function|approve_content_month(p_month_id uuid)|5bb8650149438f2c620d5b535e5d5ff2
 function|asset_variant_path(p_brand_kit_id uuid, p_key text, p_fingerprint text, p_kind text, p_size integer, p_format text)|22f65c154bf5b9750d3e453b7dc27140
+function|assign_topic_to_kit(p_brand_kit_id uuid, p_month date, p_archetype text)|cb0db4cb512667b79be64741d50b125f
+function|begin_on_demand_write(p_item_id uuid, p_idempotency_key text)|cbfcf1160eb9ca54bd738fa438d20847
 function|brand_images_claim(p_brand_kit_id uuid, p_slot text, p_image_fingerprint text, p_cost_estimate_cents integer, p_daily_cap_cents integer, p_reclaim_after interval)|d226e001234200d00c8f8b4e1a377deb
 function|brand_images_enabled()|37e256566648f65bd4f5b07293bd1707
 function|brand_images_mark_failed(p_image_id uuid, p_claim_token timestamp with time zone, p_status text, p_failure_reason text)|46619b22e76133449e7f5c1117e9a650
@@ -1346,6 +1653,7 @@ function|brief_preview(p_brief_id uuid)|75f864b2d995cf47f4119b8d4696a792
 function|brief_progress_step_renumber_up(p_progress integer)|7224ff6c835fd1429a69fb13f286d083
 function|brief_step_renumber_up(p_step smallint)|68d7170718e2ca615c6e7db2c1d8c878
 function|caller_is_the_database()|62c3f1aee0cbc64f2c0305f2aba2c67e
+function|check_monthly_presence_entitlement(p_user uuid)|9d8fb13707c013afe8240a98a1649966
 function|comp_access_active()|0c39cf3807bc56253cc2e3aa03e75555
 function|comp_grant_active(p_user_id uuid)|f65f8542d3ef11cb73714ca7ac596181
 function|comp_grant_credits(p_user_id uuid)|50009ab8b5d221058e8071c44fdcb408
@@ -1354,13 +1662,30 @@ function|consume_anon_generation(p_ip_hash text, p_kind text)|6a84f2878ff5323411
 function|consume_check_rewrite()|c6d003309b8dc89b66cb159c4678aa6c
 function|consume_generation_credit(p_brand_kit_id uuid)|a3ea6fd67afa60e6c53f341391d6b94f
 function|content_error(p_code text)|5793157fb65546de56dda9129cd9dd10
-function|content_item_json(p_id uuid)|51b3826cb4552494f889dbcf169ae3d6
+function|content_item_json(p_id uuid)|c17df420cd5e8d921be5a1295b824169
+function|content_item_valid(p jsonb)|c694f45ba1d4a3e5265ece5c7df63477
 function|content_items_ethics_gate()|88e7885e6b4dd677ce16ed0a546576d9
+function|content_items_payload_ethics_gate()|1bbf00b6a857c57fccad6b0dfedbcf26
 function|content_items_theme_belongs_to_month()|e5c2315ed45c1c1ddd79b707fc97b729
+function|content_items_valid(p jsonb, p_min integer, p_max integer)|138f4fb32c2d9e383d4a18a881d753c0
 function|content_kit_access(p_brand_kit_id uuid)|0da955fd0ef92d1485007306c1589b9f
+function|content_month_cost(p_user uuid, p_month date)|65bee1915fe02c990e0b5f4de03ef9be
 function|content_normalize_tags(p_tags text[])|a01e292aee6da8ad6fee86963503f10c
 function|content_preferences_validate_registers()|ada96e7b4e23f1f0d2d1be9877637079
+function|content_topic_bank_payload_valid(p_archetype text, p jsonb)|c8c1bc46e1375048f8f0846525b1ada1
+function|content_topic_payload_valid(p_archetype text, p jsonb)|79edeae883f38f352e364130f96384f1
+function|content_topic_text(p jsonb)|cccde56a6d136b3e215532125f953065
+function|content_topics_banned_phrases_gate()|309185c2b0f066daed1cb74883ad2a6d
+function|content_topics_ethics_gate()|a7ae25eac7193c71a9380c17cd02da3a
+function|content_words(p text)|191b501258da4c4e636cb971627d604d
 function|create_content_item(p_brand_kit_id uuid, p_archetype text, p_scheduled_for date)|4eaa2e02b915178b7efe26d62151be31
+function|credit_ledger_apply()|ca642a1df5d3c998d1a0f8928b859365
+function|credit_ledger_is_append_only()|c673c0f4b87fb5a9d5571242459ccdd8
+function|credit_meter(p_month date)|d931a7da499ad5907a1328a1863f44fe
+function|credit_monthly_limit(p_user uuid, p_kind text)|4b9f87cbf5af3c2f786f6e1de066c531
+function|credit_plan_for(p_user uuid)|c6496b84be92fd3c4fd9428ce3e05364
+function|credit_remaining(p_user uuid, p_kind text, p_month date)|ae3199f591a87f93287951fcd1ff44a5
+function|custom_visual_path(p_brand_kit_id uuid, p_prompt_hash text)|e133571db3129285042b3f3f1ae84be9
 function|delete_brand_kit(p_brand_kit_id uuid)|44f1712bed1ccef3455542d2a9dc1f4d
 function|delete_content_item(p_id uuid)|e2ec80fab9c8c70f65e85deca33212a2
 function|delete_user_upload(p_id uuid)|5085b31d84e15e53a21eeab306498680
@@ -1370,9 +1695,12 @@ function|direction_assets_mark_ready(p_asset_id uuid, p_claim_token timestamp wi
 function|direction_limits()|61f2622e9b6d1fc87d83262ca532b622
 function|directory_profiles_ethics_gate()|7cb20288a09da55421bce672fb5b4e81
 function|directory_structured_valid(p jsonb)|453229bc2cf0996a8f61637ce88f4eb8
+function|drawable_count_for_kit(p_brand_kit_id uuid)|1fff54cb8e2aac35e36a9bc6449244e9
+function|drawable_topics_for_kit(p_brand_kit_id uuid, p_archetype text)|9b3d0e1ef6df8ebcf594c19d67bcfe12
 function|enforce_direction_selection_entitlement()|e0c993f6f226de509c0a14d87035ae75
 function|ethics_blocks(p_text text)|2c49cbc94d17cfb9e190b0517d489f73
-function|ethics_scan(p_text text)|0d3b92dd0df41eb240f11c03cb4ec264
+function|ethics_prohibitive_lead()|83c3805432ac44e51440be3c30dd1e17
+function|ethics_scan(p_text text)|a3f9bd4e728d35e92ea9715f64b29a0d
 function|funnel_props_are_safe(p_props jsonb)|82b9235aaa886ebb1fd12b085f040da2
 function|funnel_report(p_from timestamp with time zone, p_to timestamp with time zone)|b43621171416ac4b694034aa41a4c634
 function|get_brand_asset_manifest(p_brand_kit_id uuid, p_current_fingerprint text)|85c972c860abf702c53caef6915842b9
@@ -1410,9 +1738,12 @@ function|handle_new_user()|41932e749c6db3811bce994d4a4523af
 function|hex_rgb(p_hex text)|be49289141753d5d18177201ddf5809a
 function|holds_anon_brief()|7d3eefe861994392208cfff96b01c51b
 function|home_recent_activity(p_brand_kit_id uuid)|575592132446f07c4454bde590b5f8b6
+function|insight_cards_validate_segments()|f539eb34234660df7dbca7f76115731e
 function|invite_clinician(p_organization_id uuid, p_email text)|4c47129dbb68ae2faf6061a8dc4c7f80
 function|is_org_member(p_org_id uuid)|dfea061ff13cb0dfb08d583df178ee5e
 function|kit_paid_access(p_brand_kit_id uuid)|bae60b271d60bd875903933b44f78308
+function|licence_number_problem(p text)|aaf657ab7f6dfc8ba7fdc2bb8c6af438
+function|licence_number_reprise()|a6c359ab89ed2844f64ae5bf10929afb
 function|license_state_allowed(p_license_type_id text, p_state text)|6b3bb2ee58120aec4b5ee22d865e2f61
 function|license_type_states_track_delete_gate()|717f4cfab74b3344e51fd60eadab2ff9
 function|license_type_states_track_gate()|f539714bd932f05a0fbd968ff1dac356
@@ -1423,12 +1754,17 @@ function|maintain_site_spec_text_variants()|3e238e2d09353501ce1a3ad9795b287a
 function|mark_brand_kit_delivered(p_brand_kit_id uuid)|bf0959ae94753061226ce342ee8a9248
 function|mark_content_posted(p_id uuid, p_posted boolean, p_channel text)|5cd4e80e9b3e5f1c3651032c473b0a43
 function|mark_notifications_read(p_brand_kit_id uuid)|d1690efe3bd8c6e3f3160ba27217b554
+function|monthly_presence_entitled()|604a41baf83635c3bbb7e74c65c1639a
+function|monthly_presence_past_due_grace()|11df6b28b29332a3cb1b138a5c809a9b
 function|nearest_color_name(p_hex text)|190ca02e1ebde2b6369e055081c6cc75
+function|next_background_for_kit(p_brand_kit_id uuid)|5c53d111b4e6c05a663e23d2e48901bd
+function|next_topic_for_kit(p_brand_kit_id uuid, p_month date, p_archetype text)|283edd3ef5cb4149f77c1a9685ddcfc8
 function|organization_invitation_preview(p_token text)|d7415aeac2c3431a368b56d64ffb93dc
 function|orphaned_purchases()|e0063405888cf2889352b4f0c7cb9850
 function|owns_project(p_project_id uuid)|03af99749de299a343a751ce3ce3198b
 function|platform_refusal_counts(p_since timestamp with time zone)|3ff775fd13123b0caacf44d8df53a48d
 function|project_briefs_data_valid(p jsonb)|0f486ac0a268e9ff8fad93a3b10aac0d
+function|project_briefs_licence_number_to_specs()|65c22c4c8d5ecddcf651643b0e4d5400
 function|project_briefs_license_state_gate()|15530284729ee05f3de3b63fd6ac2f26
 function|project_briefs_tone_cards_valid(p jsonb)|f397965e90abb7219c360a7eab099377
 function|project_briefs_usp_options_valid(p jsonb)|4f0b8c3a91294067899eadaf96463647
@@ -1442,31 +1778,43 @@ function|purchase_status_events_append_only()|6e94302c3aacd83a54b8c80759cb645a
 function|purchase_status_events_apply()|7b40772cd98be02f7af108708896e225
 function|purchases_kind_matches_plan()|d451c63c6ad46395952b65b47ad0a395
 function|purge_funnel_events()|2d8ed714b03de4a670628e4e0922dae0
+function|reassert_topic_assignments(p_brand_kit_id uuid, p_topic_ids uuid[])|a4f42313fd7efe9e3f46680fb18896c7
 function|record_asset_download(p_brand_kit_id uuid, p_key text, p_fingerprint text, p_size integer, p_format text)|bcc0f198dd376a6e3ba2cb21c44d6e6b
 function|record_brand_asset(p_brand_kit_id uuid, p_key text, p_fingerprint text, p_storage_path text, p_byte_size integer, p_width integer, p_height integer, p_size integer, p_format text, p_change_summary text, p_fingerprint_inputs jsonb)|dfe8e60736719a1886fa9bd633e69136
+function|record_custom_visual(p_brand_kit_id uuid, p_prompt_hash text, p_content_item_id uuid, p_model text, p_quality text, p_size text, p_storage_path text, p_cost_usd numeric, p_reservation_id uuid)|8d9fce5061474e628dee32115c662867
 function|record_funnel_events(p_events jsonb)|73a3a920018c76c32f3769984cfb3842
 function|record_platform_refusal(p_platform_id text, p_project_id uuid)|4829d8d02eb36342a696697757576190
 function|record_purchase_status_event(p_purchase_id uuid, p_stripe_event_id text, p_new_status text, p_event_type text, p_amount_cents integer, p_occurred_at timestamp with time zone)|d643ea687c47590a794370df1f046ecb
+function|record_rendered_asset(p_brand_kit_id uuid, p_content_hash text, p_archetype_key text, p_palette_key text, p_storage_path text, p_width integer, p_height integer, p_bytes integer, p_render_ms integer)|17c8606c321a7fbcb56fc6b5fd8eac99
 function|record_user_upload(p_brand_kit_id uuid, p_id uuid, p_kind text, p_storage_path text, p_mime_type text, p_byte_size integer, p_original_name text)|723eb285274b39c9210c64067f10b6ca
 function|refresh_brand_kit_site_prompt()|9cab35c20145b9dabd432cebefbc4aa7
 function|release_generation_credit(p_brand_kit_id uuid)|17e8ea27c3e2221a780ef7119d2346c4
+function|release_on_demand_write(p_write_id uuid, p_cost_usd numeric)|b925d8ab1b77c7dbb307ddc4fa942628
+function|release_stale_credit_reservations(p_older_than interval)|0239931a0e14a0e7e231c08d8f406e67
+function|release_stale_topic_assignments()|7442a6164684ae3e0a9ed63b591291a4
+function|render_rationale(p_template text, p_brand_kit_id uuid)|0cb8dcf0b7ea2527275288dec89b8263
+function|rendered_asset_path(p_brand_kit_id uuid, p_content_hash text)|f513a77694e20cd597179efaf029736c
 function|request_brand_asset_upload(p_brand_kit_id uuid, p_key text, p_fingerprint text, p_size integer, p_format text)|5c1c607a5c0e36827ba1a9090ec6d0a6
 function|request_user_upload(p_brand_kit_id uuid, p_kind text, p_mime_type text, p_byte_size integer)|3d6b647c94b789904eed4ab93015207c
 function|reserve_content_image(p_brand_kit_id uuid, p_month date, p_cost_cents integer)|1b74119719c465ab78a9a5eb8316070e
+function|reserve_credit(p_user uuid, p_kind text, p_reason text, p_ref_type text, p_ref_id uuid, p_estimated_cost_usd numeric, p_provider text, p_model text, p_month date)|2af0c963a9772e61cd53a5310718e783
 function|reserve_image_regeneration(p_brand_kit_id uuid, p_cost_cents integer)|965e14dd7041a0c7cf9d3eefcbcdc9dc
 function|restore_brand_kit(p_brand_kit_id uuid)|eaec2a2c9967397358a09366c74186db
 function|retire_seed_clamp_notes()|a0cae104711770d379f5defdfbdf4635
 function|rls_auto_enable()|6998ea6b4c2480f5d2e34b5dcf3f8d36
 function|save_directory_profile(p_brand_kit_id uuid, p_platform text, p_first_paragraph text, p_body text, p_structured jsonb, p_ethics_check jsonb)|c8fef921bb1339ca50850863f5f6a506
 function|section_type_fields_valid(p jsonb)|b4cf270e47810a46aa9fafc63838972f
+function|section_types_pages_exist()|1ab50da3948b74bb841e9d42ad9feea2
 function|seed_launch_checklist(p_brand_kit_id uuid)|3b2fbc1e9336fa7b47e804dcd9a12cc4
 function|seed_site_spec(p_brand_kit_id uuid)|f2e350be6271206a798b0ccef8be823d
 function|set_content_checkin(p_brand_kit_id uuid, p_month date, p_sessions_theme text, p_taking_clients text, p_happening text)|e3ba5f9b23da60500d4e09fca55a556e
+function|set_content_item_topic(p_id uuid, p_topic_id uuid, p_rationale text)|f6d098c87e89e54566a1cb7a1474112c
 function|set_content_preferences(p_brand_kit_id uuid, p_cadence_per_week smallint, p_accepted_registers text[], p_off_limits text)|ac0896c0ff03bde39b67999da38fa6b1
 function|set_launch_step(p_brand_kit_id uuid, p_key text, p_status text)|343bef9246d39e34f7748e20f4c42ad5
 function|set_limit(real)|c30ba59e63bc3cb36608046c50620e39
 function|set_updated_at()|1e50b75e04ea6862a1972464b0cb90a9
 function|settle_content_image(p_brand_kit_id uuid, p_month date, p_cost_cents integer, p_succeeded boolean)|f49495c9a0552a29309b1120a983b2e0
+function|settle_credit(p_reservation_id uuid, p_actual_cost_usd numeric, p_succeeded boolean)|ed96cc81fcbdf2812eae13116a7dabdf
 function|settle_image_regeneration(p_brand_kit_id uuid, p_cost_cents integer, p_succeeded boolean)|5b6ee9200b8ac30a0e4e92c0071dfb33
 function|show_limit()|4be49f417a851b1848da525e573e408d
 function|show_trgm(text)|42aa0974abb454971132812dcce06cac
@@ -1520,7 +1868,7 @@ function|site_spec_pages_lengths_valid(p jsonb)|f10c3dca0d51129907375754d4887f34
 function|site_spec_pages_skeleton(p_pages jsonb)|eb400083c21fe74549691af88fe59022
 function|site_spec_pages_valid(p jsonb)|5a14b504bcd84eea8e1835eeca6cb3ac
 function|site_spec_palette_role(p_palette jsonb, p_role text)|e006b40959545be33dfdf79bbe4e8e32
-function|site_spec_patch(p_brand_kit_id uuid, p_patch jsonb)|75b26f971b6c184484036d43fce321bc
+function|site_spec_patch(p_brand_kit_id uuid, p_patch jsonb)|b786b74ed8629a2f8265b7cc892f92d7
 function|site_spec_patchable_keys()|02f691158f3f99242bdd9d0dbe3f0adb
 function|site_spec_practice_detail_keys()|8292fd2c4fa27ca5e2e449ffcac439a3
 function|site_spec_practice_details_valid(p jsonb)|0a1fe94ec4663685a0064f8eec31b169
@@ -1543,6 +1891,7 @@ function|site_spec_variant_of(p_spec jsonb, p_role text)|f2952739b2776582871d972
 function|site_spec_voice_guide(p_spec jsonb)|a18d10f4ed6b3463e49b92f65d33ebed
 function|site_spec_voice_lines(p_spec jsonb, p_frag jsonb)|789dfd79a2a71fab1cd214fe60ef22ee
 function|site_specs_ethics_gate()|7ee4a3c92db42243e5705b252d09e19e
+function|site_specs_licence_number_from_brief()|a05c9f20a49c889f557ef5b3e1779539
 function|site_specs_set_color_labels()|c47bd3dda4dcc1e73ec286092564aa2f
 function|state_is_sellable(p_state text)|d0b18b9423d132064240d73da463a7dd
 function|strict_word_similarity(text, text)|523450d477b4e105989795603c58761a
@@ -1550,11 +1899,17 @@ function|strict_word_similarity_commutator_op(text, text)|49fe0d7b5f628c2f13e21a
 function|strict_word_similarity_dist_commutator_op(text, text)|e4384ee3a07267eb13f09bb4b042f334
 function|strict_word_similarity_dist_op(text, text)|bc660db5cc387e8821747f1ecfb347eb
 function|strict_word_similarity_op(text, text)|fa21d1ae2c217ba161bb3f7777e5e020
+function|subscriptions_refuse_stale_event()|9de83a1304a7bf1dace3443866552c4f
+function|suggest_topics_for_kit(p_brand_kit_id uuid, p_month date, p_limit integer, p_exclude uuid[])|75022fb7142f12178c7b4b18c7569057
+function|swap_content_item(p_id uuid)|3245cd4d5e7ca3352a90374e7f95f43d
 function|sync_notifications(p_brand_kit_id uuid)|95ebc8bb97b4f901db12861a73553825
 function|title_abbreviation(p_license_type_id text, p_state text)|a4cb558b5b95ae92efe0d4b09e401a74
+function|topic_assignment_grace()|1893bbbfb3d1544126361e6cdf59a24f
+function|topic_assignment_holds(p_brand_kit_id uuid, p_topic_id uuid, p_assigned_at timestamp with time zone)|46b240f3a2924d6831906ac66207a38a
+function|topic_collision_window()|dd2989ebf1f8b64726d03514ebd40f64
 function|truncate_on_word_boundary(p_text text, p_max integer)|145dbb6d73973a552765a00ddbba97a7
 function|unwarned_trials(p_within_days integer)|e01f6075cad948f10c1f20bac4a7f148
-function|update_content_item(p_id uuid, p_patch jsonb)|9cae8fc0fce4af0c7bb25718a2a4d269
+function|update_content_item(p_id uuid, p_patch jsonb)|140c59f10ad33129a1e2934ac569a30c
 function|user_uploads_error(p_code text)|4d57b61057bdc276c632b9ad6a151f12
 function|user_uploads_quota_error(p_brand_kit_id uuid, p_byte_size integer, p_replacing uuid)|dac6cc2f0ec34fa9ff1556c7e698d86f
 function|user_uploads_setting_int(p_key text, p_fallback integer)|d7c1be7b9b09140df3d8b1384853f813
@@ -1568,12 +1923,16 @@ function|word_similarity_commutator_op(text, text)|98ece0ccacd71230bea0e7805d310
 function|word_similarity_dist_commutator_op(text, text)|db36854b61d077b4cb945606bab01fc6
 function|word_similarity_dist_op(text, text)|ab0c2cb7ec6c0cbe0937ec3288d2cfda
 function|word_similarity_op(text, text)|9cb3bc9ce246a2c4c4d17c7205f4a17f
+grant.function.env|abandon_stale_generation_runs()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|accept_organization_invitation(p_token text)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|anon_spend_today()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|anon_token_hash()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|app_search(p_brand_kit_id uuid, p_query text)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|apply_on_demand_write(p_write_id uuid, p_title text, p_caption text, p_on_image_text text, p_alt_text text, p_compose_archetype text, p_payload jsonb, p_rationale text, p_topic_id uuid, p_cost_usd numeric)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|approve_content_month(p_month_id uuid)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|asset_variant_path(p_brand_kit_id uuid, p_key text, p_fingerprint text, p_kind text, p_size integer, p_format text)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|assign_topic_to_kit(p_brand_kit_id uuid, p_month date, p_archetype text)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|begin_on_demand_write(p_item_id uuid, p_idempotency_key text)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|brand_images_claim(p_brand_kit_id uuid, p_slot text, p_image_fingerprint text, p_cost_estimate_cents integer, p_daily_cap_cents integer, p_reclaim_after interval)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|brand_images_enabled()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|brand_images_mark_failed(p_image_id uuid, p_claim_token timestamp with time zone, p_status text, p_failure_reason text)|b50339a10e1de285ac99d4c3990b8693
@@ -1605,6 +1964,7 @@ grant.function.env|brief_preview(p_brief_id uuid)|b50339a10e1de285ac99d4c3990b86
 grant.function.env|brief_progress_step_renumber_up(p_progress integer)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|brief_step_renumber_up(p_step smallint)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|caller_is_the_database()|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|check_monthly_presence_entitlement(p_user uuid)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|comp_access_active()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|comp_grant_active(p_user_id uuid)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|comp_grant_credits(p_user_id uuid)|b50339a10e1de285ac99d4c3990b8693
@@ -1614,12 +1974,29 @@ grant.function.env|consume_check_rewrite()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|consume_generation_credit(p_brand_kit_id uuid)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|content_error(p_code text)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|content_item_json(p_id uuid)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|content_item_valid(p jsonb)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|content_items_ethics_gate()|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|content_items_payload_ethics_gate()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|content_items_theme_belongs_to_month()|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|content_items_valid(p jsonb, p_min integer, p_max integer)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|content_kit_access(p_brand_kit_id uuid)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|content_month_cost(p_user uuid, p_month date)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|content_normalize_tags(p_tags text[])|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|content_preferences_validate_registers()|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|content_topic_bank_payload_valid(p_archetype text, p jsonb)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|content_topic_payload_valid(p_archetype text, p jsonb)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|content_topic_text(p jsonb)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|content_topics_banned_phrases_gate()|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|content_topics_ethics_gate()|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|content_words(p text)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|create_content_item(p_brand_kit_id uuid, p_archetype text, p_scheduled_for date)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|credit_ledger_apply()|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|credit_ledger_is_append_only()|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|credit_meter(p_month date)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|credit_monthly_limit(p_user uuid, p_kind text)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|credit_plan_for(p_user uuid)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|credit_remaining(p_user uuid, p_kind text, p_month date)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|custom_visual_path(p_brand_kit_id uuid, p_prompt_hash text)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|delete_brand_kit(p_brand_kit_id uuid)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|delete_content_item(p_id uuid)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|delete_user_upload(p_id uuid)|b50339a10e1de285ac99d4c3990b8693
@@ -1629,8 +2006,11 @@ grant.function.env|direction_assets_mark_ready(p_asset_id uuid, p_claim_token ti
 grant.function.env|direction_limits()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|directory_profiles_ethics_gate()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|directory_structured_valid(p jsonb)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|drawable_count_for_kit(p_brand_kit_id uuid)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|drawable_topics_for_kit(p_brand_kit_id uuid, p_archetype text)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|enforce_direction_selection_entitlement()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|ethics_blocks(p_text text)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|ethics_prohibitive_lead()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|ethics_scan(p_text text)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|funnel_props_are_safe(p_props jsonb)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|funnel_report(p_from timestamp with time zone, p_to timestamp with time zone)|b50339a10e1de285ac99d4c3990b8693
@@ -1669,9 +2049,12 @@ grant.function.env|handle_new_user()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|hex_rgb(p_hex text)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|holds_anon_brief()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|home_recent_activity(p_brand_kit_id uuid)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|insight_cards_validate_segments()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|invite_clinician(p_organization_id uuid, p_email text)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|is_org_member(p_org_id uuid)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|kit_paid_access(p_brand_kit_id uuid)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|licence_number_problem(p text)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|licence_number_reprise()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|license_state_allowed(p_license_type_id text, p_state text)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|license_type_states_track_delete_gate()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|license_type_states_track_gate()|b50339a10e1de285ac99d4c3990b8693
@@ -1682,12 +2065,17 @@ grant.function.env|maintain_site_spec_text_variants()|b50339a10e1de285ac99d4c399
 grant.function.env|mark_brand_kit_delivered(p_brand_kit_id uuid)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|mark_content_posted(p_id uuid, p_posted boolean, p_channel text)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|mark_notifications_read(p_brand_kit_id uuid)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|monthly_presence_entitled()|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|monthly_presence_past_due_grace()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|nearest_color_name(p_hex text)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|next_background_for_kit(p_brand_kit_id uuid)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|next_topic_for_kit(p_brand_kit_id uuid, p_month date, p_archetype text)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|organization_invitation_preview(p_token text)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|orphaned_purchases()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|owns_project(p_project_id uuid)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|platform_refusal_counts(p_since timestamp with time zone)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|project_briefs_data_valid(p jsonb)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|project_briefs_licence_number_to_specs()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|project_briefs_license_state_gate()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|project_briefs_tone_cards_valid(p jsonb)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|project_briefs_usp_options_valid(p jsonb)|b50339a10e1de285ac99d4c3990b8693
@@ -1701,31 +2089,43 @@ grant.function.env|purchase_status_events_append_only()|b50339a10e1de285ac99d4c3
 grant.function.env|purchase_status_events_apply()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|purchases_kind_matches_plan()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|purge_funnel_events()|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|reassert_topic_assignments(p_brand_kit_id uuid, p_topic_ids uuid[])|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|record_asset_download(p_brand_kit_id uuid, p_key text, p_fingerprint text, p_size integer, p_format text)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|record_brand_asset(p_brand_kit_id uuid, p_key text, p_fingerprint text, p_storage_path text, p_byte_size integer, p_width integer, p_height integer, p_size integer, p_format text, p_change_summary text, p_fingerprint_inputs jsonb)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|record_custom_visual(p_brand_kit_id uuid, p_prompt_hash text, p_content_item_id uuid, p_model text, p_quality text, p_size text, p_storage_path text, p_cost_usd numeric, p_reservation_id uuid)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|record_funnel_events(p_events jsonb)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|record_platform_refusal(p_platform_id text, p_project_id uuid)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|record_purchase_status_event(p_purchase_id uuid, p_stripe_event_id text, p_new_status text, p_event_type text, p_amount_cents integer, p_occurred_at timestamp with time zone)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|record_rendered_asset(p_brand_kit_id uuid, p_content_hash text, p_archetype_key text, p_palette_key text, p_storage_path text, p_width integer, p_height integer, p_bytes integer, p_render_ms integer)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|record_user_upload(p_brand_kit_id uuid, p_id uuid, p_kind text, p_storage_path text, p_mime_type text, p_byte_size integer, p_original_name text)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|refresh_brand_kit_site_prompt()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|release_generation_credit(p_brand_kit_id uuid)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|release_on_demand_write(p_write_id uuid, p_cost_usd numeric)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|release_stale_credit_reservations(p_older_than interval)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|release_stale_topic_assignments()|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|render_rationale(p_template text, p_brand_kit_id uuid)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|rendered_asset_path(p_brand_kit_id uuid, p_content_hash text)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|request_brand_asset_upload(p_brand_kit_id uuid, p_key text, p_fingerprint text, p_size integer, p_format text)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|request_user_upload(p_brand_kit_id uuid, p_kind text, p_mime_type text, p_byte_size integer)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|reserve_content_image(p_brand_kit_id uuid, p_month date, p_cost_cents integer)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|reserve_credit(p_user uuid, p_kind text, p_reason text, p_ref_type text, p_ref_id uuid, p_estimated_cost_usd numeric, p_provider text, p_model text, p_month date)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|reserve_image_regeneration(p_brand_kit_id uuid, p_cost_cents integer)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|restore_brand_kit(p_brand_kit_id uuid)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|retire_seed_clamp_notes()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|rls_auto_enable()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|save_directory_profile(p_brand_kit_id uuid, p_platform text, p_first_paragraph text, p_body text, p_structured jsonb, p_ethics_check jsonb)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|section_type_fields_valid(p jsonb)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|section_types_pages_exist()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|seed_launch_checklist(p_brand_kit_id uuid)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|seed_site_spec(p_brand_kit_id uuid)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|set_content_checkin(p_brand_kit_id uuid, p_month date, p_sessions_theme text, p_taking_clients text, p_happening text)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|set_content_item_topic(p_id uuid, p_topic_id uuid, p_rationale text)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|set_content_preferences(p_brand_kit_id uuid, p_cadence_per_week smallint, p_accepted_registers text[], p_off_limits text)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|set_launch_step(p_brand_kit_id uuid, p_key text, p_status text)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|set_limit(real)|d6201f0b02ab3c4787a0e2931472b008
 grant.function.env|set_updated_at()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|settle_content_image(p_brand_kit_id uuid, p_month date, p_cost_cents integer, p_succeeded boolean)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|settle_credit(p_reservation_id uuid, p_actual_cost_usd numeric, p_succeeded boolean)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|settle_image_regeneration(p_brand_kit_id uuid, p_cost_cents integer, p_succeeded boolean)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|show_limit()|d6201f0b02ab3c4787a0e2931472b008
 grant.function.env|show_trgm(text)|d6201f0b02ab3c4787a0e2931472b008
@@ -1802,6 +2202,7 @@ grant.function.env|site_spec_variant_of(p_spec jsonb, p_role text)|b50339a10e1de
 grant.function.env|site_spec_voice_guide(p_spec jsonb)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|site_spec_voice_lines(p_spec jsonb, p_frag jsonb)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|site_specs_ethics_gate()|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|site_specs_licence_number_from_brief()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|site_specs_set_color_labels()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|state_is_sellable(p_state text)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|strict_word_similarity(text, text)|d6201f0b02ab3c4787a0e2931472b008
@@ -1809,8 +2210,14 @@ grant.function.env|strict_word_similarity_commutator_op(text, text)|d6201f0b02ab
 grant.function.env|strict_word_similarity_dist_commutator_op(text, text)|d6201f0b02ab3c4787a0e2931472b008
 grant.function.env|strict_word_similarity_dist_op(text, text)|d6201f0b02ab3c4787a0e2931472b008
 grant.function.env|strict_word_similarity_op(text, text)|d6201f0b02ab3c4787a0e2931472b008
+grant.function.env|subscriptions_refuse_stale_event()|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|suggest_topics_for_kit(p_brand_kit_id uuid, p_month date, p_limit integer, p_exclude uuid[])|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|swap_content_item(p_id uuid)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|sync_notifications(p_brand_kit_id uuid)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|title_abbreviation(p_license_type_id text, p_state text)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|topic_assignment_grace()|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|topic_assignment_holds(p_brand_kit_id uuid, p_topic_id uuid, p_assigned_at timestamp with time zone)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|topic_collision_window()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|truncate_on_word_boundary(p_text text, p_max integer)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|unwarned_trials(p_within_days integer)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|update_content_item(p_id uuid, p_patch jsonb)|b50339a10e1de285ac99d4c3990b8693
@@ -1818,7 +2225,7 @@ grant.function.env|user_uploads_error(p_code text)|b50339a10e1de285ac99d4c3990b8
 grant.function.env|user_uploads_quota_error(p_brand_kit_id uuid, p_byte_size integer, p_replacing uuid)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|user_uploads_setting_int(p_key text, p_fallback integer)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|usp_banned_phrases_check(p_text text)|b50339a10e1de285ac99d4c3990b8693
-grant.function.env|usp_banned_phrases_list()|97139627c126d86a74d8ab820ad756d6
+grant.function.env|usp_banned_phrases_list()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|usp_check_distinct(p_scope_key text, p_statement text, p_exclude_brief uuid)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|usp_fingerprint_confirm(p_brief_id uuid, p_statement text)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|usp_normalize(p_text text)|b50339a10e1de285ac99d4c3990b8693
@@ -1827,12 +2234,16 @@ grant.function.env|word_similarity_commutator_op(text, text)|d6201f0b02ab3c4787a
 grant.function.env|word_similarity_dist_commutator_op(text, text)|d6201f0b02ab3c4787a0e2931472b008
 grant.function.env|word_similarity_dist_op(text, text)|d6201f0b02ab3c4787a0e2931472b008
 grant.function.env|word_similarity_op(text, text)|d6201f0b02ab3c4787a0e2931472b008
+grant.function|abandon_stale_generation_runs()|f440cb7547aafb71bac3b9275ad5f4bd
 grant.function|accept_organization_invitation(p_token text)|f440cb7547aafb71bac3b9275ad5f4bd
 grant.function|anon_spend_today()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|anon_token_hash()|d78174332163bd0ee30d25636fc7a93d
 grant.function|app_search(p_brand_kit_id uuid, p_query text)|f440cb7547aafb71bac3b9275ad5f4bd
+grant.function|apply_on_demand_write(p_write_id uuid, p_title text, p_caption text, p_on_image_text text, p_alt_text text, p_compose_archetype text, p_payload jsonb, p_rationale text, p_topic_id uuid, p_cost_usd numeric)|f440cb7547aafb71bac3b9275ad5f4bd
 grant.function|approve_content_month(p_month_id uuid)|f440cb7547aafb71bac3b9275ad5f4bd
 grant.function|asset_variant_path(p_brand_kit_id uuid, p_key text, p_fingerprint text, p_kind text, p_size integer, p_format text)|59a9d60d2ccf51b0c7c03f225c171a7d
+grant.function|assign_topic_to_kit(p_brand_kit_id uuid, p_month date, p_archetype text)|8dd1771e78316f3d93a564b7d81a4c88
+grant.function|begin_on_demand_write(p_item_id uuid, p_idempotency_key text)|f440cb7547aafb71bac3b9275ad5f4bd
 grant.function|brand_images_claim(p_brand_kit_id uuid, p_slot text, p_image_fingerprint text, p_cost_estimate_cents integer, p_daily_cap_cents integer, p_reclaim_after interval)|f440cb7547aafb71bac3b9275ad5f4bd
 grant.function|brand_images_enabled()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|brand_images_mark_failed(p_image_id uuid, p_claim_token timestamp with time zone, p_status text, p_failure_reason text)|f440cb7547aafb71bac3b9275ad5f4bd
@@ -1864,6 +2275,7 @@ grant.function|brief_preview(p_brief_id uuid)|59a9d60d2ccf51b0c7c03f225c171a7d
 grant.function|brief_progress_step_renumber_up(p_progress integer)|59a9d60d2ccf51b0c7c03f225c171a7d
 grant.function|brief_step_renumber_up(p_step smallint)|59a9d60d2ccf51b0c7c03f225c171a7d
 grant.function|caller_is_the_database()|8dd1771e78316f3d93a564b7d81a4c88
+grant.function|check_monthly_presence_entitlement(p_user uuid)|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|comp_access_active()|f440cb7547aafb71bac3b9275ad5f4bd
 grant.function|comp_grant_active(p_user_id uuid)|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|comp_grant_credits(p_user_id uuid)|8dd1771e78316f3d93a564b7d81a4c88
@@ -1873,12 +2285,29 @@ grant.function|consume_check_rewrite()|f440cb7547aafb71bac3b9275ad5f4bd
 grant.function|consume_generation_credit(p_brand_kit_id uuid)|f440cb7547aafb71bac3b9275ad5f4bd
 grant.function|content_error(p_code text)|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|content_item_json(p_id uuid)|8dd1771e78316f3d93a564b7d81a4c88
+grant.function|content_item_valid(p jsonb)|d78174332163bd0ee30d25636fc7a93d
 grant.function|content_items_ethics_gate()|8dd1771e78316f3d93a564b7d81a4c88
+grant.function|content_items_payload_ethics_gate()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|content_items_theme_belongs_to_month()|8dd1771e78316f3d93a564b7d81a4c88
+grant.function|content_items_valid(p jsonb, p_min integer, p_max integer)|d78174332163bd0ee30d25636fc7a93d
 grant.function|content_kit_access(p_brand_kit_id uuid)|8dd1771e78316f3d93a564b7d81a4c88
+grant.function|content_month_cost(p_user uuid, p_month date)|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|content_normalize_tags(p_tags text[])|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|content_preferences_validate_registers()|8dd1771e78316f3d93a564b7d81a4c88
+grant.function|content_topic_bank_payload_valid(p_archetype text, p jsonb)|59a9d60d2ccf51b0c7c03f225c171a7d
+grant.function|content_topic_payload_valid(p_archetype text, p jsonb)|f440cb7547aafb71bac3b9275ad5f4bd
+grant.function|content_topic_text(p jsonb)|f440cb7547aafb71bac3b9275ad5f4bd
+grant.function|content_topics_banned_phrases_gate()|8dd1771e78316f3d93a564b7d81a4c88
+grant.function|content_topics_ethics_gate()|8dd1771e78316f3d93a564b7d81a4c88
+grant.function|content_words(p text)|d78174332163bd0ee30d25636fc7a93d
 grant.function|create_content_item(p_brand_kit_id uuid, p_archetype text, p_scheduled_for date)|f440cb7547aafb71bac3b9275ad5f4bd
+grant.function|credit_ledger_apply()|8dd1771e78316f3d93a564b7d81a4c88
+grant.function|credit_ledger_is_append_only()|8dd1771e78316f3d93a564b7d81a4c88
+grant.function|credit_meter(p_month date)|f440cb7547aafb71bac3b9275ad5f4bd
+grant.function|credit_monthly_limit(p_user uuid, p_kind text)|8dd1771e78316f3d93a564b7d81a4c88
+grant.function|credit_plan_for(p_user uuid)|8dd1771e78316f3d93a564b7d81a4c88
+grant.function|credit_remaining(p_user uuid, p_kind text, p_month date)|8dd1771e78316f3d93a564b7d81a4c88
+grant.function|custom_visual_path(p_brand_kit_id uuid, p_prompt_hash text)|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|delete_brand_kit(p_brand_kit_id uuid)|f440cb7547aafb71bac3b9275ad5f4bd
 grant.function|delete_content_item(p_id uuid)|f440cb7547aafb71bac3b9275ad5f4bd
 grant.function|delete_user_upload(p_id uuid)|59a9d60d2ccf51b0c7c03f225c171a7d
@@ -1888,8 +2317,11 @@ grant.function|direction_assets_mark_ready(p_asset_id uuid, p_claim_token timest
 grant.function|direction_limits()|59a9d60d2ccf51b0c7c03f225c171a7d
 grant.function|directory_profiles_ethics_gate()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|directory_structured_valid(p jsonb)|59a9d60d2ccf51b0c7c03f225c171a7d
+grant.function|drawable_count_for_kit(p_brand_kit_id uuid)|8dd1771e78316f3d93a564b7d81a4c88
+grant.function|drawable_topics_for_kit(p_brand_kit_id uuid, p_archetype text)|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|enforce_direction_selection_entitlement()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|ethics_blocks(p_text text)|d78174332163bd0ee30d25636fc7a93d
+grant.function|ethics_prohibitive_lead()|59a9d60d2ccf51b0c7c03f225c171a7d
 grant.function|ethics_scan(p_text text)|d78174332163bd0ee30d25636fc7a93d
 grant.function|funnel_props_are_safe(p_props jsonb)|59a9d60d2ccf51b0c7c03f225c171a7d
 grant.function|funnel_report(p_from timestamp with time zone, p_to timestamp with time zone)|8dd1771e78316f3d93a564b7d81a4c88
@@ -1928,9 +2360,12 @@ grant.function|handle_new_user()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|hex_rgb(p_hex text)|59a9d60d2ccf51b0c7c03f225c171a7d
 grant.function|holds_anon_brief()|d78174332163bd0ee30d25636fc7a93d
 grant.function|home_recent_activity(p_brand_kit_id uuid)|f440cb7547aafb71bac3b9275ad5f4bd
+grant.function|insight_cards_validate_segments()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|invite_clinician(p_organization_id uuid, p_email text)|f440cb7547aafb71bac3b9275ad5f4bd
 grant.function|is_org_member(p_org_id uuid)|d78174332163bd0ee30d25636fc7a93d
 grant.function|kit_paid_access(p_brand_kit_id uuid)|8dd1771e78316f3d93a564b7d81a4c88
+grant.function|licence_number_problem(p text)|f440cb7547aafb71bac3b9275ad5f4bd
+grant.function|licence_number_reprise()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|license_state_allowed(p_license_type_id text, p_state text)|d78174332163bd0ee30d25636fc7a93d
 grant.function|license_type_states_track_delete_gate()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|license_type_states_track_gate()|8dd1771e78316f3d93a564b7d81a4c88
@@ -1941,12 +2376,17 @@ grant.function|maintain_site_spec_text_variants()|8dd1771e78316f3d93a564b7d81a4c
 grant.function|mark_brand_kit_delivered(p_brand_kit_id uuid)|f440cb7547aafb71bac3b9275ad5f4bd
 grant.function|mark_content_posted(p_id uuid, p_posted boolean, p_channel text)|59a9d60d2ccf51b0c7c03f225c171a7d
 grant.function|mark_notifications_read(p_brand_kit_id uuid)|f440cb7547aafb71bac3b9275ad5f4bd
+grant.function|monthly_presence_entitled()|f440cb7547aafb71bac3b9275ad5f4bd
+grant.function|monthly_presence_past_due_grace()|d78174332163bd0ee30d25636fc7a93d
 grant.function|nearest_color_name(p_hex text)|59a9d60d2ccf51b0c7c03f225c171a7d
+grant.function|next_background_for_kit(p_brand_kit_id uuid)|8dd1771e78316f3d93a564b7d81a4c88
+grant.function|next_topic_for_kit(p_brand_kit_id uuid, p_month date, p_archetype text)|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|organization_invitation_preview(p_token text)|d78174332163bd0ee30d25636fc7a93d
 grant.function|orphaned_purchases()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|owns_project(p_project_id uuid)|d78174332163bd0ee30d25636fc7a93d
 grant.function|platform_refusal_counts(p_since timestamp with time zone)|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|project_briefs_data_valid(p jsonb)|59a9d60d2ccf51b0c7c03f225c171a7d
+grant.function|project_briefs_licence_number_to_specs()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|project_briefs_license_state_gate()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|project_briefs_tone_cards_valid(p jsonb)|59a9d60d2ccf51b0c7c03f225c171a7d
 grant.function|project_briefs_usp_options_valid(p jsonb)|59a9d60d2ccf51b0c7c03f225c171a7d
@@ -1960,31 +2400,43 @@ grant.function|purchase_status_events_append_only()|8dd1771e78316f3d93a564b7d81a
 grant.function|purchase_status_events_apply()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|purchases_kind_matches_plan()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|purge_funnel_events()|8dd1771e78316f3d93a564b7d81a4c88
+grant.function|reassert_topic_assignments(p_brand_kit_id uuid, p_topic_ids uuid[])|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|record_asset_download(p_brand_kit_id uuid, p_key text, p_fingerprint text, p_size integer, p_format text)|f440cb7547aafb71bac3b9275ad5f4bd
 grant.function|record_brand_asset(p_brand_kit_id uuid, p_key text, p_fingerprint text, p_storage_path text, p_byte_size integer, p_width integer, p_height integer, p_size integer, p_format text, p_change_summary text, p_fingerprint_inputs jsonb)|f440cb7547aafb71bac3b9275ad5f4bd
+grant.function|record_custom_visual(p_brand_kit_id uuid, p_prompt_hash text, p_content_item_id uuid, p_model text, p_quality text, p_size text, p_storage_path text, p_cost_usd numeric, p_reservation_id uuid)|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|record_funnel_events(p_events jsonb)|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|record_platform_refusal(p_platform_id text, p_project_id uuid)|d78174332163bd0ee30d25636fc7a93d
 grant.function|record_purchase_status_event(p_purchase_id uuid, p_stripe_event_id text, p_new_status text, p_event_type text, p_amount_cents integer, p_occurred_at timestamp with time zone)|8dd1771e78316f3d93a564b7d81a4c88
+grant.function|record_rendered_asset(p_brand_kit_id uuid, p_content_hash text, p_archetype_key text, p_palette_key text, p_storage_path text, p_width integer, p_height integer, p_bytes integer, p_render_ms integer)|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|record_user_upload(p_brand_kit_id uuid, p_id uuid, p_kind text, p_storage_path text, p_mime_type text, p_byte_size integer, p_original_name text)|59a9d60d2ccf51b0c7c03f225c171a7d
 grant.function|refresh_brand_kit_site_prompt()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|release_generation_credit(p_brand_kit_id uuid)|f440cb7547aafb71bac3b9275ad5f4bd
+grant.function|release_on_demand_write(p_write_id uuid, p_cost_usd numeric)|f440cb7547aafb71bac3b9275ad5f4bd
+grant.function|release_stale_credit_reservations(p_older_than interval)|8dd1771e78316f3d93a564b7d81a4c88
+grant.function|release_stale_topic_assignments()|8dd1771e78316f3d93a564b7d81a4c88
+grant.function|render_rationale(p_template text, p_brand_kit_id uuid)|8dd1771e78316f3d93a564b7d81a4c88
+grant.function|rendered_asset_path(p_brand_kit_id uuid, p_content_hash text)|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|request_brand_asset_upload(p_brand_kit_id uuid, p_key text, p_fingerprint text, p_size integer, p_format text)|f440cb7547aafb71bac3b9275ad5f4bd
 grant.function|request_user_upload(p_brand_kit_id uuid, p_kind text, p_mime_type text, p_byte_size integer)|59a9d60d2ccf51b0c7c03f225c171a7d
 grant.function|reserve_content_image(p_brand_kit_id uuid, p_month date, p_cost_cents integer)|8dd1771e78316f3d93a564b7d81a4c88
+grant.function|reserve_credit(p_user uuid, p_kind text, p_reason text, p_ref_type text, p_ref_id uuid, p_estimated_cost_usd numeric, p_provider text, p_model text, p_month date)|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|reserve_image_regeneration(p_brand_kit_id uuid, p_cost_cents integer)|f440cb7547aafb71bac3b9275ad5f4bd
 grant.function|restore_brand_kit(p_brand_kit_id uuid)|f440cb7547aafb71bac3b9275ad5f4bd
 grant.function|retire_seed_clamp_notes()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|rls_auto_enable()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|save_directory_profile(p_brand_kit_id uuid, p_platform text, p_first_paragraph text, p_body text, p_structured jsonb, p_ethics_check jsonb)|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|section_type_fields_valid(p jsonb)|59a9d60d2ccf51b0c7c03f225c171a7d
+grant.function|section_types_pages_exist()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|seed_launch_checklist(p_brand_kit_id uuid)|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|seed_site_spec(p_brand_kit_id uuid)|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|set_content_checkin(p_brand_kit_id uuid, p_month date, p_sessions_theme text, p_taking_clients text, p_happening text)|f440cb7547aafb71bac3b9275ad5f4bd
+grant.function|set_content_item_topic(p_id uuid, p_topic_id uuid, p_rationale text)|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|set_content_preferences(p_brand_kit_id uuid, p_cadence_per_week smallint, p_accepted_registers text[], p_off_limits text)|f440cb7547aafb71bac3b9275ad5f4bd
 grant.function|set_launch_step(p_brand_kit_id uuid, p_key text, p_status text)|f440cb7547aafb71bac3b9275ad5f4bd
 grant.function|set_limit(real)|59a9d60d2ccf51b0c7c03f225c171a7d
 grant.function|set_updated_at()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|settle_content_image(p_brand_kit_id uuid, p_month date, p_cost_cents integer, p_succeeded boolean)|8dd1771e78316f3d93a564b7d81a4c88
+grant.function|settle_credit(p_reservation_id uuid, p_actual_cost_usd numeric, p_succeeded boolean)|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|settle_image_regeneration(p_brand_kit_id uuid, p_cost_cents integer, p_succeeded boolean)|f440cb7547aafb71bac3b9275ad5f4bd
 grant.function|show_limit()|59a9d60d2ccf51b0c7c03f225c171a7d
 grant.function|show_trgm(text)|59a9d60d2ccf51b0c7c03f225c171a7d
@@ -2061,6 +2513,7 @@ grant.function|site_spec_variant_of(p_spec jsonb, p_role text)|59a9d60d2ccf51b0c
 grant.function|site_spec_voice_guide(p_spec jsonb)|59a9d60d2ccf51b0c7c03f225c171a7d
 grant.function|site_spec_voice_lines(p_spec jsonb, p_frag jsonb)|59a9d60d2ccf51b0c7c03f225c171a7d
 grant.function|site_specs_ethics_gate()|8dd1771e78316f3d93a564b7d81a4c88
+grant.function|site_specs_licence_number_from_brief()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|site_specs_set_color_labels()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|state_is_sellable(p_state text)|d78174332163bd0ee30d25636fc7a93d
 grant.function|strict_word_similarity(text, text)|59a9d60d2ccf51b0c7c03f225c171a7d
@@ -2068,8 +2521,14 @@ grant.function|strict_word_similarity_commutator_op(text, text)|59a9d60d2ccf51b0
 grant.function|strict_word_similarity_dist_commutator_op(text, text)|59a9d60d2ccf51b0c7c03f225c171a7d
 grant.function|strict_word_similarity_dist_op(text, text)|59a9d60d2ccf51b0c7c03f225c171a7d
 grant.function|strict_word_similarity_op(text, text)|59a9d60d2ccf51b0c7c03f225c171a7d
+grant.function|subscriptions_refuse_stale_event()|8dd1771e78316f3d93a564b7d81a4c88
+grant.function|suggest_topics_for_kit(p_brand_kit_id uuid, p_month date, p_limit integer, p_exclude uuid[])|f440cb7547aafb71bac3b9275ad5f4bd
+grant.function|swap_content_item(p_id uuid)|f440cb7547aafb71bac3b9275ad5f4bd
 grant.function|sync_notifications(p_brand_kit_id uuid)|f440cb7547aafb71bac3b9275ad5f4bd
 grant.function|title_abbreviation(p_license_type_id text, p_state text)|d78174332163bd0ee30d25636fc7a93d
+grant.function|topic_assignment_grace()|59a9d60d2ccf51b0c7c03f225c171a7d
+grant.function|topic_assignment_holds(p_brand_kit_id uuid, p_topic_id uuid, p_assigned_at timestamp with time zone)|59a9d60d2ccf51b0c7c03f225c171a7d
+grant.function|topic_collision_window()|d78174332163bd0ee30d25636fc7a93d
 grant.function|truncate_on_word_boundary(p_text text, p_max integer)|59a9d60d2ccf51b0c7c03f225c171a7d
 grant.function|unwarned_trials(p_within_days integer)|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|update_content_item(p_id uuid, p_patch jsonb)|f440cb7547aafb71bac3b9275ad5f4bd
@@ -2089,6 +2548,8 @@ grant.function|word_similarity_op(text, text)|59a9d60d2ccf51b0c7c03f225c171a7d
 grant.table.env|anon_generation_counters|5d85f2ab7850ab5ff3601a99931342f7
 grant.table.env|app_settings|35176a6956b7edc861997fabfe28a1e5
 grant.table.env|asset_catalog|5d85f2ab7850ab5ff3601a99931342f7
+grant.table.env|background_assignments|abf0fdb64df1423e417d22075873c495
+grant.table.env|background_library|abf0fdb64df1423e417d22075873c495
 grant.table.env|banned_phrases|35176a6956b7edc861997fabfe28a1e5
 grant.table.env|brand_assets|5d85f2ab7850ab5ff3601a99931342f7
 grant.table.env|brand_image_daily_spend|35176a6956b7edc861997fabfe28a1e5
@@ -2099,14 +2560,24 @@ grant.table.env|check_rewrite_usage|5d85f2ab7850ab5ff3601a99931342f7
 grant.table.env|client_persona_cards|5d85f2ab7850ab5ff3601a99931342f7
 grant.table.env|color_names|5d85f2ab7850ab5ff3601a99931342f7
 grant.table.env|comp_grants|35176a6956b7edc861997fabfe28a1e5
+grant.table.env|content_archetypes|abf0fdb64df1423e417d22075873c495
 grant.table.env|content_checkins|5d85f2ab7850ab5ff3601a99931342f7
+grant.table.env|content_generation_results|abf0fdb64df1423e417d22075873c495
+grant.table.env|content_generation_runs|abf0fdb64df1423e417d22075873c495
 grant.table.env|content_grounds|5d85f2ab7850ab5ff3601a99931342f7
 grant.table.env|content_image_allowance|5d85f2ab7850ab5ff3601a99931342f7
+grant.table.env|content_intents|abf0fdb64df1423e417d22075873c495
 grant.table.env|content_items|5d85f2ab7850ab5ff3601a99931342f7
 grant.table.env|content_months|5d85f2ab7850ab5ff3601a99931342f7
 grant.table.env|content_preferences|5d85f2ab7850ab5ff3601a99931342f7
 grant.table.env|content_publications|5d85f2ab7850ab5ff3601a99931342f7
 grant.table.env|content_registers|5d85f2ab7850ab5ff3601a99931342f7
+grant.table.env|content_segments|abf0fdb64df1423e417d22075873c495
+grant.table.env|content_topics|abf0fdb64df1423e417d22075873c495
+grant.table.env|credit_balances|abf0fdb64df1423e417d22075873c495
+grant.table.env|credit_ledger|abf0fdb64df1423e417d22075873c495
+grant.table.env|credit_quotas|abf0fdb64df1423e417d22075873c495
+grant.table.env|custom_visual_generations|abf0fdb64df1423e417d22075873c495
 grant.table.env|degrees|5d85f2ab7850ab5ff3601a99931342f7
 grant.table.env|direction_asset_daily_spend|5d85f2ab7850ab5ff3601a99931342f7
 grant.table.env|direction_assets|5d85f2ab7850ab5ff3601a99931342f7
@@ -2118,6 +2589,10 @@ grant.table.env|funnel_events|5d85f2ab7850ab5ff3601a99931342f7
 grant.table.env|funnel_steps|5d85f2ab7850ab5ff3601a99931342f7
 grant.table.env|gain_cards|5d85f2ab7850ab5ff3601a99931342f7
 grant.table.env|generation_credits|5d85f2ab7850ab5ff3601a99931342f7
+grant.table.env|illustration_library|abf0fdb64df1423e417d22075873c495
+grant.table.env|insight_cards|abf0fdb64df1423e417d22075873c495
+grant.table.env|insight_runs|abf0fdb64df1423e417d22075873c495
+grant.table.env|insight_sources|abf0fdb64df1423e417d22075873c495
 grant.table.env|launch_checklist_items|5d85f2ab7850ab5ff3601a99931342f7
 grant.table.env|license_type_states|5d85f2ab7850ab5ff3601a99931342f7
 grant.table.env|license_types|5d85f2ab7850ab5ff3601a99931342f7
@@ -2125,6 +2600,7 @@ grant.table.env|modality_cards|5d85f2ab7850ab5ff3601a99931342f7
 grant.table.env|modality_prominence_options|5d85f2ab7850ab5ff3601a99931342f7
 grant.table.env|not_a_fit_cards|5d85f2ab7850ab5ff3601a99931342f7
 grant.table.env|notifications|5d85f2ab7850ab5ff3601a99931342f7
+grant.table.env|on_demand_writes|abf0fdb64df1423e417d22075873c495
 grant.table.env|organization_members|5d85f2ab7850ab5ff3601a99931342f7
 grant.table.env|organizations|5d85f2ab7850ab5ff3601a99931342f7
 grant.table.env|palette_families|5d85f2ab7850ab5ff3601a99931342f7
@@ -2140,6 +2616,7 @@ grant.table.env|project_briefs|5d85f2ab7850ab5ff3601a99931342f7
 grant.table.env|projects|5d85f2ab7850ab5ff3601a99931342f7
 grant.table.env|purchase_status_events|5d85f2ab7850ab5ff3601a99931342f7
 grant.table.env|purchases|5d85f2ab7850ab5ff3601a99931342f7
+grant.table.env|rendered_assets|abf0fdb64df1423e417d22075873c495
 grant.table.env|section_types|5d85f2ab7850ab5ff3601a99931342f7
 grant.table.env|sellability_decisions|35176a6956b7edc861997fabfe28a1e5
 grant.table.env|session_style_cards|5d85f2ab7850ab5ff3601a99931342f7
@@ -2152,6 +2629,7 @@ grant.table.env|specialties|5d85f2ab7850ab5ff3601a99931342f7
 grant.table.env|stripe_events|35176a6956b7edc861997fabfe28a1e5
 grant.table.env|subscriptions|5d85f2ab7850ab5ff3601a99931342f7
 grant.table.env|tone_cards|5d85f2ab7850ab5ff3601a99931342f7
+grant.table.env|topic_assignments|abf0fdb64df1423e417d22075873c495
 grant.table.env|type_pairings|5d85f2ab7850ab5ff3601a99931342f7
 grant.table.env|user_uploads|5d85f2ab7850ab5ff3601a99931342f7
 grant.table.env|usp_fingerprints|5d85f2ab7850ab5ff3601a99931342f7
@@ -2159,6 +2637,8 @@ grant.table.env|usp_stopwords|35176a6956b7edc861997fabfe28a1e5
 grant.table|anon_generation_counters|3a8e0a23972aba2675d29434f743d797
 grant.table|app_settings|070408fccc5213b4f0586e3af748bb04
 grant.table|asset_catalog|3a8e0a23972aba2675d29434f743d797
+grant.table|background_assignments|3a8e0a23972aba2675d29434f743d797
+grant.table|background_library|3a8e0a23972aba2675d29434f743d797
 grant.table|banned_phrases|070408fccc5213b4f0586e3af748bb04
 grant.table|brand_assets|3a8e0a23972aba2675d29434f743d797
 grant.table|brand_image_daily_spend|070408fccc5213b4f0586e3af748bb04
@@ -2169,14 +2649,24 @@ grant.table|check_rewrite_usage|e1105780a7eef68cc7e407f278629a3d
 grant.table|client_persona_cards|3a8e0a23972aba2675d29434f743d797
 grant.table|color_names|3a8e0a23972aba2675d29434f743d797
 grant.table|comp_grants|070408fccc5213b4f0586e3af748bb04
+grant.table|content_archetypes|3a8e0a23972aba2675d29434f743d797
 grant.table|content_checkins|3a8e0a23972aba2675d29434f743d797
+grant.table|content_generation_results|070408fccc5213b4f0586e3af748bb04
+grant.table|content_generation_runs|070408fccc5213b4f0586e3af748bb04
 grant.table|content_grounds|3a8e0a23972aba2675d29434f743d797
 grant.table|content_image_allowance|3a8e0a23972aba2675d29434f743d797
+grant.table|content_intents|3a8e0a23972aba2675d29434f743d797
 grant.table|content_items|3a8e0a23972aba2675d29434f743d797
 grant.table|content_months|3a8e0a23972aba2675d29434f743d797
 grant.table|content_preferences|3a8e0a23972aba2675d29434f743d797
 grant.table|content_publications|3a8e0a23972aba2675d29434f743d797
 grant.table|content_registers|3a8e0a23972aba2675d29434f743d797
+grant.table|content_segments|3a8e0a23972aba2675d29434f743d797
+grant.table|content_topics|3a8e0a23972aba2675d29434f743d797
+grant.table|credit_balances|3a8e0a23972aba2675d29434f743d797
+grant.table|credit_ledger|3a8e0a23972aba2675d29434f743d797
+grant.table|credit_quotas|3a8e0a23972aba2675d29434f743d797
+grant.table|custom_visual_generations|3a8e0a23972aba2675d29434f743d797
 grant.table|degrees|3a8e0a23972aba2675d29434f743d797
 grant.table|direction_asset_daily_spend|3a8e0a23972aba2675d29434f743d797
 grant.table|direction_assets|3a8e0a23972aba2675d29434f743d797
@@ -2188,6 +2678,10 @@ grant.table|funnel_events|3a8e0a23972aba2675d29434f743d797
 grant.table|funnel_steps|3a8e0a23972aba2675d29434f743d797
 grant.table|gain_cards|3a8e0a23972aba2675d29434f743d797
 grant.table|generation_credits|e1105780a7eef68cc7e407f278629a3d
+grant.table|illustration_library|3a8e0a23972aba2675d29434f743d797
+grant.table|insight_cards|070408fccc5213b4f0586e3af748bb04
+grant.table|insight_runs|070408fccc5213b4f0586e3af748bb04
+grant.table|insight_sources|3a8e0a23972aba2675d29434f743d797
 grant.table|launch_checklist_items|f1e26c2a22dfc693af14850520eeb135
 grant.table|license_type_states|3a8e0a23972aba2675d29434f743d797
 grant.table|license_types|3a8e0a23972aba2675d29434f743d797
@@ -2195,6 +2689,7 @@ grant.table|modality_cards|3a8e0a23972aba2675d29434f743d797
 grant.table|modality_prominence_options|3a8e0a23972aba2675d29434f743d797
 grant.table|not_a_fit_cards|3a8e0a23972aba2675d29434f743d797
 grant.table|notifications|3a8e0a23972aba2675d29434f743d797
+grant.table|on_demand_writes|070408fccc5213b4f0586e3af748bb04
 grant.table|organization_members|3a8e0a23972aba2675d29434f743d797
 grant.table|organizations|3a8e0a23972aba2675d29434f743d797
 grant.table|palette_families|3a8e0a23972aba2675d29434f743d797
@@ -2210,6 +2705,7 @@ grant.table|project_briefs|3a8e0a23972aba2675d29434f743d797
 grant.table|projects|3a8e0a23972aba2675d29434f743d797
 grant.table|purchase_status_events|5efdb4e57379f71f0794aa3f9e355ccf
 grant.table|purchases|3a8e0a23972aba2675d29434f743d797
+grant.table|rendered_assets|3a8e0a23972aba2675d29434f743d797
 grant.table|section_types|3a8e0a23972aba2675d29434f743d797
 grant.table|sellability_decisions|070408fccc5213b4f0586e3af748bb04
 grant.table|session_style_cards|3a8e0a23972aba2675d29434f743d797
@@ -2222,6 +2718,7 @@ grant.table|specialties|3a8e0a23972aba2675d29434f743d797
 grant.table|stripe_events|070408fccc5213b4f0586e3af748bb04
 grant.table|subscriptions|3a8e0a23972aba2675d29434f743d797
 grant.table|tone_cards|3a8e0a23972aba2675d29434f743d797
+grant.table|topic_assignments|3a8e0a23972aba2675d29434f743d797
 grant.table|type_pairings|3a8e0a23972aba2675d29434f743d797
 grant.table|user_uploads|3a8e0a23972aba2675d29434f743d797
 grant.table|usp_fingerprints|6de54f4c9cdf0971a0acf7a91ae99136
@@ -2229,6 +2726,10 @@ grant.table|usp_stopwords|070408fccc5213b4f0586e3af748bb04
 index|anon_generation_counters.anon_generation_counters_pkey|d5add110407f022fbac2b4dc23fd7f47
 index|app_settings.app_settings_pkey|6d1258c1df3502dea98a1e37a51e5fa1
 index|asset_catalog.asset_catalog_pkey|cf46c23003b849986c228f2bb474c7a7
+index|background_assignments.background_assignments_asset_idx|8e5843d8afb4305edd26c9247a704d8d
+index|background_assignments.background_assignments_pkey|8182212e362750e4b71200b5e133f03e
+index|background_library.background_library_pkey|f104e217a8a2deae604b0a50bbf7e04b
+index|background_library.background_library_slug_key|27d2951bd73d6e507ece5365d9068a30
 index|banned_phrases.banned_phrases_lower_phrase_key|317f551d35faf38fa4e456acdfc6c3ec
 index|banned_phrases.banned_phrases_pkey|881b7b2c7357fbf07f959c0c8b244c9f
 index|brand_assets.brand_assets_kit_fingerprint_idx|32a5088f11c3fb3ef0335a97596b0315
@@ -2252,23 +2753,52 @@ index|color_names.color_names_pkey|5248afa38d27c6222c3f2f00e7bfefb3
 index|comp_grants.comp_grants_pkey|50196bc5973d4de2ece86621dedc6eab
 index|comp_grants.comp_grants_user_id_active_key|3287fd74d287af430533a9b0b477b589
 index|comp_grants.comp_grants_user_id_idx|3b8eefef4a1cecc1e2380dc3fc81ad69
+index|content_archetypes.content_archetypes_pkey|5bb7b5abcd2973e256eb1f3559ec140e
 index|content_checkins.content_checkins_kit_month_idx|a10b25d47135fb42143a8cec20ab96d0
 index|content_checkins.content_checkins_kit_month_key|62bbeeac42d119caa72c0ce7c6b32639
 index|content_checkins.content_checkins_pkey|efc5bcc903a36b85deadb0c978fd8227
+index|content_generation_results.content_generation_results_pkey|822b1caf0cf91b286f646647541a35bf
+index|content_generation_results.content_generation_results_run_idx|e927d1ed6a6b4f6bb9741c68281e9db9
+index|content_generation_results.content_generation_results_unique|f7144f2a7ab8b8fb2612f7bd486ef506
+index|content_generation_runs.content_generation_runs_open_idx|bb6ae3c5bb7be96ccf328d5974f94441
+index|content_generation_runs.content_generation_runs_open_unique|e1052f950b73b1ac810a552b328d37f1
+index|content_generation_runs.content_generation_runs_pkey|0c97df6c11418b6c81bcd2521358328e
 index|content_grounds.content_grounds_month_idx|1c120af95acdd4acd9f0c9a8276f3042
 index|content_grounds.content_grounds_month_theme_key|7aab2ce979bc5176fc0592d0133a88ab
 index|content_grounds.content_grounds_pkey|ef51af3ba062324c2c8b0aa96b095538
 index|content_image_allowance.content_image_allowance_pkey|8b25d10ddd01c174763cbeabf1dce90c
+index|content_intents.content_intents_pkey|77098db6b1c91993f5e196af3830446e
+index|content_items.content_items_compose_archetype_idx|e315fd98702fc1afb5c3fabec33110a1
 index|content_items.content_items_kit_created_idx|9cae5ecaef804c6ea82e3639d2767bfc
 index|content_items.content_items_kit_scheduled_idx|15b3c975f57070bb245b57d9f817bcab
 index|content_items.content_items_month_id_idx|9bea4712b0c6d5404651d9c760d93bca
 index|content_items.content_items_pkey|8a829ed313a10073be642237fc648426
+index|content_items.content_items_topic_idx|3939df97948c0ee23323f5770c33d5b2
 index|content_months.content_months_kit_month_key|3ee1890c67e44b1c2ec18fe0ac2f1dcc
 index|content_months.content_months_pkey|bc103ad59e294667546f7190023f8df8
 index|content_preferences.content_preferences_pkey|299f03a7b3010851eb2e66c036d13a8a
 index|content_publications.content_publications_item_idx|cd1d8f19515f8564102d17486d218b98
 index|content_publications.content_publications_pkey|4d9221f1298bf68fea368c12a9f4b343
 index|content_registers.content_registers_pkey|f9d3c0aa72bce832e742a151ddb0d207
+index|content_segments.content_segments_any_state_key|97342c155db10fe0a8fb141287bc23ab
+index|content_segments.content_segments_pkey|a0b079f3c02c32dab01f3a916a1cbc60
+index|content_segments.content_segments_with_state_key|511c95bb6e8da619fdc2a0e29f115114
+index|content_topics.content_topics_batch_idx|74a9205b1294c6f76e354953e34b1c2b
+index|content_topics.content_topics_insight_idx|358a2586b9ccbfcddcc0cb65c28e7ff0
+index|content_topics.content_topics_pkey|80691336bb0d1d53384f064a9b00bf0e
+index|content_topics.content_topics_reviewed_idx|6f953a563381b298bbef34dedb3eaca5
+index|content_topics.content_topics_segment_idx|2b0423b34c72b95cbd0bb9cabaaab3d8
+index|content_topics.content_topics_timely_idx|c6427edc44c85b96d18a098ac0c1dd6c
+index|credit_balances.credit_balances_pkey|8fe40532c1ab044608c1c80dc75ff49e
+index|credit_balances.credit_balances_user_month_idx|735dcc451d43420b2c1b37b4716c95ee
+index|credit_ledger.credit_ledger_one_outcome_per_reservation|dbec60281f5ed599d76b1ec16379540a
+index|credit_ledger.credit_ledger_open_reservations_idx|50539af447e0fec91a95caee5a9c375f
+index|credit_ledger.credit_ledger_pkey|6b00160b18f3911c743f39cab460d8f4
+index|credit_ledger.credit_ledger_user_month_idx|1d637de1c38bce6f4df2050e48e01e0a
+index|credit_quotas.credit_quotas_pkey|d01f12ebce3ad502015bbb05edbfcead
+index|custom_visual_generations.custom_visual_generations_pkey|8cdd93ad08f7d20f276814fb6a22f3c3
+index|custom_visual_generations.custom_visual_kit_idx|88e936d9ab527242909183b4a08edf48
+index|custom_visual_generations.custom_visual_kit_prompt_key|06c1b24cb2e38b101191005939bff3d1
 index|degrees.degrees_pkey|ae16a3e916723239ce0d560c8a747aff
 index|direction_asset_daily_spend.direction_asset_daily_spend_pkey|389851ed875a3c79605771a946fe1fc6
 index|direction_assets.direction_assets_brand_kit_id_idx|cb1dca4abd9159c6d3d635210ec45265
@@ -2291,6 +2821,16 @@ index|funnel_steps.funnel_steps_step_no_key|a8970d80c9153d0c93e37d1b176453c9
 index|gain_cards.gain_cards_pkey|bc02eba34f94c1a9b614c8d9daf1c5c1
 index|generation_credits.generation_credits_pkey|b9239ca685c26de9a1f5e989d8ac19fe
 index|generation_credits.generation_credits_project_id_key|59abdd95e2ae0fcecf6c6a18209cfb37
+index|illustration_library.illustration_library_archetype_idx|ff2d304a10f7afa338daf11327ca769a
+index|illustration_library.illustration_library_pkey|30c4fa6952087732fcd0fadf70616301
+index|illustration_library.illustration_library_slug_version_key|3c91d9d9befd2ead62d57397769b6132
+index|insight_cards.insight_cards_expiry_idx|03dc5b81d58844471e6137d01d81c92a
+index|insight_cards.insight_cards_pkey|17c86504555219664b33fc05f2a8bf8f
+index|insight_cards.insight_cards_run_idx|0bc4d3fa3a65fbcfa2d1018c2e3a4308
+index|insight_cards.insight_cards_segments_idx|e45f964e47f8af625c528ebb412d9f6d
+index|insight_runs.insight_runs_pkey|fee78a490c55f65a677cd78a79897ceb
+index|insight_runs.insight_runs_week_key|d3c92d96b7577d3a30e11464d5599599
+index|insight_sources.insight_sources_pkey|4feb5695739f4e485cc4843833cfb0f0
 index|launch_checklist_items.launch_checklist_items_brand_kit_id_idx|1bf045097b8c11a755aeacdccf5d89df
 index|launch_checklist_items.launch_checklist_items_brand_kit_id_key_key|e683163b25b610fb312392b1790d23b6
 index|launch_checklist_items.launch_checklist_items_brand_kit_id_sort_order_idx|71f742c976bc8a088ffddfc4acfbac0c
@@ -2306,6 +2846,9 @@ index|notifications.notifications_asset_rendered_idx|c539a59e89017e539699082acb3
 index|notifications.notifications_pkey|3435fbb51aa7e7d2ac858b253960952b
 index|notifications.notifications_site_stale_unread_idx|1350b27a8ec9cead9ced3d412ecc1716
 index|notifications.notifications_user_id_read_at_idx|478178db622d0ddbbf6db81ef94c73a9
+index|on_demand_writes.on_demand_writes_item_idx|c4a965e7a471d1051b6fa09b120281e1
+index|on_demand_writes.on_demand_writes_pkey|c000bd1a4e33728a8da1aee1241e949e
+index|on_demand_writes.on_demand_writes_unique|c6efb4cf48720e149bceea4638f45ef0
 index|organization_members.organization_members_invite_token_hash_key|e38d2cab04f48d5e641107ac87002080
 index|organization_members.organization_members_invited_email_idx|68acbf122e2b3830bb4795427e343c33
 index|organization_members.organization_members_one_owned_org_per_user|299bfdd8f8d95d46606fd8084925003d
@@ -2348,6 +2891,9 @@ index|purchases.purchases_project_id_idx|78083693954cc4ebac9036eeebcf9114
 index|purchases.purchases_project_kind_idx|1b80f50aebc2cb9d2f3ab9833ac8060c
 index|purchases.purchases_stripe_checkout_session_id_key|fca72b0d7ce0063dfbe42f42549f21e4
 index|purchases.purchases_user_id_idx|69ab225863bcdb18ffcabdd4133ab402
+index|rendered_assets.rendered_assets_kit_hash_key|e956eb38e7d23b7efbfefba526977d76
+index|rendered_assets.rendered_assets_kit_idx|ece1b2aa1357cdaf19de72cf7ea0d878
+index|rendered_assets.rendered_assets_pkey|9707faba731c4b9be2f385a9d1a83f2e
 index|section_types.section_types_pkey|fb5f16276f76d327ad4e02c31d9dba6f
 index|sellability_decisions.sellability_decisions_pkey|9e602c9909bad397520c23951447e19d
 index|session_style_cards.session_style_cards_pkey|4032ddc175bad88da81c83410fd563ae
@@ -2367,6 +2913,11 @@ index|subscriptions.subscriptions_stripe_subscription_id_key|159978ccfbe833fe722
 index|subscriptions.subscriptions_trialing_ending_idx|3defe3861fe5b9a8c8673b992dbba40a
 index|subscriptions.subscriptions_user_id_key|f7e64cd8a3034f2dc434828fda95b3c7
 index|tone_cards.tone_cards_pkey|5055ac9925dd5acd4c422340f3a1f9b2
+index|topic_assignments.topic_assignments_assigned_at_idx|676cc57c8cd31ae6037e0cad07f4bcc8
+index|topic_assignments.topic_assignments_kit_month_idx|e6a05fe557de7f38f10c48c1afadc3f5
+index|topic_assignments.topic_assignments_kit_topic_idx|452e5060c9dbe9003007fcf9b315f340
+index|topic_assignments.topic_assignments_pkey|74a11f1292d9bc8a29adadae7d88cc71
+index|topic_assignments.topic_assignments_topic_idx|a639b1f6ae6fdc8ec4c25d4ffafb74bb
 index|type_pairings.type_pairings_pkey|bfc59f63eef5ab607ed1bd448f8e5604
 index|user_uploads.user_uploads_kit_idx|6d3846cc5be5b3783f36003b97123590
 index|user_uploads.user_uploads_one_portrait|a5b308c27cdc52294f1560e5f75570a4
@@ -2381,6 +2932,14 @@ index|usp_stopwords.usp_stopwords_pkey|3350e9ba087434c15ffa4f9f365000de
 policy|anon_generation_counters.anon_counters_denied|596077fbaa073cdaa464d2147cbf2fd3
 policy|app_settings.app_settings_denied|596077fbaa073cdaa464d2147cbf2fd3
 policy|asset_catalog.asset_catalog_select_all|4f626659e1330512816b28f1686c5051
+policy|background_assignments.background_assignments_delete_denied|41696294add3a8d7970b68fb52e3f87b
+policy|background_assignments.background_assignments_insert_denied|eaeff572b6b24ac49fb3ca9b4b9e3a84
+policy|background_assignments.background_assignments_select_own|9f9ed268594555750a4437db602dc0dc
+policy|background_assignments.background_assignments_update_denied|a725c1c31ee3d4b76fd581737ee92609
+policy|background_library.background_library_delete_denied|41696294add3a8d7970b68fb52e3f87b
+policy|background_library.background_library_insert_denied|eaeff572b6b24ac49fb3ca9b4b9e3a84
+policy|background_library.background_library_select_all|4f626659e1330512816b28f1686c5051
+policy|background_library.background_library_update_denied|a725c1c31ee3d4b76fd581737ee92609
 policy|banned_phrases.banned_phrases_denied|596077fbaa073cdaa464d2147cbf2fd3
 policy|brand_assets.brand_assets_select_own|54992899021b1ea9827f9768b35ffc60
 policy|brand_image_daily_spend.brand_image_daily_spend_denied|596077fbaa073cdaa464d2147cbf2fd3
@@ -2394,10 +2953,16 @@ policy|check_rewrite_usage.check_rewrite_usage_update_denied|a725c1c31ee3d4b76fd
 policy|client_persona_cards.client_persona_cards_select_all|d81c1b8081dcd2240c075a490e308a66
 policy|color_names.color_names_select_all|4f626659e1330512816b28f1686c5051
 policy|comp_grants.comp_grants_denied|596077fbaa073cdaa464d2147cbf2fd3
+policy|content_archetypes.content_archetypes_delete_denied|41696294add3a8d7970b68fb52e3f87b
+policy|content_archetypes.content_archetypes_insert_denied|eaeff572b6b24ac49fb3ca9b4b9e3a84
+policy|content_archetypes.content_archetypes_select_all|4f626659e1330512816b28f1686c5051
+policy|content_archetypes.content_archetypes_update_denied|a725c1c31ee3d4b76fd581737ee92609
 policy|content_checkins.content_checkins_delete_denied|41696294add3a8d7970b68fb52e3f87b
 policy|content_checkins.content_checkins_insert_denied|eaeff572b6b24ac49fb3ca9b4b9e3a84
 policy|content_checkins.content_checkins_select_own|67aea9ec26c2427e2889fbe6001685d2
 policy|content_checkins.content_checkins_update_denied|a725c1c31ee3d4b76fd581737ee92609
+policy|content_generation_results.content_generation_results_no_browser|990df26e2bf3643307cd9ff06d317893
+policy|content_generation_runs.content_generation_runs_no_browser|990df26e2bf3643307cd9ff06d317893
 policy|content_grounds.content_grounds_delete_denied|41696294add3a8d7970b68fb52e3f87b
 policy|content_grounds.content_grounds_insert_denied|eaeff572b6b24ac49fb3ca9b4b9e3a84
 policy|content_grounds.content_grounds_select_own|aaf2354b49faaf557380160aad3530fb
@@ -2406,6 +2971,10 @@ policy|content_image_allowance.content_image_allowance_delete_denied|41696294add
 policy|content_image_allowance.content_image_allowance_insert_denied|eaeff572b6b24ac49fb3ca9b4b9e3a84
 policy|content_image_allowance.content_image_allowance_select_own|2f0ab2b00c655d38291b6fcedbe8330d
 policy|content_image_allowance.content_image_allowance_update_denied|a725c1c31ee3d4b76fd581737ee92609
+policy|content_intents.content_intents_delete_denied|41696294add3a8d7970b68fb52e3f87b
+policy|content_intents.content_intents_insert_denied|eaeff572b6b24ac49fb3ca9b4b9e3a84
+policy|content_intents.content_intents_select_all|4f626659e1330512816b28f1686c5051
+policy|content_intents.content_intents_update_denied|a725c1c31ee3d4b76fd581737ee92609
 policy|content_items.content_items_delete_denied|1bf1f940222bbc6d074428c78181196f
 policy|content_items.content_items_insert_denied|3a947623c42040a69518f4e56824f28b
 policy|content_items.content_items_select_own|71f95e9d42d8cb9c24a7cc9216749fcf
@@ -2426,6 +2995,30 @@ policy|content_registers.content_registers_delete_denied|41696294add3a8d7970b68f
 policy|content_registers.content_registers_insert_denied|eaeff572b6b24ac49fb3ca9b4b9e3a84
 policy|content_registers.content_registers_select_all|4f626659e1330512816b28f1686c5051
 policy|content_registers.content_registers_update_denied|a725c1c31ee3d4b76fd581737ee92609
+policy|content_segments.content_segments_delete_denied|41696294add3a8d7970b68fb52e3f87b
+policy|content_segments.content_segments_insert_denied|eaeff572b6b24ac49fb3ca9b4b9e3a84
+policy|content_segments.content_segments_select_all|4f626659e1330512816b28f1686c5051
+policy|content_segments.content_segments_update_denied|a725c1c31ee3d4b76fd581737ee92609
+policy|content_topics.content_topics_delete_denied|41696294add3a8d7970b68fb52e3f87b
+policy|content_topics.content_topics_insert_denied|eaeff572b6b24ac49fb3ca9b4b9e3a84
+policy|content_topics.content_topics_select_assigned|66044347bec044726e78383ff908347c
+policy|content_topics.content_topics_update_denied|a725c1c31ee3d4b76fd581737ee92609
+policy|credit_balances.credit_balances_delete_denied|41696294add3a8d7970b68fb52e3f87b
+policy|credit_balances.credit_balances_insert_denied|eaeff572b6b24ac49fb3ca9b4b9e3a84
+policy|credit_balances.credit_balances_select_own|c9e7a3b6c2ec85fd99ff2293db29e596
+policy|credit_balances.credit_balances_update_denied|a725c1c31ee3d4b76fd581737ee92609
+policy|credit_ledger.credit_ledger_delete_denied|41696294add3a8d7970b68fb52e3f87b
+policy|credit_ledger.credit_ledger_insert_denied|eaeff572b6b24ac49fb3ca9b4b9e3a84
+policy|credit_ledger.credit_ledger_select_own|c9e7a3b6c2ec85fd99ff2293db29e596
+policy|credit_ledger.credit_ledger_update_denied|a725c1c31ee3d4b76fd581737ee92609
+policy|credit_quotas.credit_quotas_delete_denied|41696294add3a8d7970b68fb52e3f87b
+policy|credit_quotas.credit_quotas_insert_denied|eaeff572b6b24ac49fb3ca9b4b9e3a84
+policy|credit_quotas.credit_quotas_select_all|4f626659e1330512816b28f1686c5051
+policy|credit_quotas.credit_quotas_update_denied|a725c1c31ee3d4b76fd581737ee92609
+policy|custom_visual_generations.custom_visual_delete_denied|41696294add3a8d7970b68fb52e3f87b
+policy|custom_visual_generations.custom_visual_insert_denied|eaeff572b6b24ac49fb3ca9b4b9e3a84
+policy|custom_visual_generations.custom_visual_select_own|083f1399a9673b2c7c914e9756e094ee
+policy|custom_visual_generations.custom_visual_update_denied|a725c1c31ee3d4b76fd581737ee92609
 policy|degrees.degrees_select_all|d81c1b8081dcd2240c075a490e308a66
 policy|direction_asset_daily_spend.direction_asset_daily_spend_denied|596077fbaa073cdaa464d2147cbf2fd3
 policy|direction_assets.direction_assets_select_own|d248a9a2635f55ec5f8ee46f73cfb671
@@ -2447,6 +3040,16 @@ policy|generation_credits.generation_credits_delete_denied|41696294add3a8d7970b6
 policy|generation_credits.generation_credits_insert_denied|eaeff572b6b24ac49fb3ca9b4b9e3a84
 policy|generation_credits.generation_credits_select_own|03b70087d81c1da91e55a14edc23d2cf
 policy|generation_credits.generation_credits_update_denied|a725c1c31ee3d4b76fd581737ee92609
+policy|illustration_library.illustration_library_delete_denied|41696294add3a8d7970b68fb52e3f87b
+policy|illustration_library.illustration_library_insert_denied|eaeff572b6b24ac49fb3ca9b4b9e3a84
+policy|illustration_library.illustration_library_select_all|4f626659e1330512816b28f1686c5051
+policy|illustration_library.illustration_library_update_denied|a725c1c31ee3d4b76fd581737ee92609
+policy|insight_cards.insight_cards_denied|596077fbaa073cdaa464d2147cbf2fd3
+policy|insight_runs.insight_runs_denied|596077fbaa073cdaa464d2147cbf2fd3
+policy|insight_sources.insight_sources_delete_denied|41696294add3a8d7970b68fb52e3f87b
+policy|insight_sources.insight_sources_insert_denied|eaeff572b6b24ac49fb3ca9b4b9e3a84
+policy|insight_sources.insight_sources_select_all|4f626659e1330512816b28f1686c5051
+policy|insight_sources.insight_sources_update_denied|a725c1c31ee3d4b76fd581737ee92609
 policy|launch_checklist_items.launch_checklist_items_delete_denied|41696294add3a8d7970b68fb52e3f87b
 policy|launch_checklist_items.launch_checklist_items_insert_denied|eaeff572b6b24ac49fb3ca9b4b9e3a84
 policy|launch_checklist_items.launch_checklist_items_select_own|c9e7a3b6c2ec85fd99ff2293db29e596
@@ -2460,6 +3063,7 @@ policy|notifications.notifications_delete_denied|41696294add3a8d7970b68fb52e3f87
 policy|notifications.notifications_insert_denied|eaeff572b6b24ac49fb3ca9b4b9e3a84
 policy|notifications.notifications_select_own|c9e7a3b6c2ec85fd99ff2293db29e596
 policy|notifications.notifications_update_denied|a725c1c31ee3d4b76fd581737ee92609
+policy|on_demand_writes.on_demand_writes_no_browser|990df26e2bf3643307cd9ff06d317893
 policy|organization_members.organization_members_select_member|d17b3bd9fc6e6cfad440c1597c65c1c5
 policy|organizations.organizations_select_member|2e39b650b28f747b89f93370a6434b6c
 policy|palette_families.palette_families_select_all|d81c1b8081dcd2240c075a490e308a66
@@ -2498,6 +3102,10 @@ policy|purchases.purchases_delete_denied|41696294add3a8d7970b68fb52e3f87b
 policy|purchases.purchases_insert_denied|eaeff572b6b24ac49fb3ca9b4b9e3a84
 policy|purchases.purchases_select_own|c9e7a3b6c2ec85fd99ff2293db29e596
 policy|purchases.purchases_update_denied|a725c1c31ee3d4b76fd581737ee92609
+policy|rendered_assets.rendered_assets_delete_denied|41696294add3a8d7970b68fb52e3f87b
+policy|rendered_assets.rendered_assets_insert_denied|eaeff572b6b24ac49fb3ca9b4b9e3a84
+policy|rendered_assets.rendered_assets_select_own|b10e37dd748f79c91b06e7072ceb4b9d
+policy|rendered_assets.rendered_assets_update_denied|a725c1c31ee3d4b76fd581737ee92609
 policy|section_types.section_types_select_all|4f626659e1330512816b28f1686c5051
 policy|sellability_decisions.sellability_decisions_no_browser|596077fbaa073cdaa464d2147cbf2fd3
 policy|session_style_cards.session_style_cards_select_all|d81c1b8081dcd2240c075a490e308a66
@@ -2522,6 +3130,10 @@ policy|subscriptions.subscriptions_insert_denied|eaeff572b6b24ac49fb3ca9b4b9e3a8
 policy|subscriptions.subscriptions_select_own|c9e7a3b6c2ec85fd99ff2293db29e596
 policy|subscriptions.subscriptions_update_denied|a725c1c31ee3d4b76fd581737ee92609
 policy|tone_cards.tone_cards_select_all|d81c1b8081dcd2240c075a490e308a66
+policy|topic_assignments.topic_assignments_delete_denied|41696294add3a8d7970b68fb52e3f87b
+policy|topic_assignments.topic_assignments_insert_denied|eaeff572b6b24ac49fb3ca9b4b9e3a84
+policy|topic_assignments.topic_assignments_select_own|b697225584de03dd816b39e08e571fed
+policy|topic_assignments.topic_assignments_update_denied|a725c1c31ee3d4b76fd581737ee92609
 policy|type_pairings.type_pairings_select_all|d81c1b8081dcd2240c075a490e308a66
 policy|user_uploads.user_uploads_delete_denied|1bf1f940222bbc6d074428c78181196f
 policy|user_uploads.user_uploads_insert_denied|3a947623c42040a69518f4e56824f28b
@@ -2535,6 +3147,8 @@ policy|usp_stopwords.usp_stopwords_denied|596077fbaa073cdaa464d2147cbf2fd3
 rls|anon_generation_counters|on
 rls|app_settings|on
 rls|asset_catalog|on
+rls|background_assignments|on
+rls|background_library|on
 rls|banned_phrases|on
 rls|brand_assets|on
 rls|brand_image_daily_spend|on
@@ -2545,14 +3159,24 @@ rls|check_rewrite_usage|on
 rls|client_persona_cards|on
 rls|color_names|on
 rls|comp_grants|on
+rls|content_archetypes|on
 rls|content_checkins|on
+rls|content_generation_results|on
+rls|content_generation_runs|on
 rls|content_grounds|on
 rls|content_image_allowance|on
+rls|content_intents|on
 rls|content_items|on
 rls|content_months|on
 rls|content_preferences|on
 rls|content_publications|on
 rls|content_registers|on
+rls|content_segments|on
+rls|content_topics|on
+rls|credit_balances|on
+rls|credit_ledger|on
+rls|credit_quotas|on
+rls|custom_visual_generations|on
 rls|degrees|on
 rls|direction_asset_daily_spend|on
 rls|direction_assets|on
@@ -2564,6 +3188,10 @@ rls|funnel_events|on
 rls|funnel_steps|on
 rls|gain_cards|on
 rls|generation_credits|on
+rls|illustration_library|on
+rls|insight_cards|on
+rls|insight_runs|on
+rls|insight_sources|on
 rls|launch_checklist_items|on
 rls|license_type_states|on
 rls|license_types|on
@@ -2571,6 +3199,7 @@ rls|modality_cards|on
 rls|modality_prominence_options|on
 rls|not_a_fit_cards|on
 rls|notifications|on
+rls|on_demand_writes|on
 rls|organization_members|on
 rls|organizations|on
 rls|palette_families|on
@@ -2586,6 +3215,7 @@ rls|project_briefs|on
 rls|projects|on
 rls|purchase_status_events|on
 rls|purchases|on
+rls|rendered_assets|on
 rls|section_types|on
 rls|sellability_decisions|on
 rls|session_style_cards|on
@@ -2598,6 +3228,7 @@ rls|specialties|on
 rls|stripe_events|on
 rls|subscriptions|on
 rls|tone_cards|on
+rls|topic_assignments|on
 rls|type_pairings|on
 rls|user_uploads|on
 rls|usp_fingerprints|on
@@ -2608,12 +3239,19 @@ trigger|brand_kits.on_brand_kit_created|7cb9362152861ee538f3a715ee69b81c
 trigger|brand_kits.on_brand_kit_direction_selected|62c33d0437118a478c6d54fe10f1ccc7
 trigger|brand_kits.set_brand_kits_updated_at|8c2a3eef0047378ccc1b4a78c03a19bb
 trigger|content_items.content_items_ethics_gate|7a60ec4b1a4032942f0cd204d4eff484
+trigger|content_items.content_items_payload_ethics_gate|42b14e195da51de7e3618ed881f807be
 trigger|content_items.content_items_theme_check_trg|920cb24395d42bd33bf45746c24545ae
 trigger|content_preferences.content_preferences_validate_registers|21e8805da6cb7b3094bccad0c9c5a5f1
+trigger|content_topics.content_topics_banned_phrases_gate|6c5836c79ce3bd3f4b057010bb80aa3a
+trigger|content_topics.content_topics_ethics_gate|fcb973bd2a54dc62c47fced02106ef54
+trigger|credit_ledger.credit_ledger_apply|d6f4c24fd069f1e6cb23e03b358b92f9
+trigger|credit_ledger.credit_ledger_no_delete|e8f56c308f9d56d936cad6bcccd09bae
+trigger|credit_ledger.credit_ledger_no_update|cceea84f41cbc00c44c6dda150beca4a
 trigger|directions.directions_set_updated_at|f56b171b3531a5f55e96b112e0b3316e
 trigger|directory_profiles.directory_profiles_ethics_gate|938150bf3f781adc7423550257abafd4
 trigger|directory_profiles.set_directory_profiles_updated_at|9c345255eae24676029088b9c2d47259
 trigger|generation_credits.set_generation_credits_updated_at|8997fbdb302973e466e0c3149c54fe94
+trigger|insight_cards.insight_cards_validate_segments|0a9df55bf23ffd1680d20110782da358
 trigger|launch_checklist_items.set_launch_checklist_items_updated_at|9ef8fa1278a16baa2ff8afe7d83fbadf
 trigger|license_type_states.license_type_states_track_delete_gate|d4efed2d591805e75d24faac8071e1cd
 trigger|license_type_states.license_type_states_track_gate|c79d93ce90a05e2a086afc8f0b9e7a07
@@ -2621,6 +3259,7 @@ trigger|license_types.license_types_track_depth_gate|349c03e52100f0ac6128412c089
 trigger|organizations.set_organizations_updated_at|b5cc67c0e7b2be102a0de1e476ba25fc
 trigger|plans.set_plans_updated_at|6ce793de41dff81c5cbae0ff6a0a936b
 trigger|profiles.set_profiles_updated_at|bf9efb8a082e779e846ca818d1119e35
+trigger|project_briefs.project_briefs_licence_number_to_specs|a0bb686be7ec952c08d451ede8b5af06
 trigger|project_briefs.project_briefs_license_state_gate|6041150b039291069ff536ba6f313d97
 trigger|project_briefs.project_briefs_set_updated_at|cb433173aa3f017ee7b8bb315bfb89b2
 trigger|project_briefs.project_briefs_validate_how_you_work_refs|7944e6a80fee42d31680f194f5ee721f
@@ -2633,6 +3272,7 @@ trigger|purchase_status_events.purchase_status_events_capture_previous|f0b83290e
 trigger|purchase_status_events.purchase_status_events_no_rewrite|332ac8923c2fef5382f73deee4d33d9c
 trigger|purchases.purchases_kind_matches_plan|16d3254bd9e86c256274776676aa9b7f
 trigger|purchases.set_purchases_updated_at|558cfb77b6a5e6218eaa89deccf537b0
+trigger|section_types.section_types_pages_exist_trigger|e4fd1b46baf40d6433099063a1b26f3a
 trigger|site_platforms.set_site_platforms_updated_at|4ace3dbc78ba03369e07a1d19595e162
 trigger|site_specs.maintain_site_spec_text_variants|fd5b2f12b5fa1fcb2a0065f28ee70bf6
 trigger|site_specs.on_site_spec_written|8608c10851dbba70e5eb9c66f54b8fd6
@@ -2640,4 +3280,6 @@ trigger|site_specs.retire_site_spec_clamp_notes|6798228b47c15b4157b1b696ba78dd32
 trigger|site_specs.set_site_specs_updated_at|1eeda81fee8570399c539df2d995f7c4
 trigger|site_specs.site_specs_color_labels|9771e02b9b0b2e5bb5aa2e7b6b1cd33d
 trigger|site_specs.site_specs_ethics_gate|24bdbc259d7b0017a6079c745ba98e46
+trigger|site_specs.site_specs_licence_number_from_brief|1881f02f2cf0ce5007b47b25e1587335
 trigger|subscriptions.set_subscriptions_updated_at|e167c05da103d083560d5ad16a36fdca
+trigger|subscriptions.subscriptions_refuse_stale_event|ea0a27f851276108908aabd7b6af65c7
