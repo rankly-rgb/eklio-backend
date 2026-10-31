@@ -1,0 +1,16 @@
+# F81 (20261031090000_a_month_eklio_got_wrong_is_withdrawn) — ce que la production doit
+# porter APRÈS application, relevé sur le rejeu local des 180 migrations le 2026-10-31.
+# Ce n'est PAS l'empreinte de production : celle-ci se relève sur la base, après coup.
+# Lignes '+' : à trouver en production. Lignes '-' : à ne plus y trouver.
+#
+# ⚠ D'ICI LÀ, schema-drift EST ROUGE SUR main, ET C'EST VOULU : main décrit un schéma
+# que la production n'a pas encore. C'est l'alarme qui a manqué à F76.
++ column|credit_month_audit.refunds|de75f88ce8313f3f24dd9c5b2aafb799
++ constraint|credit_ledger.credit_ledger_entry_type_check|f541ae9dd2aa11fbc42e7a910198f856
++ constraint|credit_ledger.credit_ledger_refund_shape|a1ad5e9f9f12a10afb63f59f999b4e2b
++ function.body|withdraw_content_month(p_month_id uuid, p_reason text)|7172fe18066a391df6e34538d6c7275b
++ function|withdraw_content_month(p_month_id uuid, p_reason text)|6dbdf3f16dcd15965323468d5b193e6a
++ grant.function.env|withdraw_content_month(p_month_id uuid, p_reason text)|b50339a10e1de285ac99d4c3990b8693
++ grant.function|withdraw_content_month(p_month_id uuid, p_reason text)|8dd1771e78316f3d93a564b7d81a4c88
++ index|credit_ledger.credit_ledger_one_refund_per_reservation|f9cb9d2d59a1efe800c20dbc5bc664ee
+- constraint|credit_ledger.credit_ledger_entry_type_check|339fbac9d96aba11dacea3130e455391
