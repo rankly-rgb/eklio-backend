@@ -1,18 +1,33 @@
-# Fingerprint of PRODUCTION (project fobgdsupyfslxbswfuay), recorded 2026-10-12,
-# after 20261011090000_a_refused_month_is_not_resumed — 178 migrations in
-# supabase_migrations.schema_migrations.
+# Fingerprint of PRODUCTION (project fobgdsupyfslxbswfuay), recorded 2026-10-31,
+# after 20261012090000_the_practice_state_has_one_authority (F76) — 179
+# migrations in supabase_migrations.schema_migrations.
 #
 # Produced by supabase/tests/helpers/schema_fingerprint.sql.
 #
-# ⚠ HOW THIS COPY WAS BUILT. Read in ONE query through the Supabase MCP
-# endpoint, read-only: the same SQL, its lines aggregated into one text with
-# md5(string_agg(... order by line)). The md5 recomputed here over the received
-# text matched the md5 production reported (3250 lines), so this file is
-# production's output, not an impression of it. Then sorted, like the replay.
+# ⚠ HOW THIS COPY WAS BUILT. Read-only, through the Supabase MCP endpoint, WITHOUT
+# carrying the 3277 lines over the wire:
+#   1. production ran the same SQL and returned, per kind and for the whole,
+#      count(*) and md5(string_agg(line, E'\n' order by line collate "C"));
+#   2. here, the 2026-10-12 copy minus the four '-' lines and plus the
+#      thirty-one '+' lines of schema_fingerprint.f76_expected.txt (F76 as the
+#      replay produces it) gave a candidate — eleven kinds out of twelve
+#      already matched production's md5 exactly;
+#   3. the twelfth, `function`, differed: production returned its 317 lines,
+#      and seven (the F76 functions) carried another hash than the replay.
+#      Those seven were swapped in;
+#   4. the md5 of the result over all 3277 lines, byte order, is
+#      7e30851435fb24764c20011974a823c5 — the md5 production reported.
+# So this file is production's output, not an impression of it.
 #
-# ⚠ THE PREVIOUS COPY (2026-09-17) PREDATED THE 30 MIGRATIONS APPLIED ON
-# 2026-09-27: schema-drift.yml was red on main from then on, reporting age as
-# drift (689 divergences) — and would have warned of nothing.
+# The seven `function` rows differ from the replay ONLY by CR bytes (F76 went
+# in through the SQL editor): production with E'\r' removed has the replay's
+# md5, and scripts/sql_tokens.py finds identical token streams. They are in
+# schema_drift_accepted.txt by triplet, like the forty-odd CRLF rows before them.
+#
+# ⚠ THE PREVIOUS COPY (2026-10-12) PREDATED F76, APPLIED ON 2026-10-18. With F76
+# not on main either, replay and baseline were both pre-F76 and agreed:
+# schema-drift.yml stayed green on main while production ran a schema main did
+# not describe. Green meant "main agrees with an old photograph", nothing more.
 #
 # ⚠ A SNAPSHOT, NOT A LIVE READ. Regenerate it after every migration applied to
 # production:
@@ -22,16 +37,16 @@
 #
 #   column                   762
 #   constraint               506
-#   function                 311
-#   function.body            311
-#   grant.function           311
-#   grant.function.env       311
+#   function                 317
+#   function.body            317
+#   grant.function           317
+#   grant.function.env       317
 #   grant.table               89
 #   grant.table.env           89
 #   index                    206
 #   policy                   215
 #   rls                       89
-#   trigger                   50
+#   trigger                   53
 #
 column|anon_generation_counters.bucket|bfd7a34b0a0954d9eb54990fcc6ca449
 column|anon_generation_counters.day|507d91db1cacfe4362f078375f6b42b5
@@ -217,6 +232,7 @@ column|content_items.compose_archetype|44735fcd1e7f687a9ac2130e871687ab
 column|content_items.created_at|1f4d4e4ad4c5de3894870bee567ea8a7
 column|content_items.id|941fb71b7f14da4ef6249ea7f0ef7c41
 column|content_items.image_slot|44735fcd1e7f687a9ac2130e871687ab
+column|content_items.licence_state_code|51ec27fe9ce7340950461d914b593c8b
 column|content_items.month_id|48fab12d214b859cc04a8a4228752965
 column|content_items.on_image_text|44735fcd1e7f687a9ac2130e871687ab
 column|content_items.payload|75cfa09e88ebe48706483bf199825a4a
@@ -581,7 +597,6 @@ column|project_briefs.data|99540861e5d4a894380d260f2be522c7
 column|project_briefs.degree_id|44735fcd1e7f687a9ac2130e871687ab
 column|project_briefs.gain_card_ids|338601327b34fecf4a320a90ba8c047a
 column|project_briefs.license_number|44735fcd1e7f687a9ac2130e871687ab
-column|project_briefs.license_state_code|51ec27fe9ce7340950461d914b593c8b
 column|project_briefs.license_type_id|44735fcd1e7f687a9ac2130e871687ab
 column|project_briefs.modality_ids|991ef2888960c469a81ab43a982c3d03
 column|project_briefs.modality_prominence|44735fcd1e7f687a9ac2130e871687ab
@@ -907,6 +922,7 @@ constraint|content_items.content_items_category_check|ec1f3e17a6d40716a053b754e6
 constraint|content_items.content_items_compose_archetype_fkey|75d4a7a17acab75894e01b715f54df1b
 constraint|content_items.content_items_google_post_has_no_image|6c5a8c66bf6a710fe32d972f00c7df94
 constraint|content_items.content_items_image_slot_check|bce15eefc6ecef908625d0eff65bfa2c
+constraint|content_items.content_items_licence_state_shape|6f435176d8518a0ac2c3a1c1e5ef4eee
 constraint|content_items.content_items_month_id_fkey|236835606d57dfb1ac5a0b8e5aa303e3
 constraint|content_items.content_items_on_image_text_check|86cf2d638e8a64a66ad18eac9ebba4d9
 constraint|content_items.content_items_payload_needs_archetype|3a21328e7baba30761af92dd942ca992
@@ -1160,7 +1176,6 @@ constraint|project_briefs.project_briefs_builder_target_id_fkey|cc89dc2733e927b0
 constraint|project_briefs.project_briefs_data_shape_check|1336f1b7b6ce3b9cf0cea500351474c2
 constraint|project_briefs.project_briefs_degree_id_fkey|14eaa8c78c0b903e955d63eb61ca1111
 constraint|project_briefs.project_briefs_license_number_shape|0417b5a0bc196d0696cdb16c23eba6d1
-constraint|project_briefs.project_briefs_license_state_shape|1f6f9536cdcb6ed1fc289affe0acb244
 constraint|project_briefs.project_briefs_license_type_id_fkey|b8159309958158272024a4247b32ad13
 constraint|project_briefs.project_briefs_modality_ids_check|42dcb979add889831c2b609b5163bc83
 constraint|project_briefs.project_briefs_modality_prominence_fkey|3a05c521832ddc0840a116edcf67608b
@@ -1352,8 +1367,10 @@ function.body|consume_check_rewrite()|65d8d8b7d29aef50d9942b6c07b90af6
 function.body|consume_generation_credit(p_brand_kit_id uuid)|7ca84edac4b55c94f42e967dc4261a74
 function.body|content_error(p_code text)|b7f8c40886ac1bb462b0db8e7cc9a296
 function.body|content_item_json(p_id uuid)|ab3e3a7aa8b5d325f883ea579068b43f
+function.body|content_item_licence_state_problem(p_id uuid)|1f7f7c88f48ca2904969202809f0fbcb
 function.body|content_item_valid(p jsonb)|683866d3ba2d2b040d2f831229f7445b
 function.body|content_items_ethics_gate()|d09ef7af263ceb7a3298d46c778c4a2a
+function.body|content_items_licence_state()|1849e60d60b0442c2f1c34329bbf986f
 function.body|content_items_payload_ethics_gate()|7cdeb4dfde42ec4e18be597bac2db4c4
 function.body|content_items_theme_belongs_to_month()|ac065d95237419b3ea450a1ba68191f9
 function.body|content_items_valid(p jsonb, p_min integer, p_max integer)|dbbd815627a875a96afdc74d9c35907c
@@ -1452,9 +1469,12 @@ function.body|organization_invitation_preview(p_token text)|07e6f414d8dd6c96d6a8
 function.body|orphaned_purchases()|8bcf1ac1e862b9499b69668bd26ae2da
 function.body|owns_project(p_project_id uuid)|fbfac0b01ea00f089c692a132a0656b9
 function.body|platform_refusal_counts(p_since timestamp with time zone)|8a27c9b629801b481fa3b590b239189a
+function.body|practice_place_reprise(p_decisions jsonb)|a11be4f53465bcb71edfbd177aad2353
+function.body|practice_state_of_kit(p_brand_kit_id uuid)|0141d1362be1f12ec7889b2359388d54
 function.body|project_briefs_data_valid(p jsonb)|f1a6169dae0820abc9cdf0e106848965
 function.body|project_briefs_licence_number_to_specs()|1e18258e4579c3f9c0e77846fdfa7657
 function.body|project_briefs_license_state_gate()|5e617edee221433baa50ad09bb5723b4
+function.body|project_briefs_place_to_specs()|902418c0b2409106f36ba02de10d41f8
 function.body|project_briefs_tone_cards_valid(p jsonb)|4628495671fb3024d9a6de886798828a
 function.body|project_briefs_usp_options_valid(p jsonb)|1d14b70cf4fd0d904dd8c95ed6fe1a53
 function.body|project_briefs_validate_how_you_work_refs()|fb3a3d7f9cacdf68d7e7eb72efc51661
@@ -1557,7 +1577,7 @@ function.body|site_spec_pages_lengths_valid(p jsonb)|271c4b2cf79b7678cffc0a3dddd
 function.body|site_spec_pages_skeleton(p_pages jsonb)|53924debd8b21f5abe743c07dad56414
 function.body|site_spec_pages_valid(p jsonb)|a8b1df78504cd78d17cfa7705a1d6915
 function.body|site_spec_palette_role(p_palette jsonb, p_role text)|28e1577f4bf3920423f4c278b69fc844
-function.body|site_spec_patch(p_brand_kit_id uuid, p_patch jsonb)|6e6ba87cd480b800439a89599e399138
+function.body|site_spec_patch(p_brand_kit_id uuid, p_patch jsonb)|51550f3d4967734500bf46be2d32da53
 function.body|site_spec_patchable_keys()|2c13b09794f35164cb1bd17e8b254598
 function.body|site_spec_practice_detail_keys()|e8de52674ff75aaa4b250d9329718797
 function.body|site_spec_practice_details_valid(p jsonb)|47f12918a8b7a319060687555df8de1b
@@ -1581,6 +1601,7 @@ function.body|site_spec_voice_guide(p_spec jsonb)|f320f58300d60cc0e3ea7f5e5cbb87
 function.body|site_spec_voice_lines(p_spec jsonb, p_frag jsonb)|85d15bc08e973a93796f8784c9872326
 function.body|site_specs_ethics_gate()|9fca53daadb650eb195f0ae1ee6281f4
 function.body|site_specs_licence_number_from_brief()|cc715d39435b2e30c7bfa98d144cafed
+function.body|site_specs_place_from_brief()|ee2d9e30b132b237ab26e91bd968f6e4
 function.body|site_specs_set_color_labels()|c6c97e198a1c1efa6527ab188912fe5c
 function.body|state_is_sellable(p_state text)|119e964430b558110d19d57950af8fcf
 function.body|strict_word_similarity(text, text)|ee45a2ab384e122787c477314d32dfc6
@@ -1663,8 +1684,10 @@ function|consume_check_rewrite()|c6d003309b8dc89b66cb159c4678aa6c
 function|consume_generation_credit(p_brand_kit_id uuid)|a3ea6fd67afa60e6c53f341391d6b94f
 function|content_error(p_code text)|5793157fb65546de56dda9129cd9dd10
 function|content_item_json(p_id uuid)|c17df420cd5e8d921be5a1295b824169
+function|content_item_licence_state_problem(p_id uuid)|c230f34975f7d1572a0a49fe4fe670fb
 function|content_item_valid(p jsonb)|c694f45ba1d4a3e5265ece5c7df63477
 function|content_items_ethics_gate()|88e7885e6b4dd677ce16ed0a546576d9
+function|content_items_licence_state()|47887ada9e4ce325745550455fa95313
 function|content_items_payload_ethics_gate()|1bbf00b6a857c57fccad6b0dfedbcf26
 function|content_items_theme_belongs_to_month()|e5c2315ed45c1c1ddd79b707fc97b729
 function|content_items_valid(p jsonb, p_min integer, p_max integer)|138f4fb32c2d9e383d4a18a881d753c0
@@ -1763,9 +1786,12 @@ function|organization_invitation_preview(p_token text)|d7415aeac2c3431a368b56d64
 function|orphaned_purchases()|e0063405888cf2889352b4f0c7cb9850
 function|owns_project(p_project_id uuid)|03af99749de299a343a751ce3ce3198b
 function|platform_refusal_counts(p_since timestamp with time zone)|3ff775fd13123b0caacf44d8df53a48d
+function|practice_place_reprise(p_decisions jsonb)|c53c807717a8498f3a7becff84f2f8f7
+function|practice_state_of_kit(p_brand_kit_id uuid)|38644db5f272b35a92985f1cd3432677
 function|project_briefs_data_valid(p jsonb)|0f486ac0a268e9ff8fad93a3b10aac0d
 function|project_briefs_licence_number_to_specs()|65c22c4c8d5ecddcf651643b0e4d5400
 function|project_briefs_license_state_gate()|15530284729ee05f3de3b63fd6ac2f26
+function|project_briefs_place_to_specs()|b44ad3803809ca86df43af7cf95e5652
 function|project_briefs_tone_cards_valid(p jsonb)|f397965e90abb7219c360a7eab099377
 function|project_briefs_usp_options_valid(p jsonb)|4f0b8c3a91294067899eadaf96463647
 function|project_briefs_validate_how_you_work_refs()|41924fa614ed1e7bf7fad00cb5104ab8
@@ -1868,7 +1894,7 @@ function|site_spec_pages_lengths_valid(p jsonb)|f10c3dca0d51129907375754d4887f34
 function|site_spec_pages_skeleton(p_pages jsonb)|eb400083c21fe74549691af88fe59022
 function|site_spec_pages_valid(p jsonb)|5a14b504bcd84eea8e1835eeca6cb3ac
 function|site_spec_palette_role(p_palette jsonb, p_role text)|e006b40959545be33dfdf79bbe4e8e32
-function|site_spec_patch(p_brand_kit_id uuid, p_patch jsonb)|b786b74ed8629a2f8265b7cc892f92d7
+function|site_spec_patch(p_brand_kit_id uuid, p_patch jsonb)|25d21c7098b934f1fe9ab845acd6087b
 function|site_spec_patchable_keys()|02f691158f3f99242bdd9d0dbe3f0adb
 function|site_spec_practice_detail_keys()|8292fd2c4fa27ca5e2e449ffcac439a3
 function|site_spec_practice_details_valid(p jsonb)|0a1fe94ec4663685a0064f8eec31b169
@@ -1892,6 +1918,7 @@ function|site_spec_voice_guide(p_spec jsonb)|a18d10f4ed6b3463e49b92f65d33ebed
 function|site_spec_voice_lines(p_spec jsonb, p_frag jsonb)|789dfd79a2a71fab1cd214fe60ef22ee
 function|site_specs_ethics_gate()|7ee4a3c92db42243e5705b252d09e19e
 function|site_specs_licence_number_from_brief()|a05c9f20a49c889f557ef5b3e1779539
+function|site_specs_place_from_brief()|26abc4d8df38aa0a978f61a9fa0c9312
 function|site_specs_set_color_labels()|c47bd3dda4dcc1e73ec286092564aa2f
 function|state_is_sellable(p_state text)|d0b18b9423d132064240d73da463a7dd
 function|strict_word_similarity(text, text)|523450d477b4e105989795603c58761a
@@ -1974,8 +2001,10 @@ grant.function.env|consume_check_rewrite()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|consume_generation_credit(p_brand_kit_id uuid)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|content_error(p_code text)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|content_item_json(p_id uuid)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|content_item_licence_state_problem(p_id uuid)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|content_item_valid(p jsonb)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|content_items_ethics_gate()|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|content_items_licence_state()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|content_items_payload_ethics_gate()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|content_items_theme_belongs_to_month()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|content_items_valid(p jsonb, p_min integer, p_max integer)|b50339a10e1de285ac99d4c3990b8693
@@ -2074,9 +2103,12 @@ grant.function.env|organization_invitation_preview(p_token text)|b50339a10e1de28
 grant.function.env|orphaned_purchases()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|owns_project(p_project_id uuid)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|platform_refusal_counts(p_since timestamp with time zone)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|practice_place_reprise(p_decisions jsonb)|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|practice_state_of_kit(p_brand_kit_id uuid)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|project_briefs_data_valid(p jsonb)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|project_briefs_licence_number_to_specs()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|project_briefs_license_state_gate()|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|project_briefs_place_to_specs()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|project_briefs_tone_cards_valid(p jsonb)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|project_briefs_usp_options_valid(p jsonb)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|project_briefs_validate_how_you_work_refs()|b50339a10e1de285ac99d4c3990b8693
@@ -2203,6 +2235,7 @@ grant.function.env|site_spec_voice_guide(p_spec jsonb)|b50339a10e1de285ac99d4c39
 grant.function.env|site_spec_voice_lines(p_spec jsonb, p_frag jsonb)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|site_specs_ethics_gate()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|site_specs_licence_number_from_brief()|b50339a10e1de285ac99d4c3990b8693
+grant.function.env|site_specs_place_from_brief()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|site_specs_set_color_labels()|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|state_is_sellable(p_state text)|b50339a10e1de285ac99d4c3990b8693
 grant.function.env|strict_word_similarity(text, text)|d6201f0b02ab3c4787a0e2931472b008
@@ -2285,8 +2318,10 @@ grant.function|consume_check_rewrite()|f440cb7547aafb71bac3b9275ad5f4bd
 grant.function|consume_generation_credit(p_brand_kit_id uuid)|f440cb7547aafb71bac3b9275ad5f4bd
 grant.function|content_error(p_code text)|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|content_item_json(p_id uuid)|8dd1771e78316f3d93a564b7d81a4c88
+grant.function|content_item_licence_state_problem(p_id uuid)|f440cb7547aafb71bac3b9275ad5f4bd
 grant.function|content_item_valid(p jsonb)|d78174332163bd0ee30d25636fc7a93d
 grant.function|content_items_ethics_gate()|8dd1771e78316f3d93a564b7d81a4c88
+grant.function|content_items_licence_state()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|content_items_payload_ethics_gate()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|content_items_theme_belongs_to_month()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|content_items_valid(p jsonb, p_min integer, p_max integer)|d78174332163bd0ee30d25636fc7a93d
@@ -2385,9 +2420,12 @@ grant.function|organization_invitation_preview(p_token text)|d78174332163bd0ee30
 grant.function|orphaned_purchases()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|owns_project(p_project_id uuid)|d78174332163bd0ee30d25636fc7a93d
 grant.function|platform_refusal_counts(p_since timestamp with time zone)|8dd1771e78316f3d93a564b7d81a4c88
+grant.function|practice_place_reprise(p_decisions jsonb)|8dd1771e78316f3d93a564b7d81a4c88
+grant.function|practice_state_of_kit(p_brand_kit_id uuid)|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|project_briefs_data_valid(p jsonb)|59a9d60d2ccf51b0c7c03f225c171a7d
 grant.function|project_briefs_licence_number_to_specs()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|project_briefs_license_state_gate()|8dd1771e78316f3d93a564b7d81a4c88
+grant.function|project_briefs_place_to_specs()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|project_briefs_tone_cards_valid(p jsonb)|59a9d60d2ccf51b0c7c03f225c171a7d
 grant.function|project_briefs_usp_options_valid(p jsonb)|59a9d60d2ccf51b0c7c03f225c171a7d
 grant.function|project_briefs_validate_how_you_work_refs()|8dd1771e78316f3d93a564b7d81a4c88
@@ -2514,6 +2552,7 @@ grant.function|site_spec_voice_guide(p_spec jsonb)|59a9d60d2ccf51b0c7c03f225c171
 grant.function|site_spec_voice_lines(p_spec jsonb, p_frag jsonb)|59a9d60d2ccf51b0c7c03f225c171a7d
 grant.function|site_specs_ethics_gate()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|site_specs_licence_number_from_brief()|8dd1771e78316f3d93a564b7d81a4c88
+grant.function|site_specs_place_from_brief()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|site_specs_set_color_labels()|8dd1771e78316f3d93a564b7d81a4c88
 grant.function|state_is_sellable(p_state text)|d78174332163bd0ee30d25636fc7a93d
 grant.function|strict_word_similarity(text, text)|59a9d60d2ccf51b0c7c03f225c171a7d
@@ -3239,6 +3278,7 @@ trigger|brand_kits.on_brand_kit_created|7cb9362152861ee538f3a715ee69b81c
 trigger|brand_kits.on_brand_kit_direction_selected|62c33d0437118a478c6d54fe10f1ccc7
 trigger|brand_kits.set_brand_kits_updated_at|8c2a3eef0047378ccc1b4a78c03a19bb
 trigger|content_items.content_items_ethics_gate|7a60ec4b1a4032942f0cd204d4eff484
+trigger|content_items.content_items_licence_state|44e3b79dbccda743ab150054f22a6e58
 trigger|content_items.content_items_payload_ethics_gate|42b14e195da51de7e3618ed881f807be
 trigger|content_items.content_items_theme_check_trg|920cb24395d42bd33bf45746c24545ae
 trigger|content_preferences.content_preferences_validate_registers|21e8805da6cb7b3094bccad0c9c5a5f1
@@ -3261,6 +3301,7 @@ trigger|plans.set_plans_updated_at|6ce793de41dff81c5cbae0ff6a0a936b
 trigger|profiles.set_profiles_updated_at|bf9efb8a082e779e846ca818d1119e35
 trigger|project_briefs.project_briefs_licence_number_to_specs|a0bb686be7ec952c08d451ede8b5af06
 trigger|project_briefs.project_briefs_license_state_gate|6041150b039291069ff536ba6f313d97
+trigger|project_briefs.project_briefs_place_to_specs|c0c89a0af799fe8fa572f19160297913
 trigger|project_briefs.project_briefs_set_updated_at|cb433173aa3f017ee7b8bb315bfb89b2
 trigger|project_briefs.project_briefs_validate_how_you_work_refs|7944e6a80fee42d31680f194f5ee721f
 trigger|project_briefs.project_briefs_validate_selected_usp_id|5997b1311d4b6990b58e2fbd6b604760
@@ -3281,5 +3322,6 @@ trigger|site_specs.set_site_specs_updated_at|1eeda81fee8570399c539df2d995f7c4
 trigger|site_specs.site_specs_color_labels|9771e02b9b0b2e5bb5aa2e7b6b1cd33d
 trigger|site_specs.site_specs_ethics_gate|24bdbc259d7b0017a6079c745ba98e46
 trigger|site_specs.site_specs_licence_number_from_brief|1881f02f2cf0ce5007b47b25e1587335
+trigger|site_specs.site_specs_place_from_brief|0f380c3e27c1d073f62c60879b1483d7
 trigger|subscriptions.set_subscriptions_updated_at|e167c05da103d083560d5ad16a36fdca
 trigger|subscriptions.subscriptions_refuse_stale_event|ea0a27f851276108908aabd7b6af65c7

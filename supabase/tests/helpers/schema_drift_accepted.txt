@@ -149,7 +149,6 @@ function|reserve_credit(p_user uuid, p_kind text, p_reason text, p_ref_type text
 function|section_types_pages_exist()|1ab50da3948b74bb841e9d42ad9feea2|4e87f2d58f66478d13e665b2dcee1c8d  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
 function|set_content_item_topic(p_id uuid, p_topic_id uuid, p_rationale text)|f6d098c87e89e54566a1cb7a1474112c|03126886139e401d6c8e48c5ea080515  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
 function|settle_credit(p_reservation_id uuid, p_actual_cost_usd numeric, p_succeeded boolean)|ed96cc81fcbdf2812eae13116a7dabdf|75e874ae9ce6d54dd0eb8410cdefc2ae  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
-function|site_spec_patch(p_brand_kit_id uuid, p_patch jsonb)|b786b74ed8629a2f8265b7cc892f92d7|310c4089576bcc29d3c0a7b9e4ad4e30  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
 function|site_specs_licence_number_from_brief()|a05c9f20a49c889f557ef5b3e1779539|91c8ebda87c31951e24324bdb58e5ca8  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
 function|subscriptions_refuse_stale_event()|9de83a1304a7bf1dace3443866552c4f|131168c624ba0df6773937f943950236  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
 function|suggest_topics_for_kit(p_brand_kit_id uuid, p_month date, p_limit integer, p_exclude uuid[])|75022fb7142f12178c7b4b18c7569057|d9ce140cfac581a66667b99461618268  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
@@ -158,3 +157,23 @@ function|topic_assignment_grace()|1893bbbfb3d1544126361e6cdf59a24f|4a4ed1f414449
 function|topic_assignment_holds(p_brand_kit_id uuid, p_topic_id uuid, p_assigned_at timestamp with time zone)|46b240f3a2924d6831906ac66207a38a|b6d5ee66b82163ec1527011a6145c844  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
 function|topic_collision_window()|dd2989ebf1f8b64726d03514ebd40f64|b49282c256a54d2ff68af646b9e043a4  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
 function|update_content_item(p_id uuid, p_patch jsonb)|140c59f10ad33129a1e2934ac569a30c|432f361f163a23eb13a816b5f039c6b2  # CRLF à l'application (collage dans l'éditeur SQL) ; même flux de jetons (sql_tokens.py)
+
+# ── 2026-10-31 : F76, SEPT FINS DE LIGNE DE PLUS ────────────────────────────
+#
+# F76 (20261012090000) a été appliquée le 2026-10-18 par l'éditeur SQL : les
+# sept fonctions qu'elle crée ou réécrit sont stockées en CRLF. Pour chacune :
+# la définition de production SANS ses \r a exactement le md5 du rejeu, et
+# scripts/sql_tokens.py rend le même flux de jetons (corps lexé, littéraux
+# gardés tels quels) — 7 sur 7, 0 comportement différent.
+#
+# site_spec_patch était déjà ici sous son empreinte d'avant F76
+# (prod b786b74e / rejeu 310c4089). F76 la redéfinit : cette ligne-là, devenue
+# une exemption périmée, est retirée et remplacée par la paire ci-dessous.
+#
+function|content_item_licence_state_problem(p_id uuid)|c230f34975f7d1572a0a49fe4fe670fb|5640b41a994932bba974980095e8515b  # F76 : CRLF à l'application (éditeur SQL) ; sans \r = md5 du rejeu ; même flux de jetons (sql_tokens.py)
+function|content_items_licence_state()|47887ada9e4ce325745550455fa95313|a231a03132d249c40943f20b45ae2e1d  # F76 : CRLF à l'application (éditeur SQL) ; sans \r = md5 du rejeu ; même flux de jetons (sql_tokens.py)
+function|practice_place_reprise(p_decisions jsonb)|c53c807717a8498f3a7becff84f2f8f7|cc101ef003e95b698403eaf29e02d5c7  # F76 : CRLF à l'application (éditeur SQL) ; sans \r = md5 du rejeu ; même flux de jetons (sql_tokens.py)
+function|practice_state_of_kit(p_brand_kit_id uuid)|38644db5f272b35a92985f1cd3432677|d52eeec0c4a8660065872d8d60f48f7d  # F76 : CRLF à l'application (éditeur SQL) ; sans \r = md5 du rejeu ; même flux de jetons (sql_tokens.py)
+function|project_briefs_place_to_specs()|b44ad3803809ca86df43af7cf95e5652|27c2fcbc208122271cb0bcb092b31661  # F76 : CRLF à l'application (éditeur SQL) ; sans \r = md5 du rejeu ; même flux de jetons (sql_tokens.py)
+function|site_spec_patch(p_brand_kit_id uuid, p_patch jsonb)|25d21c7098b934f1fe9ab845acd6087b|2817aecd144d8fb473b0b427b4c72896  # F76 : CRLF à l'application (éditeur SQL) ; sans \r = md5 du rejeu ; même flux de jetons (sql_tokens.py)
+function|site_specs_place_from_brief()|26abc4d8df38aa0a978f61a9fa0c9312|238566be55ad17166acda17d3a5f2124  # F76 : CRLF à l'application (éditeur SQL) ; sans \r = md5 du rejeu ; même flux de jetons (sql_tokens.py)
